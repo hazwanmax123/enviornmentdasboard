@@ -587,9 +587,41 @@ elif selected_page == "Discharge Compliance":
     ntu_pm_col = [c for c in df.columns if "ntu" in c.lower()][-1]
 
   if not df.empty:
-    # Ditukar kepada .min() untuk mengambil nilai pH paling rendah
-    min_ph_val = df[[ph_am_col, ph_pm_col]].min().min()
-    max_ntu_val = df[[ntu_am_col, ntu_pm_col]].max().max()
+    # Cari nilai minimum pH dan tarikh rekodnya
+    df_ph_stacked = pd.melt(
+        df,
+        id_vars=["Date"],
+        value_vars=[ph_am_col, ph_pm_col],
+        value_name="pH",
+    )
+    df_ph_stacked = df_ph_stacked.dropna(subset=["pH"])
+    if not df_ph_stacked.empty:
+      min_row = df_ph_stacked.loc[df_ph_stacked["pH"].idxmin()]
+      min_ph_val = min_row["pH"]
+      min_ph_date = min_row["Date"].strftime("%d %b %Y")
+    else:
+      min_ph_val = 0.0
+      min_ph_date = "N/A"
+
+    # Cari nilai maksimum Turbidity dan tarikh rekodnya
+    df_ntu_stacked = pd.melt(
+        df,
+        id_vars=["Date"],
+        value_vars=[ntu_am_col, ntu_pm_col],
+        value_name="NTU",
+    )
+    df_ntu_stacked = df_ntu_stacked.dropna(subset=["NTU"])
+    if not df_ntu_stacked.empty:
+      max_row = df_ntu_stacked.loc[df_ntu_stacked["NTU"].idxmax()]
+      max_ntu_val = max_row["NTU"]
+      max_ntu_date = max_row["Date"].strftime("%d %b %Y")
+    else:
+      max_ntu_val = 0.0
+      max_ntu_date = "N/A"
+
+    # Dapatkan julat tarikh yang sedang ditapis
+    start_date_str = df["Date"].min().strftime("%d %b %Y")
+    end_date_str = df["Date"].max().strftime("%d %b %Y")
 
     limit_val = (
         df["NTU Limit"].dropna().iloc[-1]
@@ -605,17 +637,19 @@ elif selected_page == "Discharge Compliance":
     col_left, col_right = st.columns([1, 1])
 
     with col_left:
-      st.markdown("#### 📌 Parameter Extremes (Filtered Range)")
+      st.markdown(
+          f"#### 📌 Parameter Extremes ({start_date_str} – {end_date_str})"
+      )
       st.markdown("<br>", unsafe_allow_html=True)
       st.metric(
-          label="Lowest pH Recorded (FDP)",
+          label=f"Lowest pH Recorded (FDP) • {min_ph_date}",
           value=f"{min_ph_val:.2f}",
           delta="Critical Acidic Value",
           delta_color="inverse",
       )
       st.markdown("<br>", unsafe_allow_html=True)
       st.metric(
-          label="Max Turbidity Recorded (FDP)",
+          label=f"Max Turbidity Recorded (FDP) • {max_ntu_date}",
           value=f"{max_ntu_val:.1f} NTU",
           delta="Peak Turbidity",
           delta_color="inverse" if max_ntu_val > 250 else "normal",
