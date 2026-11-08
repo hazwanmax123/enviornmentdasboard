@@ -259,16 +259,29 @@ if selected_page == "Overview":
       else 0
   )
 
-  f_ph = (
-      "Avg pH FDP"
-      if "Avg pH FDP" in df.columns
-      else [c for c in df.columns if "ph" in c.lower()][-1]
+  f_ph = next(
+      (
+          c
+          for c in df.columns
+          if "ph" in c.lower()
+          and ("fdp" in c.lower() or "discharge" in c.lower())
+      ),
+      None,
   )
-  f_ntu = (
-      "Avg NTU FDP"
-      if "Avg NTU FDP" in df.columns
-      else [c for c in df.columns if "ntu" in c.lower()][-1]
+  if not f_ph:
+    f_ph = [c for c in df.columns if "ph" in c.lower()][-1]
+
+  f_ntu = next(
+      (
+          c
+          for c in df.columns
+          if ("ntu" in c.lower() or "turb" in c.lower())
+          and ("fdp" in c.lower() or "discharge" in c.lower())
+      ),
+      None,
   )
+  if not f_ntu:
+    f_ntu = [c for c in df.columns if "ntu" in c.lower()][-1]
 
   if not df.empty:
     valid_recs = df.dropna(subset=[f_ph, f_ntu])
@@ -336,26 +349,42 @@ if selected_page == "Overview":
   if not df.empty:
     latest_row = df.sort_values(by="Date").iloc[-1]
 
-    us_ph_col = (
-        "Avg pH Sg. Duri US"
-        if "Avg pH Sg. Duri US" in df.columns
-        else "Sg.Duri US pH AM"
+    us_ph_col = next(
+        (
+            c
+            for c in df.columns
+            if "ph" in c.lower()
+            and ("us" in c.lower() or "upstream" in c.lower())
+        ),
+        df.columns[1],
     )
-    us_ntu_col = (
-        "Avg NTU Sg.Duri US"
-        if "Avg NTU Sg.Duri US" in df.columns
-        else "Sg.Duri US NTU AM"
+    us_ntu_col = next(
+        (
+            c
+            for c in df.columns
+            if ("ntu" in c.lower() or "turb" in c.lower())
+            and ("us" in c.lower() or "upstream" in c.lower())
+        ),
+        df.columns[3],
     )
 
-    ds_ph_col = (
-        "Avg pH Sg. Duri DS"
-        if "Avg pH Sg. Duri DS" in df.columns
-        else "Sg.Duri DS pH AM"
+    ds_ph_col = next(
+        (
+            c
+            for c in df.columns
+            if "ph" in c.lower()
+            and ("ds" in c.lower() or "downstream" in c.lower())
+        ),
+        df.columns[2],
     )
-    ds_ntu_col = (
-        "Avg NTU Sg. Duri DS"
-        if "Avg NTU Sg. Duri DS" in df.columns
-        else "Sg.Duri DS NTU AM"
+    ds_ntu_col = next(
+        (
+            c
+            for c in df.columns
+            if ("ntu" in c.lower() or "turb" in c.lower())
+            and ("ds" in c.lower() or "downstream" in c.lower())
+        ),
+        df.columns[4],
     )
 
     def get_status_badge(val, param_type):
@@ -490,7 +519,7 @@ if selected_page == "Overview":
   st.dataframe(df_sorted_recent, use_container_width=True)
 
 # ==========================================
-# PAGE 2: DISCHARGE COMPLIANCE (2 KAD KPI + CARTA PAI)
+# PAGE 2: DISCHARGE COMPLIANCE (STRICT FDP FILTER)
 # ==========================================
 elif selected_page == "Discharge Compliance":
   st.markdown(
@@ -506,83 +535,94 @@ elif selected_page == "Discharge Compliance":
       unsafe_allow_html=True,
   )
 
-  f_ph = (
-      "Avg pH FDP"
-      if "Avg pH FDP" in df.columns
-      else [c for c in df.columns if "ph" in c.lower()][-1]
-  )
-  f_ntu = (
-      "Avg NTU FDP"
-      if "Avg NTU FDP" in df.columns
-      else [c for c in df.columns if "ntu" in c.lower()][-1]
-  )
-
+  # Carian Ketat Kolum FDP AM & PM pH dan Turbidity
   ph_am_col = next(
       (
           c
           for c in df.columns
-          if "ph" in c.lower() and ("am" in c.lower() or "pagang" in c.lower())
+          if "ph" in c.lower()
+          and ("fdp" in c.lower() or "discharge" in c.lower())
+          and ("am" in c.lower() or "pagang" in c.lower())
       ),
       None,
   )
   if not ph_am_col:
-    ph_am_col = (
-        "pH FDP AM"
-        if "pH FDP AM" in df.columns
-        else [c for c in df.columns if "ph" in c.lower()][0]
+    ph_am_col = next(
+        (
+            c
+            for c in df.columns
+            if "ph" in c.lower() and ("am" in c.lower() or "pagang" in c.lower())
+        ),
+        [c for c in df.columns if "ph" in c.lower()][0],
     )
 
   ph_pm_col = next(
       (
           c
           for c in df.columns
-          if "ph" in c.lower() and ("pm" in c.lower() or "petang" in c.lower())
+          if "ph" in c.lower()
+          and ("fdp" in c.lower() or "discharge" in c.lower())
+          and ("pm" in c.lower() or "petang" in c.lower())
       ),
       None,
   )
   if not ph_pm_col:
-    ph_pm_col = (
-        "pH FDP PM"
-        if "pH FDP PM" in df.columns
-        else [c for c in df.columns if "ph" in c.lower()][-1]
+    ph_pm_col = next(
+        (
+            c
+            for c in df.columns
+            if "ph" in c.lower() and ("pm" in c.lower() or "petang" in c.lower())
+        ),
+        [c for c in df.columns if "ph" in c.lower()][-1],
     )
 
   ntu_am_col = next(
       (
           c
           for c in df.columns
-          if "ntu" in c.lower() and ("am" in c.lower() or "pagang" in c.lower())
+          if ("ntu" in c.lower() or "turb" in c.lower())
+          and ("fdp" in c.lower() or "discharge" in c.lower())
+          and ("am" in c.lower() or "pagang" in c.lower())
       ),
       None,
   )
   if not ntu_am_col:
-    ntu_am_col = (
-        "NTU FDP AM"
-        if "NTU FDP AM" in df.columns
-        else [c for c in df.columns if "ntu" in c.lower()][0]
+    ntu_am_col = next(
+        (
+            c
+            for c in df.columns
+            if ("ntu" in c.lower() or "turb" in c.lower())
+            and ("am" in c.lower() or "pagang" in c.lower())
+        ),
+        [c for c in df.columns if "ntu" in c.lower()][0],
     )
 
   ntu_pm_col = next(
       (
           c
           for c in df.columns
-          if "ntu" in c.lower() and ("pm" in c.lower() or "petang" in c.lower())
+          if ("ntu" in c.lower() or "turb" in c.lower())
+          and ("fdp" in c.lower() or "discharge" in c.lower())
+          and ("pm" in c.lower() or "petang" in c.lower())
       ),
       None,
   )
   if not ntu_pm_col:
-    ntu_pm_col = (
-        "NTU FDP PM"
-        if "NTU FDP PM" in df.columns
-        else [c for c in df.columns if "ntu" in c.lower()][-1]
+    ntu_pm_col = next(
+        (
+            c
+            for c in df.columns
+            if ("ntu" in c.lower() or "turb" in c.lower())
+            and ("pm" in c.lower() or "petang" in c.lower())
+        ),
+        [c for c in df.columns if "ntu" in c.lower()][-1],
     )
 
   if not df.empty:
-    # 1. Kira Max pH & Max Turbidity dalam julat tarikh yang ditapis
-    max_ph_val = df[[ph_am_col, ph_pm_col, f_ph]].max().max()
-    max_ntu_val = df[[ntu_am_col, ntu_pm_col, f_ntu]].max().max()
+    # Max pH & Max Turbidity khas untuk FDP sahaja
+    max_ph_val = df[[ph_am_col, ph_pm_col]].max().max()
+    max_ntu_val = df[[ntu_am_col, ntu_pm_col]].max().max()
 
-    # 2. Kira Compliance vs Breach untuk Carta Pai
     limit_val = (
         df["NTU Limit"].dropna().iloc[-1]
         if "NTU Limit" in df.columns and not df["NTU Limit"].dropna().empty
@@ -594,20 +634,19 @@ elif selected_page == "Discharge Compliance":
     compliant_count = df[compliant_mask].shape[0]
     breach_count = df.shape[0] - compliant_count
 
-    # SUSUNAN LAYOUT: 2 KPI Kad di sebelah kiri, Carta Pai di sebelah kanan
     col_left, col_right = st.columns([1, 1])
 
     with col_left:
       st.markdown("#### 📌 Parameter Extremes (Filtered Range)")
       st.markdown("<br>", unsafe_allow_html=True)
       st.metric(
-          label="Max pH Recorded",
+          label="Max pH Recorded (FDP)",
           value=f"{max_ph_val:.2f}",
           delta="Peak pH Value",
       )
       st.markdown("<br>", unsafe_allow_html=True)
       st.metric(
-          label="Max Turbidity Recorded",
+          label="Max Turbidity Recorded (FDP)",
           value=f"{max_ntu_val:.1f} NTU",
           delta="Peak Turbidity",
           delta_color="inverse" if max_ntu_val > 250 else "normal",
@@ -715,7 +754,7 @@ elif selected_page == "Discharge Compliance":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. GRAF TURBIDITY AM & PM BY DAY
+    # 2. GRAF TURBIDITY AM & PM BY DAY (FDP)
     st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
     fig_ntu = go.Figure()
     fig_ntu.add_trace(
@@ -800,64 +839,52 @@ elif selected_page == "River Water Quality":
           c
           for c in df.columns
           if "duri" in c.lower()
-          and "us" in c.lower()
+          and ("us" in c.lower() or "upstream" in c.lower())
           and "ph" in c.lower()
       ),
       None,
   )
   if not us_ph_col:
-    us_ph_col = (
-        "Avg pH Sg. Duri US" if "Avg pH Sg. Duri US" in df.columns else df.columns[1]
-    )
+    us_ph_col = df.columns[1]
 
   ds_ph_col = next(
       (
           c
           for c in df.columns
           if "duri" in c.lower()
-          and "ds" in c.lower()
+          and ("ds" in c.lower() or "downstream" in c.lower())
           and "ph" in c.lower()
       ),
       None,
   )
   if not ds_ph_col:
-    ds_ph_col = (
-        "Avg pH Sg. Duri DS" if "Avg pH Sg. Duri DS" in df.columns else df.columns[2]
-    )
+    ds_ph_col = df.columns[2]
 
   us_ntu_col = next(
       (
           c
           for c in df.columns
           if "duri" in c.lower()
-          and "us" in c.lower()
+          and ("us" in c.lower() or "upstream" in c.lower())
           and ("ntu" in c.lower() or "turb" in c.lower())
       ),
       None,
   )
   if not us_ntu_col:
-    us_ntu_col = (
-        "Avg NTU Sg.Duri US"
-        if "Avg NTU Sg.Duri US" in df.columns
-        else df.columns[3]
-    )
+    us_ntu_col = df.columns[3]
 
   ds_ntu_col = next(
       (
           c
           for c in df.columns
           if "duri" in c.lower()
-          and "ds" in c.lower()
+          and ("ds" in c.lower() or "downstream" in c.lower())
           and ("ntu" in c.lower() or "turb" in c.lower())
       ),
       None,
   )
   if not ds_ntu_col:
-    ds_ntu_col = (
-        "Avg NTU Sg. Duri DS"
-        if "Avg NTU Sg. Duri DS" in df.columns
-        else df.columns[4]
-    )
+    ds_ntu_col = df.columns[4]
 
   if not df.empty:
     df_sorted_rw = df.sort_values(by="Date")
