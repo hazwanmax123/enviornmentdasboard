@@ -360,7 +360,6 @@ if selected_page == "Overview":
   if not df.empty:
     latest_row = df.sort_values(by="Date").iloc[-1]
 
-    # Ambil column AVG untuk 3 tempat
     us_ph_avg_col = next(
         (
             c
@@ -369,7 +368,7 @@ if selected_page == "Overview":
             and "ph" in c.lower()
             and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
         ),
-        None,
+        df.columns[3],
     )
     us_ntu_avg_col = next(
         (
@@ -379,9 +378,8 @@ if selected_page == "Overview":
             and ("ntu" in c.lower() or "turb" in c.lower())
             and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
         ),
-        None,
+        df.columns[5],
     )
-
     ds_ph_avg_col = next(
         (
             c
@@ -390,7 +388,7 @@ if selected_page == "Overview":
             and "ph" in c.lower()
             and ("ds" in c.lower() or "downstream" in c.lower())
         ),
-        None,
+        df.columns[7],
     )
     ds_ntu_avg_col = next(
         (
@@ -400,18 +398,8 @@ if selected_page == "Overview":
             and ("ntu" in c.lower() or "turb" in c.lower())
             and ("ds" in c.lower() or "downstream" in c.lower())
         ),
-        None,
+        df.columns[9],
     )
-
-    # Fallback kalau tak jumpa nama AVG exact
-    if not us_ph_avg_col:
-      us_ph_avg_col = df.columns[3]
-    if not us_ntu_avg_col:
-      us_ntu_avg_col = df.columns[5]
-    if not ds_ph_avg_col:
-      ds_ph_avg_col = df.columns[7]
-    if not ds_ntu_avg_col:
-      ds_ntu_avg_col = df.columns[9]
 
 
     def get_status_badge(val, param_type):
@@ -738,6 +726,45 @@ elif selected_page == "Discharge Compliance":
         fig_ph, use_container_width=True, config={"responsive": True}
     )
 
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
+
+    fig_ntu = go.Figure()
+    fig_ntu.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[ntu_am_col],
+            name="AM Reading",
+            marker_color="#0f172a",
+        )
+    )
+    fig_ntu.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[ntu_pm_col],
+            name="PM Reading",
+            marker_color="#d97706",
+        )
+    )
+    fig_ntu.update_layout(
+        barmode="group",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
+        margin=dict(l=30, r=30, t=30, b=60),
+        height=380,
+    )
+    st.plotly_chart(
+        fig_ntu, use_container_width=True, config={"responsive": True}
+    )
+
 # ==========================================
 # PAGE 3: RIVER WATER QUALITY
 # ==========================================
@@ -800,6 +827,96 @@ elif selected_page == "River Water Quality":
       df.columns[9],
   )
 
+  us_ph_am = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "us" in c.lower()
+          and "ph" in c.lower()
+          and "am" in c.lower()
+      ),
+      df.columns[3],
+  )
+  us_ph_pm = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "us" in c.lower()
+          and "ph" in c.lower()
+          and "pm" in c.lower()
+      ),
+      df.columns[4],
+  )
+  ds_ph_am = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ph" in c.lower()
+          and "am" in c.lower()
+      ),
+      df.columns[7],
+  )
+  ds_ph_pm = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ph" in c.lower()
+          and "pm" in c.lower()
+      ),
+      df.columns[8],
+  )
+
+  us_ntu_am = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "us" in c.lower()
+          and "ntu" in c.lower()
+          and "am" in c.lower()
+      ),
+      df.columns[5],
+  )
+  us_ntu_pm = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "us" in c.lower()
+          and "ntu" in c.lower()
+          and "pm" in c.lower()
+      ),
+      df.columns[6],
+  )
+  ds_ntu_am = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ntu" in c.lower()
+          and "am" in c.lower()
+      ),
+      df.columns[9],
+  )
+  ds_ntu_pm = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ntu" in c.lower()
+          and "pm" in c.lower()
+      ),
+      df.columns[10],
+  )
+
   if not df.empty:
     df_sorted_rw = df.sort_values(by="Date")
     latest_rw = df_sorted_rw.iloc[-1]
@@ -842,6 +959,114 @@ elif selected_page == "River Water Quality":
           delta_color="inverse" if net_ntu > 0 else "normal",
       )
 
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("pH of Sg. Duri")
+
+    ph_session_filter = st.selectbox(
+        "Select Session for pH", options=["AM", "PM"], key="ph_session"
+    )
+
+    selected_us_ph = us_ph_am if ph_session_filter == "AM" else us_ph_pm
+    selected_ds_ph = ds_ph_am if ph_session_filter == "AM" else ds_ph_pm
+
+    fig_river_ph = go.Figure()
+    fig_river_ph.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[selected_us_ph],
+            name="Sg. Duri Upstream",
+            mode="lines+markers",
+            line=dict(color="#0284c7", width=2, shape="spline"),
+        )
+    )
+    fig_river_ph.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[selected_ds_ph],
+            name="Sg. Duri Downstream",
+            mode="lines+markers",
+            line=dict(color="#0f172a", width=2, shape="spline"),
+        )
+    )
+    fig_river_ph.update_layout(
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
+        margin=dict(l=30, r=30, t=30, b=60),
+        height=380,
+    )
+    st.plotly_chart(
+        fig_river_ph, use_container_width=True, config={"responsive": True}
+    )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("Turbidity of Sg. Duri")
+
+    ntu_session_filter = st.selectbox(
+        "Select Session for Turbidity", options=["AM", "PM"], key="ntu_session"
+    )
+
+    selected_us_ntu = us_ntu_am if ntu_session_filter == "AM" else us_ntu_pm
+    selected_ds_ntu = ds_ntu_am if ntu_session_filter == "AM" else ds_ntu_pm
+
+    us_colors = [
+        "#ef4444" if val > 250 else "#0284c7" for val in df[selected_us_ntu]
+    ]
+    ds_colors = [
+        "#ef4444" if val > 250 else "#0f172a" for val in df[selected_ds_ntu]
+    ]
+
+    fig_river_ntu = go.Figure()
+    fig_river_ntu.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[selected_us_ntu],
+            name="Sg. Duri Upstream",
+            marker_color=us_colors,
+        )
+    )
+    fig_river_ntu.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[selected_ds_ntu],
+            name="Sg. Duri Downstream",
+            marker_color=ds_colors,
+        )
+    )
+    fig_river_ntu.add_hline(
+        y=250,
+        line_dash="dash",
+        line_color="#ef4444",
+        annotation_text="Max Limit (250 NTU)",
+        annotation_position="top right",
+        annotation_font=dict(color="#ef4444", size=10),
+    )
+    fig_river_ntu.update_layout(
+        barmode="group",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
+        margin=dict(l=30, r=30, t=30, b=60),
+        height=380,
+    )
+    st.plotly_chart(
+        fig_river_ntu, use_container_width=True, config={"responsive": True}
+    )
+
 # ==========================================
 # PAGE 4: CASES TRACKER (MATRIX TABLE + DONUT CHART DENGAN DATE RANGE)
 # ==========================================
@@ -879,7 +1104,6 @@ elif selected_page == "Cases Tracker":
         (c for c in df_cases.columns if "location" in c.lower()), None
     )
 
-    # Tukar nama Open kepada No Action secara seragam
     if status_col:
       df_cases[status_col] = (
           df_cases[status_col]
@@ -950,13 +1174,11 @@ elif selected_page == "Cases Tracker":
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
 
-    # Susun Layout Sebelah Menyebelah: Kiri = Matrix Table Summary, Kanan = Donut Chart (dengan Date Range di atasnya)
     col_t, col_d = st.columns([1.2, 1])
 
     with col_t:
       st.subheader("📋 Cases Summary Matrix Table")
       if loc_col and issue_col and status_col:
-        # Buat pivot / cross-tab matrix table mengikut Lokasi & Issue
         matrix_table = pd.crosstab(
             index=[df_cases[loc_col], df_cases[issue_col]],
             columns=df_cases[status_col],
