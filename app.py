@@ -493,7 +493,15 @@ if selected_page == "Overview":
         height=380,
     )
 
-    st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
+    # Graf kekal saiz asal (tidak compress), boleh skrol sisi di telefon dan buang toolbar
+    st.plotly_chart(
+        fig,
+        use_container_width=False,
+        config={
+            "responsive": False,
+            "displayModeBar": False,
+        },
+    )
   else:
     st.warning("No valid data available for the selected filter range.")
 
