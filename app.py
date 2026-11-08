@@ -23,8 +23,8 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
   st.markdown(
-      "<p style='font-size: 20px; letter-spacing: 1.2px; color:"
-      " #94a3b8; font-family: Inter, sans-serif;'>ENVIRONMENTAL MONITORING SYSTEM</p>",
+      "<p style='font-size: 11px; letter-spacing: 1.2px; color:"
+      " #94a3b8; font-family: Inter, sans-serif;'>ENVIRONMENTAL SYSTEM</p>",
       unsafe_allow_html=True,
   )
   st.markdown("---")
@@ -269,7 +269,6 @@ if selected_page == "Overview":
       " 0; margin-bottom: 2px; font-family: Inter, sans-serif;'>RBA Engineering"
       " | Tin Mining PH ML087</p>",
       unsafe_allow_html=True,
- 
   )
 
   last_sample_date = (
@@ -780,7 +779,7 @@ elif selected_page == "Discharge Compliance":
     st.warning("No data available for Discharge Compliance page.")
 
 # ==========================================
-# PAGE 3: RIVER WATER QUALITY (DENGAN RANGESLIDER STABIL)
+# PAGE 3: RIVER WATER QUALITY (MENGAMBIL DATA AVG DARI EXCEL)
 # ==========================================
 elif selected_page == "River Water Quality":
   st.markdown(
@@ -800,6 +799,60 @@ elif selected_page == "River Water Quality":
       unsafe_allow_html=True,
   )
 
+  # Mengesan kolum AVG pH dan AVG Turbidity secara automatik dari fail Excel kau
+  us_ph_avg_col = next(
+      (
+          c
+          for c in df.columns
+          if "avg" in c.lower()
+          and "ph" in c.lower()
+          and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
+      ),
+      None,
+  )
+  ds_ph_avg_col = next(
+      (
+          c
+          for c in df.columns
+          if "avg" in c.lower()
+          and "ph" in c.lower()
+          and ("ds" in c.lower() or "downstream" in c.lower())
+      ),
+      None,
+  )
+
+  us_ntu_avg_col = next(
+      (
+          c
+          for c in df.columns
+          if "avg" in c.lower()
+          and ("ntu" in c.lower() or "turb" in c.lower())
+          and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
+      ),
+      None,
+  )
+  ds_ntu_avg_col = next(
+      (
+          c
+          for c in df.columns
+          if "avg" in c.lower()
+          and ("ntu" in c.lower() or "turb" in c.lower())
+          and ("ds" in c.lower() or "downstream" in c.lower())
+      ),
+      None,
+  )
+
+  # Fallback manual jika nama kolum berbeza
+  if not us_ph_avg_col:
+    us_ph_avg_col = df.columns[3]
+  if not ds_ph_avg_col:
+    ds_ph_avg_col = df.columns[7]
+  if not us_ntu_avg_col:
+    us_ntu_avg_col = df.columns[5]
+  if not ds_ntu_avg_col:
+    ds_ntu_avg_col = df.columns[9]
+
+  # Kolum AM/PM untuk graf di bawah
   us_ph_am = next(
       (
           c
@@ -822,7 +875,6 @@ elif selected_page == "River Water Quality":
       ),
       df.columns[4],
   )
-
   ds_ph_am = next(
       (
           c
@@ -868,7 +920,6 @@ elif selected_page == "River Water Quality":
       ),
       df.columns[6],
   )
-
   ds_ntu_am = next(
       (
           c
@@ -896,10 +947,11 @@ elif selected_page == "River Water Quality":
     df_sorted_rw = df.sort_values(by="Date")
     latest_rw = df_sorted_rw.iloc[-1]
 
-    us_ph_latest = latest_rw.get(us_ph_am, 0)
-    ds_ph_latest = latest_rw.get(ds_ph_am, 0)
-    us_ntu_latest = latest_rw.get(us_ntu_am, 0)
-    ds_ntu_latest = latest_rw.get(ds_ntu_am, 0)
+    # Mengambil nilai purata (Avg) untuk kad KPI pada tarikh terkini
+    us_ph_latest = latest_rw.get(us_ph_avg_col, 0)
+    ds_ph_latest = latest_rw.get(ds_ph_avg_col, 0)
+    us_ntu_latest = latest_rw.get(us_ntu_avg_col, 0)
+    ds_ntu_latest = latest_rw.get(ds_ntu_avg_col, 0)
 
     net_ph = ds_ph_latest - us_ph_latest
     net_ntu = ds_ntu_latest - us_ntu_latest
@@ -907,12 +959,12 @@ elif selected_page == "River Water Quality":
     row1_c1, row1_c2 = st.columns(2)
     with row1_c1:
       st.metric(
-          label="pH Level (Upstream vs Downstream Latest)",
+          label="pH Level (Upstream vs Downstream Latest Avg)",
           value=f"Upstream: {us_ph_latest}  |  Downstream: {ds_ph_latest}",
       )
     with row1_c2:
       st.metric(
-          label="Turbidity (Upstream vs Downstream Latest)",
+          label="Turbidity (Upstream vs Downstream Latest Avg)",
           value=(
               f"Upstream: {us_ntu_latest} NTU  |  Downstream:"
               f" {ds_ntu_latest} NTU"
