@@ -228,10 +228,9 @@ if not df.empty:
     df = df[(df["Date"].dt.date >= s_date) & (df["Date"].dt.date <= e_date)]
 
 # ==========================================
-# MAIN CONTENT AREA
+# PAGE 1: OVERVIEW
 # ==========================================
 if selected_page == "Overview":
-  # Tajuk Utama Ala Rujukan Bersih
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
       " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
@@ -250,11 +249,9 @@ if selected_page == "Overview":
       unsafe_allow_html=True,
   )
 
-  # --- PENGIRAAN METRIK TULEN ---
   last_sample_date = (
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
-
   open_cases = (
       int(df["Ongoing case"].dropna().iloc[-1])
       if "Ongoing case" in df.columns and not df["Ongoing case"].dropna().empty
@@ -309,7 +306,6 @@ if selected_page == "Overview":
         else 0.0
     )
 
-  # 4 Kad KPI Berkotak Putih Kemas
   col1, col2, col3, col4 = st.columns(4)
   with col1:
     st.metric(
@@ -330,9 +326,6 @@ if selected_page == "Overview":
 
   st.markdown("<br>", unsafe_allow_html=True)
 
-  # ==========================================
-  # STATION STATUS MATRIX TABLE (LIGHT THEME)
-  # ==========================================
   st.subheader("📋 Station Status by Parameter (Latest Sample)")
   st.caption(
       "Dynamically updated evaluation for the latest sample date in the selected"
@@ -367,7 +360,6 @@ if selected_page == "Overview":
     def get_status_badge(val, param_type):
       if pd.isna(val):
         return "<span class='badge-alert'>No Data</span>"
-
       if param_type == "pH":
         if val < 3.0:
           return "<span class='badge-breach'>❌ Breach (pH < 3)</span>"
@@ -384,10 +376,8 @@ if selected_page == "Overview":
 
     fdp_ph_val = latest_row.get(f_ph, 0)
     fdp_ntu_val = latest_row.get(f_ntu, 0)
-
     us_ph_val = latest_row.get(us_ph_col, 0)
     us_ntu_val = latest_row.get(us_ntu_col, 0)
-
     ds_ph_val = latest_row.get(ds_ph_col, 0)
     ds_ntu_val = latest_row.get(ds_ntu_col, 0)
 
@@ -421,14 +411,10 @@ if selected_page == "Overview":
 
   st.markdown("<br>", unsafe_allow_html=True)
 
-  # ==========================================
-  # GRAPH: FINAL DISCHARGE CONDITION ANALYTICS
-  # ==========================================
   st.subheader("📊 Final Discharge Condition Analytics")
 
   if not df.empty:
     fig = go.Figure()
-
     fig.add_trace(
         go.Bar(
             x=df["Date"],
@@ -438,7 +424,6 @@ if selected_page == "Overview":
             yaxis="y1",
         )
     )
-
     fig.add_trace(
         go.Scatter(
             x=df["Date"],
@@ -453,7 +438,6 @@ if selected_page == "Overview":
         )
     )
 
-    # Warna font paksi x dan date ditukar kepada gelap pekat (#0f172a)
     fig.update_layout(
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -495,26 +479,231 @@ if selected_page == "Overview":
         hovermode="x unified",
         height=400,
     )
-
     st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
   else:
     st.warning("No valid data available for the selected filter range.")
 
-  # Paparan 10 Hari Terkini Saja (Responsif Light Theme)
   st.markdown("### 📋 Recent Monitoring Log List (Latest 10 Days)")
   df_sorted_recent = df.sort_values(by="Date", ascending=False).head(10)
   st.dataframe(df_sorted_recent, use_container_width=True)
 
+# ==========================================
+# PAGE 2: DISCHARGE COMPLIANCE (BARU)
+# ==========================================
 elif selected_page == "Discharge Compliance":
-  st.title("🛡️ Discharge Compliance Details")
-  st.caption("In-depth analysis of site compliance against permitted limits.")
-  st.markdown("---")
+  st.markdown(
+      "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
+      " margin-bottom: 2px; font-family: Inter, sans-serif;'>🛡️ Discharge"
+      " Compliance</h1>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
+      " 25px; font-family: Inter, sans-serif;'>In-depth breakdown of Final"
+      " Discharge (FDP) AM and PM readings for pH and Turbidity.</p>",
+      unsafe_allow_html=True,
+  )
 
+  # Cari kolum AM & PM untuk pH dan Turbidity dari Excel
+  ph_am_col = next(
+      (
+          c
+          for c in df.columns
+          if "ph" in c.lower() and ("am" in c.lower() or "pagang" in c.lower())
+      ),
+      None,
+  )
+  if not ph_am_col:
+    ph_am_col = (
+        "pH FDP AM"
+        if "pH FDP AM" in df.columns
+        else [c for c in df.columns if "ph" in c.lower()][0]
+    )
+
+  ph_pm_col = next(
+      (
+          c
+          for c in df.columns
+          if "ph" in c.lower() and ("pm" in c.lower() or "petang" in c.lower())
+      ),
+      None,
+  )
+  if not ph_pm_col:
+    ph_pm_col = (
+        "pH FDP PM"
+        if "pH FDP PM" in df.columns
+        else [c for c in df.columns if "ph" in c.lower()][-1]
+    )
+
+  ntu_am_col = next(
+      (
+          c
+          for c in df.columns
+          if "ntu" in c.lower() and ("am" in c.lower() or "pagang" in c.lower())
+      ),
+      None,
+  )
+  if not ntu_am_col:
+    ntu_am_col = (
+        "NTU FDP AM"
+        if "NTU FDP AM" in df.columns
+        else [c for c in df.columns if "ntu" in c.lower()][0]
+    )
+
+  ntu_pm_col = next(
+      (
+          c
+          for c in df.columns
+          if "ntu" in c.lower() and ("pm" in c.lower() or "petang" in c.lower())
+      ),
+      None,
+  )
+  if not ntu_pm_col:
+    ntu_pm_col = (
+        "NTU FDP PM"
+        if "NTU FDP PM" in df.columns
+        else [c for c in df.columns if "ntu" in c.lower()][-1]
+    )
+
+  if not df.empty:
+    # 1. GRAF pH OF FINAL DISCHARGE (AM vs PM Filled Lines)
+    st.subheader("pH of Final Discharge (AM vs PM)")
+    fig_ph = go.Figure()
+
+    fig_ph.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[ph_am_col],
+            name="AM Reading",
+            mode="lines+markers",
+            line=dict(color="#0f172a", width=2, shape="spline"),
+            marker=dict(size=4, color="#0f172a"),
+            fill="tozeroy",
+            fillcolor="rgba(15, 23, 42, 0.08)",
+        )
+    )
+
+    fig_ph.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[ph_pm_col],
+            name="PM Reading",
+            mode="lines+markers",
+            line=dict(color="#d97706", width=2, shape="spline"),
+            marker=dict(size=4, color="#d97706"),
+            fill="tozeroy",
+            fillcolor="rgba(217, 119, 6, 0.1)",
+        )
+    )
+
+    fig_ph.update_layout(
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11),
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(
+            title=dict(text="pH Value", font=dict(color="#0f172a", size=11)),
+            tickfont=dict(color="#0f172a", size=10),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.45,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10, color="#0f172a"),
+        ),
+        margin=dict(l=30, r=30, t=10, b=80),
+        hovermode="x unified",
+        height=380,
+    )
+    st.plotly_chart(
+        fig_ph, use_container_width=True, config={"responsive": True}
+    )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # 2. GRAF TURBIDITY AM READING AND PM READING BY DAY (Grouped Bars)
+    st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
+    fig_ntu = go.Figure()
+
+    fig_ntu.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[ntu_am_col],
+            name="AM Reading",
+            marker_color="#0f172a",
+        )
+    )
+
+    fig_ntu.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[ntu_pm_col],
+            name="PM Reading",
+            marker_color="#d97706",
+        )
+    )
+
+    fig_ntu.update_layout(
+        barmode="group",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11),
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(
+            title=dict(
+                text="Turbidity (NTU)", font=dict(color="#0f172a", size=11)
+            ),
+            tickfont=dict(color="#0f172a", size=10),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.45,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10, color="#0f172a"),
+        ),
+        margin=dict(l=30, r=30, t=10, b=80),
+        hovermode="x unified",
+        height=380,
+    )
+    st.plotly_chart(
+        fig_ntu, use_container_width=True, config={"responsive": True}
+    )
+  else:
+    st.warning("No data available for Discharge Compliance page.")
+
+# ==========================================
+# PAGE 3: RIVER WATER QUALITY
+# ==========================================
 elif selected_page == "River Water Quality":
   st.title("💧 River Water Quality (Upstream vs Downstream)")
   st.caption("Monitoring Sungai Duri upstream and downstream parameters.")
   st.markdown("---")
 
+# ==========================================
+# PAGE 4: CASES TRACKER
+# ==========================================
 elif selected_page == "Cases Tracker":
   st.title("⚠️ Environmental Cases Tracker")
   st.caption("Detailed breakdown of ongoing cases and corrective actions.")
