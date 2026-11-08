@@ -192,10 +192,16 @@ def load_data():
 def load_cases_data():
   df_cases = pd.read_csv(CASES_CSV_URL)
   df_cases.columns = df_cases.columns.str.strip()
-  if "Date Raised" in df_cases.columns:
-    df_cases["Date Raised"] = pd.to_datetime(
-        df_cases["Date Raised"], errors="coerce"
-    )
+  date_col = next(
+      (
+          c
+          for c in df_cases.columns
+          if "date" in c.lower() or "raised" in c.lower()
+      ),
+      None,
+  )
+  if date_col:
+    df_cases[date_col] = pd.to_datetime(df_cases[date_col], errors="coerce")
   return df_cases
 
 
@@ -278,12 +284,15 @@ if selected_page == "Overview":
   last_sample_date = (
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
-
   open_cases_count = 0
-  if not df_cases.empty and "Status" in df_cases.columns:
-    open_cases_count = df_cases[
-        df_cases["Status"].astype(str).str.lower().str.contains("open")
-    ].shape[0]
+  if not df_cases.empty:
+    status_col = next(
+        (c for c in df_cases.columns if "status" in c.lower()), None
+    )
+    if status_col:
+      open_cases_count = df_cases[
+          df_cases[status_col].astype(str).str.lower().str.contains("open")
+      ].shape[0]
 
   if not df.empty:
     valid_recs = df.dropna(subset=[f_ph, f_ntu])
@@ -342,10 +351,6 @@ if selected_page == "Overview":
 
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader("📋 Station Status by Parameter (Latest Sample)")
-  st.caption(
-      "Dynamically updated evaluation for the latest sample date in the selected"
-      " range."
-  )
 
   if not df.empty:
     latest_row = df.sort_values(by="Date").iloc[-1]
@@ -781,7 +786,7 @@ elif selected_page == "River Water Quality":
       )
 
 # ==========================================
-# PAGE 4: CASES TRACKER (DENGAN "PROPOSED IN MEETING" & DATE RANGE)
+# PAGE 4: CASES TRACKER (DENGAN GRAF & KPI CARD)
 # ==========================================
 elif selected_page == "Cases Tracker":
   st.markdown(
@@ -810,10 +815,14 @@ elif selected_page == "Cases Tracker":
         ),
         None,
     )
+    issue_col = next(
+        (c for c in df_cases.columns if "issue" in c.lower()), None
+    )
+    loc_col = next(
+        (c for c in df_cases.columns if "location" in c.lower()), None
+    )
 
     total_cases = len(df_cases)
-
-    # Mengira kes mengikut status (Open, Closed, Proposed in meeting)
     open_cases = (
         len(
             df_cases[
@@ -848,7 +857,6 @@ elif selected_page == "Cases Tracker":
         else 0
     )
 
-    # Dapatkan Julat Tarikh (Date Range) untuk Kes
     if date_col and pd.api.types.is_datetime64_any_dtype(df_cases[date_col]):
       min_c_date = df_cases[date_col].min().strftime("%d %b %Y")
       max_c_date = df_cases[date_col].max().strftime("%d %b %Y")
@@ -856,7 +864,7 @@ elif selected_page == "Cases Tracker":
     else:
       date_range_label = "All Records"
 
-    # Paparan Kad KPI Kes (4 Kolum termasuk Proposed in meeting)
+    # Kad KPI Kes
     c1, c2, c3, c4 = st.columns(4)
     with c1:
       st.metric(label="Total Cases", value=total_cases, delta=date_range_label)
@@ -880,7 +888,71 @@ elif selected_page == "Cases Tracker":
       )
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
-    st.subheader("📋 Cases Tracker Records & Location Breakdown")
-    st.dataframe(df_cases, use_container_width=True)
+    st.subheader("📊 Cases Analytics & Distribution")
+
+    # Paparkan 2 Graf Sebelah-menyebelah (Jenis Kes & Lokasi)
+    g_col1, g_col2 = st.columns(2)
+
+    with g_col1:
+      if issue_col:
+        issue_counts = df_cases[issue_col].value_counts().reset_index()
+        issue_counts.columns = ["Issue", "Count"]
+        fig_issue = px.bar(
+            issue_counts,
+            x="Count",
+            y="Issue",
+            orientation="h",
+            title="Cases by Issue Type",
+            text="Count",
+            color_discrete_sequence=["#0284c7"],
+        )
+        fig_issue.update_layout(
+            plot_bgcolor="#ffffff",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#0f172a", family="Inter", size=11),
+            xaxis=dict(showgrid=True, gridcolor="rgba(100,100,100,0.06)"),
+            yaxis=dict(autorange="reversed"),
+            margin=dict(l=20, r=20, t=40, b=20),
+            height=300,
+        )
+        st.plotly_chart(
+            fig_issue, use_container_width=True, config={"responsive": True}
+        )
+
+    with g_col2:
+      if loc_col:
+        loc_counts = df_cases[loc_col].value_counts().reset_index()
+        loc_counts.columns = ["Location", "Count"]
+        fig_loc = px.bar(
+            loc_counts,
+            x="Count",
+            y="Location",
+            orientation="h",
+            title="Cases by Location",
+            text="Count",
+            color_discrete_sequence=["#0f172a"],
+        )
+        fig_loc.update_layout(
+            plot_bgcolor="#ffffff",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#0f172a", family="Inter", size=11),
+            xaxis=dict(showgrid=True, gridcolor="rgba(100,100,100,0.06)"),
+            yaxis=dict(autorange="reversed"),
+            margin=dict(l=20, r=20, t=40, b=20),
+            height=300,
+        )
+        st.plotly_chart(
+            fig_loc, use_container_width=True, config={"responsive": True}
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("📋 Cases Tracker Detailed Records")
+
+    # Format tarikh supaya nampak bersih dalam jadual
+    display_df = df_cases.copy()
+    if date_col and pd.api.types.is_datetime64_any_dtype(display_df[date_col]):
+      display_df[date_col] = display_df[date_col].dt.strftime("%d %b %Y")
+
+    st.dataframe(display_df, use_container_width=True)
   else:
     st.warning("No data found in Cases Tracker sheet.")
