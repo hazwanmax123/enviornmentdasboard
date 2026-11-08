@@ -1,4 +1,3 @@
-import base64
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -13,45 +12,27 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-# Fungsi untuk baca gambar drone tempatan
-def get_base64_of_bin_file(bin_file):
-  try:
-    with open(bin_file, "rb") as f:
-      data = f.read()
-    return base64.b64encode(data).decode()
-  except Exception:
-    return None
-
-
-img_base64 = get_base64_of_bin_file("header_bg.jpg")
-
 # ==========================================
-# SIDEBAR: THEME TOGGLE & CONTROLS
+# SIDEBAR: NAVIGATION & CONTROLS (DARK NAVY)
 # ==========================================
 with st.sidebar:
   st.markdown(
-      "<h2 style='font-size: 22px; font-weight: bold; color: white;'>🌊"
-      " Mboard</h2>",
+      "<h2 style='font-size: 22px; font-weight: 700; color: #ffffff; "
+      "font-family: Inter, sans-serif;'>🌊 Mboard</h2>",
       unsafe_allow_html=True,
   )
   st.markdown(
-      "<p style='font-size: 11px; letter-spacing: 1px; color:"
-      " #94a3b8;'>ENVIRONMENTAL SYSTEM</p>",
+      "<p style='font-size: 11px; letter-spacing: 1.2px; color:"
+      " #94a3b8; font-family: Inter, sans-serif;'>ENVIRONMENTAL SYSTEM</p>",
       unsafe_allow_html=True,
   )
   st.markdown("---")
 
-  # Suis Pilihan Tema (Dark Mode / Light Mode)
-  theme_mode = st.radio(
-      "🎨 Display Theme", ["Light Mode", "Dark Mode"], index=0
-  )
-
-  st.markdown("---")
   st.markdown(
       "<p"
-      " style='font-size: 13px; font-weight: bold; color: #38bdf8;"
-      " margin-bottom: 5px;'>NAVIGATION</p>",
+      " style='font-size: 12px; font-weight: 700; color: #38bdf8;"
+      " letter-spacing: 0.8px; margin-bottom: 5px; font-family: Inter,"
+      " sans-serif;'>NAVIGATION</p>",
       unsafe_allow_html=True,
   )
   selected_page = st.radio(
@@ -68,151 +49,120 @@ with st.sidebar:
   st.markdown("---")
   st.markdown(
       "<p"
-      " style='font-size: 13px; font-weight: bold; color: #38bdf8;"
-      " margin-bottom: 5px;'>DATA FILTERS</p>",
+      " style='font-size: 12px; font-weight: 700; color: #38bdf8;"
+      " letter-spacing: 0.8px; margin-bottom: 5px; font-family: Inter,"
+      " sans-serif;'>DATA FILTERS</p>",
       unsafe_allow_html=True,
   )
 
 # ==========================================
-# DYNAMIC CSS STYLING (LIGHT VS DARK MODE)
+# CUSTOM CSS: CLEAN LIGHT CANVAS + DARK SIDEBAR + ENHANCED FONT
 # ==========================================
-if theme_mode == "Dark Mode":
-  bg_color = "#070a13"
-  sidebar_bg = "#0f172a"
-  text_color = "#f8fafc"
-  sub_text = "#94a3b8"
-  card_bg = "#1e293b"
-  card_border = "1px solid #334155"
-  metric_val = "#38bdf8"
-  table_bg = "#1e293b"
-  table_header = "#0f172a"
-  plot_bg = "#1e293b"
-else:
-  # Stail Light Mode (Seiras Rujukan Korporat Bersih)
-  bg_color = "#f4f7fc"
-  sidebar_bg = "#121829"  # Sidebar gelap korporat ala rujukan
-  text_color = "#1e293b"
-  sub_text = "#64748b"
-  card_bg = "#ffffff"
-  card_border = "1px solid #e2e8f0"
-  metric_val = "#0f172a"
-  table_bg = "#ffffff"
-  table_header = "#f8fafc"
-  plot_bg = "#ffffff"
-
-# Konfigurasi Banner Header Gambar Drone
-banner_css = (
-    f"""
-    .custom-banner {{
-        background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.8)), 
-                    url("data:image/jpeg;base64,{img_base64}");
-        background-size: cover;
-        background-position: center;
-        border-radius: 16px;
-        padding: 40px 30px;
-        margin-bottom: 25px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    }}
-"""
-    if img_base64
-    else f"""
-    .custom-banner {{
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        border-radius: 16px;
-        padding: 40px 30px;
-        margin-bottom: 25px;
-        border: {card_border};
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-    }}
-"""
-)
-
 st.markdown(
-    f"""
+    """
     <style>
-    .stApp {{
-        background-color: {bg_color};
-        color: {text_color};
-    }}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    /* Latar Belakang Canvas Utama Cerah (Clean Light) */
+    .stApp {
+        background-color: #f4f7fc;
+        color: #1e293b;
+        font-family: 'Inter', sans-serif;
+    }
     
-    [data-testid="stSidebar"] {{
-        background-color: {sidebar_bg};
+    /* Sidebar Gelap Pekat Ala Rujukan */
+    [data-testid="stSidebar"] {
+        background-color: #0d1322;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
         color: #ffffff;
-    }}
+    }
     
-    [data-testid="stSidebar"] label {{
+    [data-testid="stSidebar"] label {
         color: #e2e8f0 !important;
         font-weight: 500;
-    }}
-
-    h1, h2, h3, h4 {{
-        color: {text_color} !important;
         font-family: 'Inter', sans-serif;
-    }}
+    }
+
+    h1, h2, h3, h4 {
+        color: #0f172a !important;
+        font-family: 'Inter', sans-serif;
+    }
     
-    p, span, label {{
-        color: {sub_text};
-    }}
+    p, span, label {
+        font-family: 'Inter', sans-serif;
+    }
 
-    {banner_css}
-
-    /* Stail Kad KPI Korporat Bersih Berkotak */
-    div[data-testid="stMetric"] {{
-        background: {card_bg};
-        border: {card_border};
-        padding: 20px 24px;
+    /* Stail Kad KPI Putih Bersih Bertingkat (Clean White Cards) */
+    div[data-testid="stMetric"] {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 18px 22px;
         border-radius: 14px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
         transition: all 0.2s ease-in-out;
-    }}
+    }
     
-    div[data-testid="stMetric"]:hover {{
+    div[data-testid="stMetric"]:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 12px -2px rgba(0, 0, 0, 0.06);
-    }}
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        border-color: #cbd5e1;
+    }
 
-    [data-testid="stMetricValue"] {{
-        font-size: 30px !important;
+    [data-testid="stMetricValue"] {
+        font-size: 28px !important;
         font-weight: 700 !important;
-        color: {metric_val} !important;
+        color: #0f172a !important;
         font-family: 'Inter', sans-serif;
-    }}
+    }
     
-    [data-testid="stMetricLabel"] {{
-        font-size: 13px !important;
-        color: {sub_text} !important;
+    [data-testid="stMetricLabel"] {
+        font-size: 12px !important;
+        color: #64748b !important;
         font-weight: 600 !important;
-    }}
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Container Jadual Responsif */
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    }
 
     /* Styling Badge Status Matriks */
-    .badge-pass {{
+    .badge-pass {
         background-color: #d1fae5;
         color: #065f46;
-        padding: 5px 12px;
+        border: 1px solid #a7f3d0;
+        padding: 4px 10px;
         border-radius: 20px;
         font-weight: 600;
-        font-size: 12px;
+        font-size: 11px;
         display: inline-block;
-    }}
-    .badge-alert {{
+    }
+    .badge-alert {
         background-color: #fef3c7;
         color: #92400e;
-        padding: 5px 12px;
+        border: 1px solid #fde68a;
+        padding: 4px 10px;
         border-radius: 20px;
         font-weight: 600;
-        font-size: 12px;
+        font-size: 11px;
         display: inline-block;
-    }}
-    .badge-breach {{
+    }
+    .badge-breach {
         background-color: #fee2e2;
         color: #991b1b;
-        padding: 5px 12px;
+        border: 1px solid #fecaca;
+        padding: 4px 10px;
         border-radius: 20px;
         font-weight: 600;
-        font-size: 12px;
+        font-size: 11px;
         display: inline-block;
-    }}
+    }
     </style>
 """,
     unsafe_allow_html=True,
@@ -281,17 +231,22 @@ if not df.empty:
 # MAIN CONTENT AREA
 # ==========================================
 if selected_page == "Overview":
-  # Header Banner Gambar Drone Bergaya Rujukan
+  # Tajuk Utama Ala Rujukan Bersih
   st.markdown(
-      """
-    <div class="custom-banner">
-        <h1 style="font-size: 28px; font-weight: 700; color: #ffffff; margin-bottom: 2px;">Welcome Back, Officer 🤖</h1>
-        <h3 style="font-size: 16px; font-weight: 300; color: #cbd5e1; margin-top: 0;">Your environmental telemetry control room - monitoring stations, compliance, and actions.</h3>
-        <p style="color: #38bdf8; font-size: 12px; margin-top: 10px; font-weight: 600;">
-            📡 RBA Engineering Active Site Telemetry
-        </p>
-    </div>
-""",
+      "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
+      " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top:"
+      " 0; margin-bottom: 2px; font-family: Inter, sans-serif;'>RBA Engineering"
+      " | Tin Mining PH ML087</p>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
+      " 20px; font-family: Inter, sans-serif;'>Your environmental telemetry"
+      " control room - monitoring stations, compliance, and actions.</p>",
       unsafe_allow_html=True,
   )
 
@@ -354,7 +309,7 @@ if selected_page == "Overview":
         else 0.0
     )
 
-  # 4 Kad KPI Berkotak Kemas
+  # 4 Kad KPI Berkotak Putih Kemas
   col1, col2, col3, col4 = st.columns(4)
   with col1:
     st.metric(
@@ -376,7 +331,7 @@ if selected_page == "Overview":
   st.markdown("<br>", unsafe_allow_html=True)
 
   # ==========================================
-  # STATION STATUS MATRIX TABLE
+  # STATION STATUS MATRIX TABLE (LIGHT THEME)
   # ==========================================
   st.subheader("📋 Station Status by Parameter (Latest Sample)")
   st.caption(
@@ -437,32 +392,34 @@ if selected_page == "Overview":
     ds_ntu_val = latest_row.get(ds_ntu_col, 0)
 
     matrix_html = f"""
-        <table style="width:100%; border-collapse: collapse; background: {table_bg}; border: {card_border}; border-radius: 14px; overflow: hidden; font-family: 'Inter', sans-serif;">
-            <tr style="background: {table_header}; border-bottom: 2px solid rgba(100,100,100,0.1); text-align: left;">
-                <th style="padding: 16px 20px; color: {sub_text}; font-size: 13px;">Station</th>
-                <th style="padding: 16px 20px; color: {sub_text}; font-size: 13px;">pH (Latest: {latest_row['Date'].strftime('%d %b %Y')})</th>
-                <th style="padding: 16px 20px; color: {sub_text}; font-size: 13px;">Turbidity (&lt; 250 NTU)</th>
+        <div class="table-container">
+        <table style="width:100%; border-collapse: collapse; font-family: 'Inter', sans-serif; white-space: nowrap;">
+            <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
+                <th style="padding: 14px 18px; color: #64748b; font-size: 12px; font-weight: 600;">Station</th>
+                <th style="padding: 14px 18px; color: #64748b; font-size: 12px; font-weight: 600;">pH (Latest: {latest_row['Date'].strftime('%d %b %Y')})</th>
+                <th style="padding: 14px 18px; color: #64748b; font-size: 12px; font-weight: 600;">Turbidity (&lt; 250 NTU)</th>
             </tr>
-            <tr style="border-bottom: 1px solid rgba(100,100,100,0.05);">
-                <td style="padding: 16px 20px; font-weight: 600; color: {text_color};">Final discharge (FDP)</td>
-                <td style="padding: 16px 20px;">{get_status_badge(fdp_ph_val, 'pH')} <span style="font-size: 12px; color: {sub_text}; margin-left: 8px;">({fdp_ph_val})</span></td>
-                <td style="padding: 16px 20px;">{get_status_badge(fdp_ntu_val, 'Turbidity')} <span style="font-size: 12px; color: {sub_text}; margin-left: 8px;">({fdp_ntu_val} NTU)</span></td>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 14px 18px; font-weight: 600; color: #0f172a; font-size: 13px;">Final discharge (FDP)</td>
+                <td style="padding: 14px 18px;">{get_status_badge(fdp_ph_val, 'pH')} <span style="font-size: 11px; color: #64748b; margin-left: 6px;">({fdp_ph_val})</span></td>
+                <td style="padding: 14px 18px;">{get_status_badge(fdp_ntu_val, 'Turbidity')} <span style="font-size: 11px; color: #64748b; margin-left: 6px;">({fdp_ntu_val} NTU)</span></td>
             </tr>
-            <tr style="border-bottom: 1px solid rgba(100,100,100,0.05);">
-                <td style="padding: 16px 20px; font-weight: 600; color: {text_color};">River upstream (Sg. Duri US)</td>
-                <td style="padding: 16px 20px;">{get_status_badge(us_ph_val, 'pH')} <span style="font-size: 12px; color: {sub_text}; margin-left: 8px;">({us_ph_val})</span></td>
-                <td style="padding: 16px 20px;">{get_status_badge(us_ntu_val, 'Turbidity')} <span style="font-size: 12px; color: {sub_text}; margin-left: 8px;">({us_ntu_val} NTU)</span></td>
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 14px 18px; font-weight: 600; color: #0f172a; font-size: 13px;">River upstream (Sg. Duri US)</td>
+                <td style="padding: 14px 18px;">{get_status_badge(us_ph_val, 'pH')} <span style="font-size: 11px; color: #64748b; margin-left: 6px;">({us_ph_val})</span></td>
+                <td style="padding: 14px 18px;">{get_status_badge(us_ntu_val, 'Turbidity')} <span style="font-size: 11px; color: #64748b; margin-left: 6px;">({us_ntu_val} NTU)</span></td>
             </tr>
             <tr>
-                <td style="padding: 16px 20px; font-weight: 600; color: {text_color};">River downstream (Sg. Duri DS)</td>
-                <td style="padding: 16px 20px;">{get_status_badge(ds_ph_val, 'pH')} <span style="font-size: 12px; color: {sub_text}; margin-left: 8px;">({ds_ph_val})</span></td>
-                <td style="padding: 16px 20px;">{get_status_badge(ds_ntu_val, 'Turbidity')} <span style="font-size: 12px; color: {sub_text}; margin-left: 8px;">({ds_ntu_val} NTU)</span></td>
+                <td style="padding: 14px 18px; font-weight: 600; color: #0f172a; font-size: 13px;">River downstream (Sg. Duri DS)</td>
+                <td style="padding: 14px 18px;">{get_status_badge(ds_ph_val, 'pH')} <span style="font-size: 11px; color: #64748b; margin-left: 6px;">({ds_ph_val})</span></td>
+                <td style="padding: 14px 18px;">{get_status_badge(ds_ntu_val, 'Turbidity')} <span style="font-size: 11px; color: #64748b; margin-left: 6px;">({ds_ntu_val} NTU)</span></td>
             </tr>
         </table>
+        </div>
         """
     st.markdown(matrix_html, unsafe_allow_html=True)
 
-  st.markdown("<br><br>", unsafe_allow_html=True)
+  st.markdown("<br>", unsafe_allow_html=True)
 
   # ==========================================
   # GRAPH: FINAL DISCHARGE CONDITION ANALYTICS
@@ -477,7 +434,7 @@ if selected_page == "Overview":
             x=df["Date"],
             y=df[f_ntu],
             name="Discharge Turbidity (NTU)",
-            marker_color="#0284c7" if theme_mode == "Light Mode" else "#38bdf8",
+            marker_color="#0284c7",
             yaxis="y1",
         )
     )
@@ -488,29 +445,36 @@ if selected_page == "Overview":
             y=df[f_ph],
             name="pH Level",
             mode="lines+markers",
-            line=dict(color="#0f172a" if theme_mode == "Light Mode" else "#fbbf24", width=2.5, shape="spline"),
-            marker=dict(size=6),
+            line=dict(color="#0f172a", width=2, shape="spline"),
+            marker=dict(size=5, color="#0f172a"),
             fill="tozeroy",
-            fillcolor="rgba(15, 23, 42, 0.05)" if theme_mode == "Light Mode" else "rgba(251, 191, 36, 0.1)",
+            fillcolor="rgba(15, 23, 42, 0.05)",
             yaxis="y2",
         )
     )
 
     fig.update_layout(
-        plot_bgcolor=plot_bg,
+        plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=text_color),
+        font=dict(color="#1e293b", family="Inter", size=11),
         xaxis=dict(
-            title="Date", showgrid=False, linecolor="#cbd5e1", tickformat="%b %d"
+            title="Date",
+            showgrid=False,
+            linecolor="#cbd5e1",
+            tickformat="%b %d",
         ),
         yaxis=dict(
-            title=dict(text="Turbidity (NTU)", font=dict(size=13)),
+            title=dict(
+                text="Turbidity (NTU)", font=dict(color="#0284c7", size=11)
+            ),
+            tickfont=dict(color="#0284c7", size=10),
             side="left",
             showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.08)",
+            gridcolor="rgba(100, 100, 100, 0.06)",
         ),
         yaxis2=dict(
-            title=dict(text="pH Level", font=dict(size=13)),
+            title=dict(text="pH Level", font=dict(color="#0f172a", size=11)),
+            tickfont=dict(color="#0f172a", size=10),
             overlaying="y",
             side="right",
             showgrid=False,
@@ -519,21 +483,24 @@ if selected_page == "Overview":
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.28,
+            y=-0.35,
             xanchor="center",
             x=0.5,
+            font=dict(size=10),
         ),
-        margin=dict(l=40, r=40, t=20, b=50),
+        margin=dict(l=30, r=30, t=10, b=60),
         hovermode="x unified",
-        height=420,
+        height=380,
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
   else:
     st.warning("No valid data available for the selected filter range.")
 
-  st.markdown("### 📋 Recent Monitoring Log List")
-  st.dataframe(df, use_container_width=True)
+  # Paparan 10 Hari Terkini Saja (Responsif Light Theme)
+  st.markdown("### 📋 Recent Monitoring Log List (Latest 10 Days)")
+  df_sorted_recent = df.sort_values(by="Date", ascending=False).head(10)
+  st.dataframe(df_sorted_recent, use_container_width=True)
 
 elif selected_page == "Discharge Compliance":
   st.title("🛡️ Discharge Compliance Details")
