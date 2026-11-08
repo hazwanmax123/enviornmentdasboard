@@ -688,7 +688,7 @@ elif selected_page == "Discharge Compliance":
     st.warning("No data available for Discharge Compliance page.")
 
 # ==========================================
-# PAGE 3: RIVER WATER QUALITY (BARU)
+# PAGE 3: RIVER WATER QUALITY (DENGAN KPI & SHADING MERAH > 250 NTU)
 # ==========================================
 elif selected_page == "River Water Quality":
   st.markdown(
@@ -699,12 +699,11 @@ elif selected_page == "River Water Quality":
   )
   st.markdown(
       "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>Comparison of Sungai Duri"
-      " Upstream (US) and Downstream (DS) monitoring stations.</p>",
+      " 25px; font-family: Inter, sans-serif;'>Comparison and net impact"
+      " analysis between Sg. Duri Upstream (US) and Downstream (DS).</p>",
       unsafe_allow_html=True,
   )
 
-  # Cari nama kolum untuk Sg Duri Upstream & Downstream dalam Excel
   us_ph_col = next(
       (
           c
@@ -766,10 +765,49 @@ elif selected_page == "River Water Quality":
     )
 
   if not df.empty:
+    df_sorted_rw = df.sort_values(by="Date")
+    latest_rw = df_sorted_rw.iloc[-1]
+
+    us_ph_latest = latest_rw.get(us_ph_col, 0)
+    ds_ph_latest = latest_rw.get(ds_ph_col, 0)
+    us_ntu_latest = latest_rw.get(us_ntu_col, 0)
+    ds_ntu_latest = latest_rw.get(ds_ntu_col, 0)
+
+    net_ph = ds_ph_latest - us_ph_latest
+    net_ntu = ds_ntu_latest - us_ntu_latest
+
+    # 4 KAD KPI KHUSUS RIVER WATER QUALITY
+    kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+    with kpi1:
+      st.metric(
+          label="pH (US vs DS Latest)",
+          value=f"US: {us_ph_latest} | DS: {ds_ph_latest}",
+      )
+    with kpi2:
+      st.metric(
+          label="Turbidity (US vs DS Latest)",
+          value=f"US: {us_ntu_latest} | DS: {ds_ntu_latest} NTU",
+      )
+    with kpi3:
+      st.metric(
+          label="Net Impact (pH)",
+          value=f"{net_ph:+.2f}",
+          delta="Acidic Shift" if net_ph < 0 else "Alkaline Shift",
+          delta_color="inverse" if net_ph < 0 else "normal",
+      )
+    with kpi4:
+      st.metric(
+          label="Net Impact (Turbidity)",
+          value=f"{net_ntu:+.1f} NTU",
+          delta="Silt Addition" if net_ntu > 0 else "Clearer",
+          delta_color="inverse" if net_ntu > 0 else "normal",
+      )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
     # 1. GRAF pH: Upstream vs Downstream
     st.subheader("pH Comparison: Sg. Duri Upstream vs Downstream")
     fig_river_ph = go.Figure()
-
     fig_river_ph.add_trace(
         go.Scatter(
             x=df["Date"],
@@ -780,7 +818,6 @@ elif selected_page == "River Water Quality":
             marker=dict(size=4, color="#0284c7"),
         )
     )
-
     fig_river_ph.add_trace(
         go.Scatter(
             x=df["Date"],
@@ -791,7 +828,6 @@ elif selected_page == "River Water Quality":
             marker=dict(size=4, color="#0f172a"),
         )
     )
-
     fig_river_ph.update_layout(
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -829,33 +865,51 @@ elif selected_page == "River Water Quality":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. GRAF TURBIDITY: Upstream vs Downstream
-    st.subheader("Turbidity Comparison: Sg. Duri Upstream vs Downstream (NTU)")
+    # 2. GRAF TURBIDITY: Upstream vs Downstream (Dengan Shading Merah > 250 NTU & Garisan Limit)
+    st.subheader(
+        "Turbidity Comparison: Sg. Duri Upstream vs Downstream (NTU)"
+    )
+
+    # Menentukan warna bar/garisan: Merah jika > 250 NTU, warna biasa jika normal
+    us_colors = [
+        "#ef4444" if val > 250 else "#0284c7" for val in df[us_ntu_col]
+    ]
+    ds_colors = [
+        "#ef4444" if val > 250 else "#0f172a" for val in df[ds_ntu_col]
+    ]
+
     fig_river_ntu = go.Figure()
 
     fig_river_ntu.add_trace(
-        go.Scatter(
+        go.Bar(
             x=df["Date"],
             y=df[us_ntu_col],
             name="Sg. Duri Upstream (US)",
-            mode="lines+markers",
-            line=dict(color="#0284c7", width=2, shape="spline"),
-            marker=dict(size=4, color="#0284c7"),
+            marker_color=us_colors,
         )
     )
 
     fig_river_ntu.add_trace(
-        go.Scatter(
+        go.Bar(
             x=df["Date"],
             y=df[ds_ntu_col],
             name="Sg. Duri Downstream (DS)",
-            mode="lines+markers",
-            line=dict(color="#0f172a", width=2, shape="spline"),
-            marker=dict(size=4, color="#0f172a"),
+            marker_color=ds_colors,
         )
     )
 
+    # Tambah garisan rujukan had maksimum 250 NTU
+    fig_river_ntu.add_hline(
+        y=250,
+        line_dash="dash",
+        line_color="#ef4444",
+        annotation_text="Max Limit (250 NTU)",
+        annotation_position="top right",
+        annotation_font=dict(color="#ef4444", size=10),
+    )
+
     fig_river_ntu.update_layout(
+        barmode="group",
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
@@ -897,9 +951,7 @@ elif selected_page == "River Water Quality":
 # ==========================================
 # PAGE 4: CASES TRACKER
 # ==========================================
-elif selected__page := (
-    selected_page == "Cases Tracker"
-):  # Diselaraskan untuk Cases Tracker
+elif selected_page == "Cases Tracker":
   st.title("⚠️ Environmental Cases Tracker")
   st.caption("Detailed breakdown of ongoing cases and corrective actions.")
   st.markdown("---")
