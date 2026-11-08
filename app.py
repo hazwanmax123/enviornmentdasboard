@@ -1,4 +1,5 @@
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -109,7 +110,7 @@ st.markdown(
     }
 
     [data-testid="stMetricValue"] {
-        font-size: 22px !important;
+        font-size: 24px !important;
         font-weight: 700 !important;
         color: #0f172a !important;
         font-family: 'Inter', sans-serif;
@@ -489,7 +490,7 @@ if selected_page == "Overview":
   st.dataframe(df_sorted_recent, use_container_width=True)
 
 # ==========================================
-# PAGE 2: DISCHARGE COMPLIANCE
+# PAGE 2: DISCHARGE COMPLIANCE (2 KAD KPI + CARTA PAI)
 # ==========================================
 elif selected_page == "Discharge Compliance":
   st.markdown(
@@ -503,6 +504,17 @@ elif selected_page == "Discharge Compliance":
       " 25px; font-family: Inter, sans-serif;'>In-depth breakdown of Final"
       " Discharge (FDP) AM and PM readings for pH and Turbidity.</p>",
       unsafe_allow_html=True,
+  )
+
+  f_ph = (
+      "Avg pH FDP"
+      if "Avg pH FDP" in df.columns
+      else [c for c in df.columns if "ph" in c.lower()][-1]
+  )
+  f_ntu = (
+      "Avg NTU FDP"
+      if "Avg NTU FDP" in df.columns
+      else [c for c in df.columns if "ntu" in c.lower()][-1]
   )
 
   ph_am_col = next(
@@ -566,6 +578,80 @@ elif selected_page == "Discharge Compliance":
     )
 
   if not df.empty:
+    # 1. Kira Max pH & Max Turbidity dalam julat tarikh yang ditapis
+    max_ph_val = df[[ph_am_col, ph_pm_col, f_ph]].max().max()
+    max_ntu_val = df[[ntu_am_col, ntu_pm_col, f_ntu]].max().max()
+
+    # 2. Kira Compliance vs Breach untuk Carta Pai
+    limit_val = (
+        df["NTU Limit"].dropna().iloc[-1]
+        if "NTU Limit" in df.columns and not df["NTU Limit"].dropna().empty
+        else 50.0
+    )
+    compliant_mask = (
+        (df[f_ph] >= 6.0) & (df[f_ph] <= 9.0) & (df[f_ntu] <= limit_val)
+    )
+    compliant_count = df[compliant_mask].shape[0]
+    breach_count = df.shape[0] - compliant_count
+
+    # SUSUNAN LAYOUT: 2 KPI Kad di sebelah kiri, Carta Pai di sebelah kanan
+    col_left, col_right = st.columns([1, 1])
+
+    with col_left:
+      st.markdown("#### 📌 Parameter Extremes (Filtered Range)")
+      st.markdown("<br>", unsafe_allow_html=True)
+      st.metric(
+          label="Max pH Recorded",
+          value=f"{max_ph_val:.2f}",
+          delta="Peak pH Value",
+      )
+      st.markdown("<br>", unsafe_allow_html=True)
+      st.metric(
+          label="Max Turbidity Recorded",
+          value=f"{max_ntu_val:.1f} NTU",
+          delta="Peak Turbidity",
+          delta_color="inverse" if max_ntu_val > 250 else "normal",
+      )
+
+    with col_right:
+      st.markdown("#### 🥧 Compliance Rate Breakdown")
+      pie_df = pd.DataFrame({
+          "Status": ["Compliant", "Breach / Non-Compliant"],
+          "Count": [compliant_count, breach_count],
+      })
+      fig_pie = px.pie(
+          pie_df,
+          values="Count",
+          names="Status",
+          color="Status",
+          color_discrete_map={
+              "Compliant": "#10b981",
+              "Breach / Non-Compliant": "#ef4444",
+          },
+          hole=0.4,
+      )
+      fig_pie.update_layout(
+          plot_bgcolor="#ffffff",
+          paper_bgcolor="rgba(0,0,0,0)",
+          font=dict(color="#0f172a", family="Inter", size=11),
+          legend=dict(
+              orientation="h",
+              yanchor="bottom",
+              y=-0.1,
+              xanchor="center",
+              x=0.5,
+              font=dict(size=10, color="#0f172a"),
+          ),
+          margin=dict(l=20, r=20, t=10, b=30),
+          height=260,
+      )
+      st.plotly_chart(
+          fig_pie, use_container_width=True, config={"responsive": True}
+      )
+
+    st.markdown("<br><hr><br>", unsafe_allow_html=True)
+
+    # 1. GRAF pH OF FINAL DISCHARGE (AM vs PM)
     st.subheader("pH of Final Discharge (AM vs PM)")
     fig_ph = go.Figure()
     fig_ph.add_trace(
@@ -629,6 +715,7 @@ elif selected_page == "Discharge Compliance":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # 2. GRAF TURBIDITY AM & PM BY DAY
     st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
     fig_ntu = go.Figure()
     fig_ntu.add_trace(
@@ -688,7 +775,7 @@ elif selected_page == "Discharge Compliance":
     st.warning("No data available for Discharge Compliance page.")
 
 # ==========================================
-# PAGE 3: RIVER WATER QUALITY (KPI 2 BARIS & NAMA PENUH)
+# PAGE 3: RIVER WATER QUALITY
 # ==========================================
 elif selected_page == "River Water Quality":
   st.markdown(
@@ -784,7 +871,6 @@ elif selected_page == "River Water Quality":
     net_ph = ds_ph_latest - us_ph_latest
     net_ntu = ds_ntu_latest - us_ntu_latest
 
-    # 4 KAD KPI DIPECAHKAN KEPADA 2 BARIS (ATAS & BAWAH) SUPAYA MUAT & JELAS
     row1_c1, row1_c2 = st.columns(2)
     with row1_c1:
       st.metric(
@@ -891,7 +977,6 @@ elif selected_page == "River Water Quality":
     ]
 
     fig_river_ntu = go.Figure()
-
     fig_river_ntu.add_trace(
         go.Bar(
             x=df["Date"],
@@ -900,7 +985,6 @@ elif selected_page == "River Water Quality":
             marker_color=us_colors,
         )
     )
-
     fig_river_ntu.add_trace(
         go.Bar(
             x=df["Date"],
@@ -909,7 +993,6 @@ elif selected_page == "River Water Quality":
             marker_color=ds_colors,
         )
     )
-
     fig_river_ntu.add_hline(
         y=250,
         line_dash="dash",
@@ -918,7 +1001,6 @@ elif selected_page == "River Water Quality":
         annotation_position="top right",
         annotation_font=dict(color="#ef4444", size=10),
     )
-
     fig_river_ntu.update_layout(
         barmode="group",
         plot_bgcolor="#ffffff",
