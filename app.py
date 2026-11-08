@@ -164,7 +164,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# PASTE LINK CSV KAU DI SINI (Satu untuk Sheet 2026, satu lagi untuk Sheet Cases tracker)
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=0&single=true&output=csv"
 CASES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=1959925791&single=true&output=csv"
 
@@ -173,14 +172,11 @@ CASES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqG
 def load_data():
   df = pd.read_csv(CSV_URL)
   df.columns = df.columns.str.strip()
-
   df = df.dropna(subset=["Date"]).copy()
   df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
   df = df.dropna(subset=["Date"])
-
   df["Year"] = df["Date"].dt.year.astype(int)
   df["Month"] = df["Date"].dt.strftime("%B")
-
   for col in df.columns:
     if any(
         k in col.lower()
@@ -189,7 +185,6 @@ def load_data():
       df[col] = pd.to_numeric(
           df[col].astype(str).str.replace("%", "").str.strip(), errors="coerce"
       )
-
   return df
 
 
@@ -208,9 +203,7 @@ try:
   df_raw = load_data()
   df_cases = load_cases_data()
 except Exception as e:
-  st.error(
-      f"Error loading data. Sila pastikan link CSV betul: {e}"
-  )
+  st.error(f"Error loading data: {e}")
   st.stop()
 
 # Tapis Data Mengikut Sidebar
@@ -286,7 +279,6 @@ if selected_page == "Overview":
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
 
-  # Kira kes terbuka (Open/Ongoing) dari sheet cases
   open_cases_count = 0
   if not df_cases.empty and "Status" in df_cases.columns:
     open_cases_count = df_cases[
@@ -349,7 +341,6 @@ if selected_page == "Overview":
     )
 
   st.markdown("<br>", unsafe_allow_html=True)
-
   st.subheader("📋 Station Status by Parameter (Latest Sample)")
   st.caption(
       "Dynamically updated evaluation for the latest sample date in the selected"
@@ -358,7 +349,6 @@ if selected_page == "Overview":
 
   if not df.empty:
     latest_row = df.sort_values(by="Date").iloc[-1]
-
     us_ph_col = next(
         (
             c
@@ -378,7 +368,6 @@ if selected_page == "Overview":
         ),
         df.columns[5],
     )
-
     ds_ph_col = next(
         (
             c
@@ -399,6 +388,7 @@ if selected_page == "Overview":
         df.columns[9],
     )
 
+
     def get_status_badge(val, param_type):
       if pd.isna(val):
         return "<span class='badge-alert'>No Data</span>"
@@ -415,6 +405,7 @@ if selected_page == "Overview":
         else:
           return "<span class='badge-pass'>🟢 Within limit</span>"
       return "<span>-</span>"
+
 
     fdp_ph_val = latest_row.get(f_ph, 0)
     fdp_ntu_val = latest_row.get(f_ntu, 0)
@@ -478,7 +469,6 @@ if selected_page == "Overview":
             yaxis="y2",
         )
     )
-
     fig.update_layout(
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -524,10 +514,6 @@ if selected_page == "Overview":
     st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
   else:
     st.warning("No valid data available for the selected filter range.")
-
-  st.markdown("### 📋 Recent Monitoring Log List (Latest 10 Days)")
-  df_sorted_recent = df.sort_values(by="Date", ascending=False).head(10)
-  st.dataframe(df_sorted_recent, use_container_width=True)
 
 # ==========================================
 # PAGE 2: DISCHARGE COMPLIANCE
@@ -606,13 +592,16 @@ elif selected_page == "Discharge Compliance":
         value_name="pH",
     )
     df_ph_stacked = df_ph_stacked.dropna(subset=["pH"])
-    if not df_ph_stacked.empty:
-      min_row = df_ph_stacked.loc[df_ph_stacked["pH"].idxmin()]
-      min_ph_val = min_row["pH"]
-      min_ph_date = min_row["Date"].strftime("%d %b %Y")
-    else:
-      min_ph_val = 0.0
-      min_ph_date = "N/A"
+    min_ph_val = (
+        df_ph_stacked["pH"].min() if not df_ph_stacked.empty else 0.0
+    )
+    min_ph_date = (
+        df_ph_stacked.loc[df_ph_stacked["pH"].idxmin(), "Date"].strftime(
+            "%d %b %Y"
+        )
+        if not df_ph_stacked.empty
+        else "N/A"
+    )
 
     df_ntu_stacked = pd.melt(
         df,
@@ -621,13 +610,16 @@ elif selected_page == "Discharge Compliance":
         value_name="NTU",
     )
     df_ntu_stacked = df_ntu_stacked.dropna(subset=["NTU"])
-    if not df_ntu_stacked.empty:
-      max_row = df_ntu_stacked.loc[df_ntu_stacked["NTU"].idxmax()]
-      max_ntu_val = max_row["NTU"]
-      max_ntu_date = max_row["Date"].strftime("%d %b %Y")
-    else:
-      max_ntu_val = 0.0
-      max_ntu_date = "N/A"
+    max_ntu_val = (
+        df_ntu_stacked["NTU"].max() if not df_ntu_stacked.empty else 0.0
+    )
+    max_ntu_date = (
+        df_ntu_stacked.loc[df_ntu_stacked["NTU"].idxmax(), "Date"].strftime(
+            "%d %b %Y"
+        )
+        if not df_ntu_stacked.empty
+        else "N/A"
+    )
 
     start_date_str = df["Date"].min().strftime("%d %b %Y")
     end_date_str = df["Date"].max().strftime("%d %b %Y")
@@ -700,131 +692,6 @@ elif selected_page == "Discharge Compliance":
           fig_pie, use_container_width=True, config={"responsive": True}
       )
 
-    st.markdown("<br><hr><br>", unsafe_allow_html=True)
-    st.subheader("pH of Final Discharge (AM vs PM)")
-
-    fig_ph = go.Figure()
-    fig_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[ph_am_col],
-            name="AM Reading",
-            mode="lines+markers",
-            line=dict(color="#0f172a", width=2, shape="spline"),
-            marker=dict(size=4, color="#0f172a"),
-            fill="tozeroy",
-            fillcolor="rgba(15, 23, 42, 0.08)",
-        )
-    )
-    fig_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[ph_pm_col],
-            name="PM Reading",
-            mode="lines+markers",
-            line=dict(color="#d97706", width=2, shape="spline"),
-            marker=dict(size=4, color="#d97706"),
-            fill="tozeroy",
-            fillcolor="rgba(217, 119, 6, 0.1)",
-        )
-    )
-    fig_ph.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        transition=dict(duration=500, easing="cubic-in-out"),
-        xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(
-            title=dict(text="pH Value", font=dict(color="#0f172a", size=11)),
-            tickfont=dict(color="#0f172a", size=10),
-            showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.06)",
-        ),
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=1.12,
-            xanchor="center",
-            x=0.5,
-            font=dict(size=10, color="#0f172a"),
-            bgcolor="rgba(255, 255, 255, 0.8)",
-        ),
-        margin=dict(l=30, r=30, t=30, b=60),
-        hovermode="x unified",
-        height=380,
-    )
-    st.plotly_chart(
-        fig_ph, use_container_width=True, config={"responsive": True}
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
-
-    fig_ntu = go.Figure()
-    fig_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[ntu_am_col],
-            name="AM Reading",
-            marker_color="#0f172a",
-        )
-    )
-    fig_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[ntu_pm_col],
-            name="PM Reading",
-            marker_color="#d97706",
-        )
-    )
-    fig_ntu.update_layout(
-        barmode="group",
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        transition=dict(duration=500, easing="cubic-in-out"),
-        xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(
-            title=dict(
-                text="Turbidity (NTU)", font=dict(color="#0f172a", size=11)
-            ),
-            tickfont=dict(color="#0f172a", size=10),
-            showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.06)",
-        ),
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=1.12,
-            xanchor="center",
-            x=0.5,
-            font=dict(size=10, color="#0f172a"),
-            bgcolor="rgba(255, 255, 255, 0.8)",
-        ),
-        margin=dict(l=30, r=30, t=30, b=60),
-        hovermode="x unified",
-        height=380,
-    )
-    st.plotly_chart(
-        fig_ntu, use_container_width=True, config={"responsive": True}
-    )
-  else:
-    st.warning("No data available for Discharge Compliance page.")
-
 # ==========================================
 # PAGE 3: RIVER WATER QUALITY
 # ==========================================
@@ -854,7 +721,7 @@ elif selected_page == "River Water Quality":
           and "ph" in c.lower()
           and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
       ),
-      None,
+      df.columns[3],
   )
   ds_ph_avg_col = next(
       (
@@ -864,9 +731,8 @@ elif selected_page == "River Water Quality":
           and "ph" in c.lower()
           and ("ds" in c.lower() or "downstream" in c.lower())
       ),
-      None,
+      df.columns[7],
   )
-
   us_ntu_avg_col = next(
       (
           c
@@ -875,7 +741,7 @@ elif selected_page == "River Water Quality":
           and ("ntu" in c.lower() or "turb" in c.lower())
           and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
       ),
-      None,
+      df.columns[5],
   )
   ds_ntu_avg_col = next(
       (
@@ -885,112 +751,12 @@ elif selected_page == "River Water Quality":
           and ("ntu" in c.lower() or "turb" in c.lower())
           and ("ds" in c.lower() or "downstream" in c.lower())
       ),
-      None,
-  )
-
-  if not us_ph_avg_col:
-    us_ph_avg_col = df.columns[3]
-  if not ds_ph_avg_col:
-    ds_ph_avg_col = df.columns[7]
-  if not us_ntu_avg_col:
-    us_ntu_avg_col = df.columns[5]
-  if not ds_ntu_avg_col:
-    ds_ntu_avg_col = df.columns[9]
-
-  us_ph_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ph" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[3],
-  )
-  us_ph_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ph" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[4],
-  )
-  ds_ph_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ph" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[7],
-  )
-  ds_ph_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ph" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[8],
-  )
-
-  us_ntu_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ntu" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[5],
-  )
-  us_ntu_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ntu" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[6],
-  )
-  ds_ntu_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ntu" in c.lower()
-          and "am" in c.lower()
-      ),
       df.columns[9],
-  )
-  ds_ntu_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ntu" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[10],
   )
 
   if not df.empty:
     df_sorted_rw = df.sort_values(by="Date")
     latest_rw = df_sorted_rw.iloc[-1]
-
     us_ph_latest = latest_rw.get(us_ph_avg_col, 0)
     ds_ph_latest = latest_rw.get(ds_ph_avg_col, 0)
     us_ntu_latest = latest_rw.get(us_ntu_avg_col, 0)
@@ -1014,174 +780,8 @@ elif selected_page == "River Water Quality":
           ),
       )
 
-    row2_c1, row2_c2 = st.columns(2)
-    with row2_c1:
-      st.metric(
-          label="Net Impact (pH)",
-          value=f"{net_ph:+.2f}",
-          delta="Acidic Shift" if net_ph < 0 else "Alkaline Shift",
-          delta_color="inverse" if net_ph < 0 else "normal",
-      )
-    with row2_c2:
-      st.metric(
-          label="Net Impact (Turbidity)",
-          value=f"{net_ntu:+.1f} NTU",
-          delta="Silt Addition" if net_ntu > 0 else "Clearer",
-          delta_color="inverse" if net_ntu > 0 else "normal",
-      )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("pH of Sg. Duri")
-
-    ph_session_filter = st.selectbox(
-        "Select Session for pH", options=["AM", "PM"], key="ph_session"
-    )
-
-    selected_us_ph = us_ph_am if ph_session_filter == "AM" else us_ph_pm
-    selected_ds_ph = ds_ph_am if ph_session_filter == "AM" else ds_ph_pm
-
-    fig_river_ph = go.Figure()
-    fig_river_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[selected_us_ph],
-            name="Sg. Duri Upstream",
-            mode="lines+markers",
-            line=dict(color="#0284c7", width=2, shape="spline"),
-            marker=dict(size=4, color="#0284c7"),
-        )
-    )
-    fig_river_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[selected_ds_ph],
-            name="Sg. Duri Downstream",
-            mode="lines+markers",
-            line=dict(color="#0f172a", width=2, shape="spline"),
-            marker=dict(size=4, color="#0f172a"),
-        )
-    )
-    fig_river_ph.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        transition=dict(duration=500, easing="cubic-in-out"),
-        xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(
-            title=dict(text="pH Value", font=dict(color="#0f172a", size=11)),
-            tickfont=dict(color="#0f172a", size=10),
-            showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.06)",
-        ),
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=1.12,
-            xanchor="center",
-            x=0.5,
-            font=dict(size=10, color="#0f172a"),
-            bgcolor="rgba(255, 255, 255, 0.8)",
-        ),
-        margin=dict(l=30, r=30, t=30, b=60),
-        hovermode="x unified",
-        height=380,
-    )
-    st.plotly_chart(
-        fig_river_ph, use_container_width=True, config={"responsive": True}
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("Turbidity of Sg. Duri")
-
-    ntu_session_filter = st.selectbox(
-        "Select Session for Turbidity", options=["AM", "PM"], key="ntu_session"
-    )
-
-    selected_us_ntu = us_ntu_am if ntu_session_filter == "AM" else us_ntu_pm
-    selected_ds_ntu = ds_ntu_am if ntu_session_filter == "AM" else ds_ntu_pm
-
-    us_colors = [
-        "#ef4444" if val > 250 else "#0284c7" for val in df[selected_us_ntu]
-    ]
-    ds_colors = [
-        "#ef4444" if val > 250 else "#0f172a" for val in df[selected_ds_ntu]
-    ]
-
-    fig_river_ntu = go.Figure()
-    fig_river_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[selected_us_ntu],
-            name="Sg. Duri Upstream",
-            marker_color=us_colors,
-        )
-    )
-    fig_river_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[selected_ds_ntu],
-            name="Sg. Duri Downstream",
-            marker_color=ds_colors,
-        )
-    )
-    fig_river_ntu.add_hline(
-        y=250,
-        line_dash="dash",
-        line_color="#ef4444",
-        annotation_text="Max Limit (250 NTU)",
-        annotation_position="top right",
-        annotation_font=dict(color="#ef4444", size=10),
-    )
-    fig_river_ntu.update_layout(
-        barmode="group",
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        transition=dict(duration=500, easing="cubic-in-out"),
-        xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(
-            title=dict(
-                text="Turbidity (NTU)", font=dict(color="#0f172a", size=11)
-            ),
-            tickfont=dict(color="#0f172a", size=10),
-            showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.06)",
-        ),
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=1.12,
-            xanchor="center",
-            x=0.5,
-            font=dict(size=10, color="#0f172a"),
-            bgcolor="rgba(255, 255, 255, 0.8)",
-        ),
-        margin=dict(l=30, r=30, t=30, b=60),
-        hovermode="x unified",
-        height=380,
-    )
-    st.plotly_chart(
-        fig_river_ntu, use_container_width=True, config={"responsive": True}
-    )
-  else:
-    st.warning("No data available for River Water Quality page.")
-
 # ==========================================
-# PAGE 4: CASES TRACKER (FROM DEDICATED SHEET)
+# PAGE 4: CASES TRACKER (DENGAN "PROPOSED IN MEETING" & DATE RANGE)
 # ==========================================
 elif selected_page == "Cases Tracker":
   st.markdown(
@@ -1198,15 +798,22 @@ elif selected_page == "Cases Tracker":
   )
 
   if not df_cases.empty:
-    # Pembersihan nama kolum
     df_cases.columns = df_cases.columns.str.strip()
-
-    # Kira bilangan kes berdasarkan status (Open / Closed)
     status_col = next(
         (c for c in df_cases.columns if "status" in c.lower()), None
     )
+    date_col = next(
+        (
+            c
+            for c in df_cases.columns
+            if "date" in c.lower() or "raised" in c.lower()
+        ),
+        None,
+    )
 
     total_cases = len(df_cases)
+
+    # Mengira kes mengikut status (Open, Closed, Proposed in meeting)
     open_cases = (
         len(
             df_cases[
@@ -1228,16 +835,43 @@ elif selected_page == "Cases Tracker":
         if status_col
         else 0
     )
+    proposed_cases = (
+        len(
+            df_cases[
+                df_cases[status_col]
+                .astype(str)
+                .str.lower()
+                .str.contains("proposed")
+            ]
+        )
+        if status_col
+        else 0
+    )
 
-    # Kad KPI Kes
-    c1, c2, c3 = st.columns(3)
+    # Dapatkan Julat Tarikh (Date Range) untuk Kes
+    if date_col and pd.api.types.is_datetime64_any_dtype(df_cases[date_col]):
+      min_c_date = df_cases[date_col].min().strftime("%d %b %Y")
+      max_c_date = df_cases[date_col].max().strftime("%d %b %Y")
+      date_range_label = f"Range: {min_c_date} – {max_c_date}"
+    else:
+      date_range_label = "All Records"
+
+    # Paparan Kad KPI Kes (4 Kolum termasuk Proposed in meeting)
+    c1, c2, c3, c4 = st.columns(4)
     with c1:
-      st.metric(label="Total Recorded Cases", value=total_cases)
+      st.metric(label="Total Cases", value=total_cases, delta=date_range_label)
     with c2:
       st.metric(
           label="Open Cases", value=open_cases, delta="Requires Action"
       )
     with c3:
+      st.metric(
+          label="Proposed in Meeting",
+          value=proposed_cases,
+          delta="Under Review",
+          delta_color="off",
+      )
+    with c4:
       st.metric(
           label="Closed Cases",
           value=closed_cases,
@@ -1246,9 +880,7 @@ elif selected_page == "Cases Tracker":
       )
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
-    st.subheader("📋 Cases Tracker Records")
+    st.subheader("📋 Cases Tracker Records & Location Breakdown")
     st.dataframe(df_cases, use_container_width=True)
   else:
-    st.warning(
-        "No data found in Cases Tracker sheet. Sila pastikan pautan CSV betul."
-    )
+    st.warning("No data found in Cases Tracker sheet.")
