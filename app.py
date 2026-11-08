@@ -229,6 +229,33 @@ if not df.empty:
     df = df[(df["Date"].dt.date >= s_date) & (df["Date"].dt.date <= e_date)]
 
 # ==========================================
+# GLOBAL VARIABLE DEFINITIONS (FDP & RIVER)
+# ==========================================
+f_ph = next(
+    (
+        c
+        for c in df.columns
+        if "ph" in c.lower()
+        and ("fdp" in c.lower() or "discharge" in c.lower())
+    ),
+    None,
+)
+if not f_ph:
+  f_ph = [c for c in df.columns if "ph" in c.lower()][-1]
+
+f_ntu = next(
+    (
+        c
+        for c in df.columns
+        if ("ntu" in c.lower() or "turb" in c.lower())
+        and ("fdp" in c.lower() or "discharge" in c.lower())
+    ),
+    None,
+)
+if not f_ntu:
+  f_ntu = [c for c in df.columns if "ntu" in c.lower()][-1]
+
+# ==========================================
 # PAGE 1: OVERVIEW
 # ==========================================
 if selected_page == "Overview":
@@ -258,30 +285,6 @@ if selected_page == "Overview":
       if "Ongoing case" in df.columns and not df["Ongoing case"].dropna().empty
       else 0
   )
-
-  f_ph = next(
-      (
-          c
-          for c in df.columns
-          if "ph" in c.lower()
-          and ("fdp" in c.lower() or "discharge" in c.lower())
-      ),
-      None,
-  )
-  if not f_ph:
-    f_ph = [c for c in df.columns if "ph" in c.lower()][-1]
-
-  f_ntu = next(
-      (
-          c
-          for c in df.columns
-          if ("ntu" in c.lower() or "turb" in c.lower())
-          and ("fdp" in c.lower() or "discharge" in c.lower())
-      ),
-      None,
-  )
-  if not f_ntu:
-    f_ntu = [c for c in df.columns if "ntu" in c.lower()][-1]
 
   if not df.empty:
     valid_recs = df.dropna(subset=[f_ph, f_ntu])
@@ -519,7 +522,7 @@ if selected_page == "Overview":
   st.dataframe(df_sorted_recent, use_container_width=True)
 
 # ==========================================
-# PAGE 2: DISCHARGE COMPLIANCE (STRICT FDP FILTER)
+# PAGE 2: DISCHARGE COMPLIANCE (FIXED FDP SCOPE)
 # ==========================================
 elif selected_page == "Discharge Compliance":
   st.markdown(
@@ -535,7 +538,6 @@ elif selected_page == "Discharge Compliance":
       unsafe_allow_html=True,
   )
 
-  # Carian Ketat Kolum FDP AM & PM pH dan Turbidity
   ph_am_col = next(
       (
           c
@@ -619,7 +621,6 @@ elif selected_page == "Discharge Compliance":
     )
 
   if not df.empty:
-    # Max pH & Max Turbidity khas untuk FDP sahaja
     max_ph_val = df[[ph_am_col, ph_pm_col]].max().max()
     max_ntu_val = df[[ntu_am_col, ntu_pm_col]].max().max()
 
@@ -690,7 +691,6 @@ elif selected_page == "Discharge Compliance":
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
 
-    # 1. GRAF pH OF FINAL DISCHARGE (AM vs PM)
     st.subheader("pH of Final Discharge (AM vs PM)")
     fig_ph = go.Figure()
     fig_ph.add_trace(
@@ -754,7 +754,6 @@ elif selected_page == "Discharge Compliance":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. GRAF TURBIDITY AM & PM BY DAY (FDP)
     st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
     fig_ntu = go.Figure()
     fig_ntu.add_trace(
