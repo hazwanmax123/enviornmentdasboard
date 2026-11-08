@@ -14,49 +14,6 @@ st.set_page_config(
 )
 
 # ==========================================
-# SIDEBAR: NAVIGATION & CONTROLS (DARK NAVY)
-# ==========================================
-with st.sidebar:
-  st.markdown(
-      "<h2 style='font-size: 22px; font-weight: 700; color: #ffffff; "
-      "font-family: Inter, sans-serif;'>🌊 Mboard</h2>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='font-size: 11px; letter-spacing: 1.2px; color:"
-      " #94a3b8; font-family: Inter, sans-serif;'>ENVIRONMENTAL SYSTEM</p>",
-      unsafe_allow_html=True,
-  )
-  st.markdown("---")
-
-  st.markdown(
-      "<p"
-      " style='font-size: 12px; font-weight: 700; color: #38bdf8;"
-      " letter-spacing: 0.8px; margin-bottom: 5px; font-family: Inter,"
-      " sans-serif;'>NAVIGATION</p>",
-      unsafe_allow_html=True,
-  )
-  selected_page = st.radio(
-      "Navigation Menu",
-      [
-          "Overview",
-          "Discharge Compliance",
-          "River Water Quality",
-          "Cases Tracker",
-      ],
-      label_visibility="collapsed",
-  )
-
-  st.markdown("---")
-  st.markdown(
-      "<p"
-      " style='font-size: 12px; font-weight: 700; color: #38bdf8;"
-      " letter-spacing: 0.8px; margin-bottom: 5px; font-family: Inter,"
-      " sans-serif;'>DATA FILTERS</p>",
-      unsafe_allow_html=True,
-  )
-
-# ==========================================
 # CUSTOM CSS: CLEAN LIGHT CANVAS + DARK SIDEBAR + ENHANCED FONT
 # ==========================================
 st.markdown(
@@ -207,13 +164,58 @@ def load_cases_data():
 
 try:
   df_raw = load_data()
-  df_cases = load_cases_data()
+  df_cases_raw = load_cases_data()
 except Exception as e:
   st.error(f"Error loading data: {e}")
   st.stop()
 
-# Tapis Data Mengikut Sidebar
+# ==========================================
+# SIDEBAR: NAVIGATION & CONTROLS
+# ==========================================
+with st.sidebar:
+  st.markdown(
+      "<h2 style='font-size: 22px; font-weight: 700; color: #ffffff; "
+      "font-family: Inter, sans-serif;'>🌊 Mboard</h2>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='font-size: 11px; letter-spacing: 1.2px; color:"
+      " #94a3b8; font-family: Inter, sans-serif;'>ENVIRONMENTAL SYSTEM</p>",
+      unsafe_allow_html=True,
+  )
+  st.markdown("---")
+
+  st.markdown(
+      "<p"
+      " style='font-size: 12px; font-weight: 700; color: #38bdf8;"
+      " letter-spacing: 0.8px; margin-bottom: 5px; font-family: Inter,"
+      " sans-serif;'>NAVIGATION</p>",
+      unsafe_allow_html=True,
+  )
+  selected_page = st.radio(
+      "Navigation Menu",
+      [
+          "Overview",
+          "Discharge Compliance",
+          "River Water Quality",
+          "Cases Tracker",
+      ],
+      label_visibility="collapsed",
+  )
+
+  st.markdown("---")
+  st.markdown(
+      "<p"
+      " style='font-size: 12px; font-weight: 700; color: #38bdf8;"
+      " letter-spacing: 0.8px; margin-bottom: 5px; font-family: Inter,"
+      " sans-serif;'>DATA FILTERS</p>",
+      unsafe_allow_html=True,
+  )
+
+# Tapis Data Mengikut Sidebar & Gabungkan Julat Tarikh (Main Sheet + Cases Sheet)
 df = df_raw.copy()
+df_cases = df_cases_raw.copy()
+
 years = sorted(df["Year"].unique(), reverse=True)
 selected_year = st.sidebar.selectbox(
     "Select Year", options=["All"] + list(years), index=1
@@ -228,15 +230,30 @@ selected_month = st.sidebar.multiselect(
 if selected_month:
   df = df[df["Month"].isin(selected_month)]
 
-if not df.empty:
-  min_d = df["Date"].min().date()
-  max_d = df["Date"].max().date()
+# Cari min & max date merangkumi kedua-dua sheet supaya tak terhalang
+all_dates = list(df["Date"].dropna())
+c_date_col = next(
+    (
+        c
+        for c in df_cases.columns
+        if "date" in c.lower() or "raised" in c.lower()
+    ),
+    None,
+)
+if c_date_col and not df_cases.empty:
+  all_dates.extend(list(df_cases[c_date_col].dropna()))
+
+if all_dates:
+  min_d = min(all_dates).date()
+  max_d = max(all_dates).date()
   selected_date_range = st.sidebar.date_input(
       "Select Date Range", value=(min_d, max_d), min_value=min_d, max_value=max_d
   )
   if len(selected_date_range) == 2:
     s_date, e_date = selected_date_range
     df = df[(df["Date"].dt.date >= s_date) & (df["Date"].dt.date <= e_date)]
+else:
+  selected_date_range = ()
 
 # ==========================================
 # GLOBAL VARIABLE DEFINITIONS (FDP)
