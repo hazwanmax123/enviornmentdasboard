@@ -469,13 +469,14 @@ if selected_page == "Overview":
         ),
         legend=dict(
             orientation="h",
-            yanchor="bottom",
-            y=-0.45,
-            xanchor="center",
-            x=0.5,
+            yanchor="top",
+            y=0.98,
+            xanchor="right",
+            x=0.98,
             font=dict(size=10, color="#0f172a"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
         ),
-        margin=dict(l=30, r=30, t=10, b=80),
+        margin=dict(l=30, r=30, t=10, b=60),
         hovermode="x unified",
         height=400,
     )
@@ -488,7 +489,7 @@ if selected_page == "Overview":
   st.dataframe(df_sorted_recent, use_container_width=True)
 
 # ==========================================
-# PAGE 2: DISCHARGE COMPLIANCE (BARU)
+# PAGE 2: DISCHARGE COMPLIANCE
 # ==========================================
 elif selected_page == "Discharge Compliance":
   st.markdown(
@@ -504,7 +505,6 @@ elif selected_page == "Discharge Compliance":
       unsafe_allow_html=True,
   )
 
-  # Cari kolum AM & PM untuk pH dan Turbidity dari Excel
   ph_am_col = next(
       (
           c
@@ -566,7 +566,7 @@ elif selected_page == "Discharge Compliance":
     )
 
   if not df.empty:
-    # 1. GRAF pH OF FINAL DISCHARGE (AM vs PM Filled Lines)
+    # 1. GRAF pH OF FINAL DISCHARGE
     st.subheader("pH of Final Discharge (AM vs PM)")
     fig_ph = go.Figure()
 
@@ -616,13 +616,14 @@ elif selected_page == "Discharge Compliance":
         ),
         legend=dict(
             orientation="h",
-            yanchor="bottom",
-            y=-0.45,
-            xanchor="center",
-            x=0.5,
+            yanchor="top",
+            y=0.98,
+            xanchor="right",
+            x=0.98,
             font=dict(size=10, color="#0f172a"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
         ),
-        margin=dict(l=30, r=30, t=10, b=80),
+        margin=dict(l=30, r=30, t=10, b=60),
         hovermode="x unified",
         height=380,
     )
@@ -632,7 +633,7 @@ elif selected_page == "Discharge Compliance":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. GRAF TURBIDITY AM READING AND PM READING BY DAY (Grouped Bars)
+    # 2. GRAF TURBIDITY AM & PM
     st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
     fig_ntu = go.Figure()
 
@@ -677,13 +678,14 @@ elif selected_page == "Discharge Compliance":
         ),
         legend=dict(
             orientation="h",
-            yanchor="bottom",
-            y=-0.45,
-            xanchor="center",
-            x=0.5,
+            yanchor="top",
+            y=0.98,
+            xanchor="right",
+            x=0.98,
             font=dict(size=10, color="#0f172a"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
         ),
-        margin=dict(l=30, r=30, t=10, b=80),
+        margin=dict(l=30, r=30, t=10, b=60),
         hovermode="x unified",
         height=380,
     )
