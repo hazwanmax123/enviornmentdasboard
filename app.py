@@ -229,7 +229,7 @@ if not df.empty:
     df = df[(df["Date"].dt.date >= s_date) & (df["Date"].dt.date <= e_date)]
 
 # ==========================================
-# GLOBAL VARIABLE DEFINITIONS (FDP & RIVER)
+# GLOBAL VARIABLE DEFINITIONS (FDP)
 # ==========================================
 f_ph = next(
     (
@@ -359,7 +359,7 @@ if selected_page == "Overview":
             if "ph" in c.lower()
             and ("us" in c.lower() or "upstream" in c.lower())
         ),
-        df.columns[1],
+        df.columns[3],
     )
     us_ntu_col = next(
         (
@@ -367,8 +367,17 @@ if selected_page == "Overview":
             for c in df.columns
             if ("ntu" in c.lower() or "turb" in c.lower())
             and ("us" in c.lower() or "upstream" in c.lower())
+            and "am" in c.lower()
         ),
-        df.columns[3],
+        next(
+            (
+                c
+                for c in df.columns
+                if ("ntu" in c.lower() or "turb" in c.lower())
+                and ("us" in c.lower() or "upstream" in c.lower())
+            ),
+            df.columns[5],
+        ),
     )
 
     ds_ph_col = next(
@@ -378,7 +387,7 @@ if selected_page == "Overview":
             if "ph" in c.lower()
             and ("ds" in c.lower() or "downstream" in c.lower())
         ),
-        df.columns[2],
+        df.columns[7],
     )
     ds_ntu_col = next(
         (
@@ -386,8 +395,17 @@ if selected_page == "Overview":
             for c in df.columns
             if ("ntu" in c.lower() or "turb" in c.lower())
             and ("ds" in c.lower() or "downstream" in c.lower())
+            and "am" in c.lower()
         ),
-        df.columns[4],
+        next(
+            (
+                c
+                for c in df.columns
+                if ("ntu" in c.lower() or "turb" in c.lower())
+                and ("ds" in c.lower() or "downstream" in c.lower())
+            ),
+            df.columns[9],
+        ),
     )
 
     def get_status_badge(val, param_type):
@@ -522,7 +540,7 @@ if selected_page == "Overview":
   st.dataframe(df_sorted_recent, use_container_width=True)
 
 # ==========================================
-# PAGE 2: DISCHARGE COMPLIANCE (FIXED FDP SCOPE)
+# PAGE 2: DISCHARGE COMPLIANCE
 # ==========================================
 elif selected_page == "Discharge Compliance":
   st.markdown(
@@ -549,14 +567,7 @@ elif selected_page == "Discharge Compliance":
       None,
   )
   if not ph_am_col:
-    ph_am_col = next(
-        (
-            c
-            for c in df.columns
-            if "ph" in c.lower() and ("am" in c.lower() or "pagang" in c.lower())
-        ),
-        [c for c in df.columns if "ph" in c.lower()][0],
-    )
+    ph_am_col = [c for c in df.columns if "ph" in c.lower()][0]
 
   ph_pm_col = next(
       (
@@ -569,14 +580,7 @@ elif selected_page == "Discharge Compliance":
       None,
   )
   if not ph_pm_col:
-    ph_pm_col = next(
-        (
-            c
-            for c in df.columns
-            if "ph" in c.lower() and ("pm" in c.lower() or "petang" in c.lower())
-        ),
-        [c for c in df.columns if "ph" in c.lower()][-1],
-    )
+    ph_pm_col = [c for c in df.columns if "ph" in c.lower()][-1]
 
   ntu_am_col = next(
       (
@@ -589,15 +593,7 @@ elif selected_page == "Discharge Compliance":
       None,
   )
   if not ntu_am_col:
-    ntu_am_col = next(
-        (
-            c
-            for c in df.columns
-            if ("ntu" in c.lower() or "turb" in c.lower())
-            and ("am" in c.lower() or "pagang" in c.lower())
-        ),
-        [c for c in df.columns if "ntu" in c.lower()][0],
-    )
+    ntu_am_col = [c for c in df.columns if "ntu" in c.lower()][0]
 
   ntu_pm_col = next(
       (
@@ -610,15 +606,7 @@ elif selected_page == "Discharge Compliance":
       None,
   )
   if not ntu_pm_col:
-    ntu_pm_col = next(
-        (
-            c
-            for c in df.columns
-            if ("ntu" in c.lower() or "turb" in c.lower())
-            and ("pm" in c.lower() or "petang" in c.lower())
-        ),
-        [c for c in df.columns if "ntu" in c.lower()][-1],
-    )
+    ntu_pm_col = [c for c in df.columns if "ntu" in c.lower()][-1]
 
   if not df.empty:
     max_ph_val = df[[ph_am_col, ph_pm_col]].max().max()
@@ -813,7 +801,7 @@ elif selected_page == "Discharge Compliance":
     st.warning("No data available for Discharge Compliance page.")
 
 # ==========================================
-# PAGE 3: RIVER WATER QUALITY
+# PAGE 3: RIVER WATER QUALITY (EXACT SG. DURI COLUMNS MAPPING)
 # ==========================================
 elif selected_page == "River Water Quality":
   st.markdown(
@@ -833,57 +821,74 @@ elif selected_page == "River Water Quality":
       unsafe_allow_html=True,
   )
 
+  # Mengesan kolum Sg. Duri US dan DS secara tepat berdasarkan struktur Excel kau
   us_ph_col = next(
       (
           c
           for c in df.columns
-          if "duri" in c.lower()
-          and ("us" in c.lower() or "upstream" in c.lower())
-          and "ph" in c.lower()
+          if "duri" in c.lower() and "us" in c.lower() and "ph" in c.lower()
       ),
-      None,
+      df.columns[3],
   )
-  if not us_ph_col:
-    us_ph_col = df.columns[1]
-
   ds_ph_col = next(
       (
           c
           for c in df.columns
-          if "duri" in c.lower()
-          and ("ds" in c.lower() or "downstream" in c.lower())
-          and "ph" in c.lower()
+          if "duri" in c.lower() and "ds" in c.lower() and "ph" in c.lower()
       ),
-      None,
+      df.columns[7],
   )
-  if not ds_ph_col:
-    ds_ph_col = df.columns[2]
 
-  us_ntu_col = next(
+  # Untuk Turbidity sungai, kita ambil purata antara AM dan MS (atau kolum NTU US/DS) supaya tak menyimpang
+  us_ntu_am = next(
       (
           c
           for c in df.columns
           if "duri" in c.lower()
-          and ("us" in c.lower() or "upstream" in c.lower())
-          and ("ntu" in c.lower() or "turb" in c.lower())
+          and "us" in c.lower()
+          and "ntu" in c.lower()
+          and "am" in c.lower()
       ),
-      None,
+      df.columns[5],
   )
-  if not us_ntu_col:
-    us_ntu_col = df.columns[3]
-
-  ds_ntu_col = next(
+  us_ntu_pm = next(
       (
           c
           for c in df.columns
           if "duri" in c.lower()
-          and ("ds" in c.lower() or "downstream" in c.lower())
-          and ("ntu" in c.lower() or "turb" in c.lower())
+          and "us" in c.lower()
+          and "ntu" in c.lower()
+          and "pm" in c.lower()
       ),
-      None,
+      df.columns[6],
   )
-  if not ds_ntu_col:
-    ds_ntu_col = df.columns[4]
+
+  ds_ntu_am = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ntu" in c.lower()
+          and "am" in c.lower()
+      ),
+      df.columns[9],
+  )
+  ds_ntu_pm = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ntu" in c.lower()
+          and "pm" in c.lower()
+      ),
+      df.columns[10],
+  )
+
+  # Buat kolum purata harian untuk Sg. Duri US & DS NTU supaya selari dengan rujukan fail Excel
+  df["Sg_Duri_US_NTU_Avg"] = df[[us_ntu_am, us_ntu_pm]].mean(axis=1)
+  df["Sg_Duri_DS_NTU_Avg"] = df[[ds_ntu_am, ds_ntu_pm]].mean(axis=1)
 
   if not df.empty:
     df_sorted_rw = df.sort_values(by="Date")
@@ -891,8 +896,8 @@ elif selected_page == "River Water Quality":
 
     us_ph_latest = latest_rw.get(us_ph_col, 0)
     ds_ph_latest = latest_rw.get(ds_ph_col, 0)
-    us_ntu_latest = latest_rw.get(us_ntu_col, 0)
-    ds_ntu_latest = latest_rw.get(ds_ntu_col, 0)
+    us_ntu_latest = latest_rw.get("Sg_Duri_US_NTU_Avg", 0)
+    ds_ntu_latest = latest_rw.get("Sg_Duri_DS_NTU_Avg", 0)
 
     net_ph = ds_ph_latest - us_ph_latest
     net_ntu = ds_ntu_latest - us_ntu_latest
@@ -907,8 +912,8 @@ elif selected_page == "River Water Quality":
       st.metric(
           label="Turbidity (Upstream vs Downstream Latest)",
           value=(
-              f"Upstream: {us_ntu_latest} NTU  |  Downstream:"
-              f" {ds_ntu_latest} NTU"
+              f"Upstream: {us_ntu_latest:.1f} NTU  |  Downstream:"
+              f" {ds_ntu_latest:.1f} NTU"
           ),
       )
 
@@ -923,7 +928,7 @@ elif selected_page == "River Water Quality":
     with row2_c2:
       st.metric(
           label="Net Impact (Turbidity)",
-          value=f"{net_ntu:+.1f} NTU",
+          value=f"{net_ntu:+.1f} NTul",
           delta="Silt Addition" if net_ntu > 0 else "Clearer",
           delta_color="inverse" if net_ntu > 0 else "normal",
       )
@@ -990,23 +995,25 @@ elif selected_page == "River Water Quality":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. GRAF TURBIDITY: Upstream vs Downstream (Limit 250 NTU & Shading Merah)
+    # 2. GRAF TURBIDITY: Upstream vs Downstream (Menggunakan Purata AM & PM yang tepat)
     st.subheader(
         "Turbidity Comparison: Sg. Duri Upstream vs Downstream (NTU)"
     )
 
     us_colors = [
-        "#ef4444" if val > 250 else "#0284c7" for val in df[us_ntu_col]
+        "#ef4444" if val > 250 else "#0284c7"
+        for val in df["Sg_Duri_US_NTU_Avg"]
     ]
     ds_colors = [
-        "#ef4444" if val > 250 else "#0f172a" for val in df[ds_ntu_col]
+        "#ef4444" if val > 250 else "#0f172a"
+        for val in df["Sg_Duri_DS_NTU_Avg"]
     ]
 
     fig_river_ntu = go.Figure()
     fig_river_ntu.add_trace(
         go.Bar(
             x=df["Date"],
-            y=df[us_ntu_col],
+            y=df["Sg_Duri_US_NTU_Avg"],
             name="Sg. Duri Upstream",
             marker_color=us_colors,
         )
@@ -1014,7 +1021,7 @@ elif selected_page == "River Water Quality":
     fig_river_ntu.add_trace(
         go.Bar(
             x=df["Date"],
-            y=df[ds_ntu_col],
+            y=df["Sg_Duri_DS_NTU_Avg"],
             name="Sg. Duri Downstream",
             marker_color=ds_colors,
         )
