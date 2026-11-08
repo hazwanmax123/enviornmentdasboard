@@ -168,7 +168,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-CSV_URL = "PASTIKAN_PASTE_LINK_CSV_KAU_KAT_SINI"
+CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=0&single=true&output=csv"
 
 
 @st.cache_data
