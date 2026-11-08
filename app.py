@@ -453,15 +453,16 @@ if selected_page == "Overview":
         )
     )
 
-    # Tambah sliders (range slider) supaya bar navigasi bawah graf wujud semula
+    # Warna font paksi x dan date ditukar kepada gelap pekat (#0f172a)
     fig.update_layout(
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#1e293b", family="Inter", size=11),
+        font=dict(color="#0f172a", family="Inter", size=11),
         xaxis=dict(
-            title="Date",
+            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
             showgrid=False,
-            linecolor="#cbd5e1",
+            linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11),
             tickformat="%b %d",
             rangeslider=dict(visible=True, thickness=0.08),
         ),
@@ -488,14 +489,13 @@ if selected_page == "Overview":
             y=-0.45,
             xanchor="center",
             x=0.5,
-            font=dict(size=10),
+            font=dict(size=10, color="#0f172a"),
         ),
         margin=dict(l=30, r=30, t=10, b=80),
         hovermode="x unified",
         height=400,
     )
 
-    # Guna container width supaya auto fit, tapi rangeslider bawah aktif semula
     st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
   else:
     st.warning("No valid data available for the selected filter range.")
@@ -512,9 +512,7 @@ elif selected_page == "Discharge Compliance":
 
 elif selected_page == "River Water Quality":
   st.title("💧 River Water Quality (Upstream vs Downstream)")
-  st.monitoring_stations = (
-      "Monitoring Sungai Duri upstream and downstream parameters."
-  )
+  st.caption("Monitoring Sungai Duri upstream and downstream parameters.")
   st.markdown("---")
 
 elif selected_page == "Cases Tracker":
