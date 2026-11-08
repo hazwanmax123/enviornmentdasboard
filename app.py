@@ -785,7 +785,7 @@ elif selected_page == "Discharge Compliance":
     st.warning("No data available for Discharge Compliance page.")
 
 # ==========================================
-# PAGE 3: RIVER WATER QUALITY (DENGAN FILTER AM/PM DI ATAS GRAF)
+# PAGE 3: RIVER WATER QUALITY (DENGAN ANIMATION TRANSITION SMOOTH)
 # ==========================================
 elif selected_page == "River Water Quality":
   st.markdown(
@@ -942,9 +942,7 @@ elif selected_page == "River Water Quality":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ==========================================
-    # 1. GRAF PH OF SG. DURI (DENGAN FILTER AM / PM DI ATAS GRAF)
-    # ==========================================
+    # 1. GRAF PH OF SG. DURI (DENGAN ANIMASI TRANSITION)
     st.subheader("pH of Sg. Duri")
     ph_session_filter = st.selectbox(
         "Select Session for pH", options=["AM", "PM"], key="ph_session"
@@ -978,6 +976,7 @@ elif selected_page == "River Water Quality":
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
+        transition=dict(duration=500, easing="cubic-in-out"),
         xaxis=dict(
             title=dict(text="Date", font=dict(color="#0f172a", size=12)),
             showgrid=False,
@@ -1011,9 +1010,7 @@ elif selected_page == "River Water Quality":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ==========================================
-    # 2. GRAF TURBIDITY OF SG. DURI (DENGAN FILTER AM / PM DI ATAS GRAF)
-    # ==========================================
+    # 2. GRAF TURBIDITY OF SG. DURI (DENGAN ANIMASI TRANSITION)
     st.subheader("Turbidity of Sg. Duri")
     ntu_session_filter = st.selectbox(
         "Select Session for Turbidity", options=["AM", "PM"], key="ntu_session"
@@ -1059,6 +1056,7 @@ elif selected_page == "River Water Quality":
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
+        transition=dict(duration=500, easing="cubic-in-out"),
         xaxis=dict(
             title=dict(text="Date", font=dict(color="#0f172a", size=12)),
             showgrid=False,
