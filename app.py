@@ -269,12 +269,7 @@ if selected_page == "Overview":
       " 0; margin-bottom: 2px; font-family: Inter, sans-serif;'>RBA Engineering"
       " | Tin Mining PH ML087</p>",
       unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 20px; font-family: Inter, sans-serif;'>Your environmental telemetry"
-      " control room - monitoring stations, compliance, and actions.</p>",
-      unsafe_allow_html=True,
+ 
   )
 
   last_sample_date = (
