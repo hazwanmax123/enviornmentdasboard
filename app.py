@@ -168,7 +168,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=0&single=true&output=csv"
+CSV_URL = "PASTIKAN_PASTE_LINK_CSV_KAU_KAT_SINI"
 
 
 @st.cache_data
@@ -566,10 +566,8 @@ elif selected_page == "Discharge Compliance":
     )
 
   if not df.empty:
-    # 1. GRAF pH OF FINAL DISCHARGE (Top Centre Legend)
     st.subheader("pH of Final Discharge (AM vs PM)")
     fig_ph = go.Figure()
-
     fig_ph.add_trace(
         go.Scatter(
             x=df["Date"],
@@ -582,7 +580,6 @@ elif selected_page == "Discharge Compliance":
             fillcolor="rgba(15, 23, 42, 0.08)",
         )
     )
-
     fig_ph.add_trace(
         go.Scatter(
             x=df["Date"],
@@ -595,7 +592,6 @@ elif selected_page == "Discharge Compliance":
             fillcolor="rgba(217, 119, 6, 0.1)",
         )
     )
-
     fig_ph.update_layout(
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -633,10 +629,8 @@ elif selected_page == "Discharge Compliance":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. GRAF TURBIDITY AM & PM (Top Centre Legend)
     st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
     fig_ntu = go.Figure()
-
     fig_ntu.add_trace(
         go.Bar(
             x=df["Date"],
@@ -645,7 +639,6 @@ elif selected_page == "Discharge Compliance":
             marker_color="#0f172a",
         )
     )
-
     fig_ntu.add_trace(
         go.Bar(
             x=df["Date"],
@@ -654,7 +647,6 @@ elif selected_page == "Discharge Compliance":
             marker_color="#d97706",
         )
     )
-
     fig_ntu.update_layout(
         barmode="group",
         plot_bgcolor="#ffffff",
@@ -696,17 +688,218 @@ elif selected_page == "Discharge Compliance":
     st.warning("No data available for Discharge Compliance page.")
 
 # ==========================================
-# PAGE 3: RIVER WATER QUALITY
+# PAGE 3: RIVER WATER QUALITY (BARU)
 # ==========================================
 elif selected_page == "River Water Quality":
-  st.title("💧 River Water Quality (Upstream vs Downstream)")
-  st.caption("Monitoring Sungai Duri upstream and downstream parameters.")
-  st.markdown("---")
+  st.markdown(
+      "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
+      " margin-bottom: 2px; font-family: Inter, sans-serif;'>💧 River Water"
+      " Quality (Upstream vs Downstream)</h1>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
+      " 25px; font-family: Inter, sans-serif;'>Comparison of Sungai Duri"
+      " Upstream (US) and Downstream (DS) monitoring stations.</p>",
+      unsafe_allow_html=True,
+  )
+
+  # Cari nama kolum untuk Sg Duri Upstream & Downstream dalam Excel
+  us_ph_col = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "us" in c.lower()
+          and "ph" in c.lower()
+      ),
+      None,
+  )
+  if not us_ph_col:
+    us_ph_col = "Avg pH Sg. Duri US" if "Avg pH Sg. Duri US" in df.columns else df.columns[1]
+
+  ds_ph_col = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ph" in c.lower()
+      ),
+      None,
+  )
+  if not ds_ph_col:
+    ds_ph_col = "Avg pH Sg. Duri DS" if "Avg pH Sg. Duri DS" in df.columns else df.columns[2]
+
+  us_ntu_col = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "us" in c.lower()
+          and ("ntu" in c.lower() or "turb" in c.lower())
+      ),
+      None,
+  )
+  if not us_ntu_col:
+    us_ntu_col = (
+        "Avg NTU Sg.Duri US"
+        if "Avg NTU Sg.Duri US" in df.columns
+        else df.columns[3]
+    )
+
+  ds_ntu_col = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and ("ntu" in c.lower() or "turb" in c.lower())
+      ),
+      None,
+  )
+  if not ds_ntu_col:
+    ds_ntu_col = (
+        "Avg NTU Sg. Duri DS"
+        if "Avg NTU Sg. Duri DS" in df.columns
+        else df.columns[4]
+    )
+
+  if not df.empty:
+    # 1. GRAF pH: Upstream vs Downstream
+    st.subheader("pH Comparison: Sg. Duri Upstream vs Downstream")
+    fig_river_ph = go.Figure()
+
+    fig_river_ph.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[us_ph_col],
+            name="Sg. Duri Upstream (US)",
+            mode="lines+markers",
+            line=dict(color="#0284c7", width=2, shape="spline"),
+            marker=dict(size=4, color="#0284c7"),
+        )
+    )
+
+    fig_river_ph.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[ds_ph_col],
+            name="Sg. Duri Downstream (DS)",
+            mode="lines+markers",
+            line=dict(color="#0f172a", width=2, shape="spline"),
+            marker=dict(size=4, color="#0f172a"),
+        )
+    )
+
+    fig_river_ph.update_layout(
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11),
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(
+            title=dict(text="pH Value", font=dict(color="#0f172a", size=11)),
+            tickfont=dict(color="#0f172a", size=10),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=1.12,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10, color="#0f172a"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+        ),
+        margin=dict(l=30, r=30, t=30, b=60),
+        hovermode="x unified",
+        height=380,
+    )
+    st.plotly_chart(
+        fig_river_ph, use_container_width=True, config={"responsive": True}
+    )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # 2. GRAF TURBIDITY: Upstream vs Downstream
+    st.subheader("Turbidity Comparison: Sg. Duri Upstream vs Downstream (NTU)")
+    fig_river_ntu = go.Figure()
+
+    fig_river_ntu.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[us_ntu_col],
+            name="Sg. Duri Upstream (US)",
+            mode="lines+markers",
+            line=dict(color="#0284c7", width=2, shape="spline"),
+            marker=dict(size=4, color="#0284c7"),
+        )
+    )
+
+    fig_river_ntu.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[ds_ntu_col],
+            name="Sg. Duri Downstream (DS)",
+            mode="lines+markers",
+            line=dict(color="#0f172a", width=2, shape="spline"),
+            marker=dict(size=4, color="#0f172a"),
+        )
+    )
+
+    fig_river_ntu.update_layout(
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11),
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(
+            title=dict(
+                text="Turbidity (NTU)", font=dict(color="#0f172a", size=11)
+            ),
+            tickfont=dict(color="#0f172a", size=10),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=1.12,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10, color="#0f172a"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+        ),
+        margin=dict(l=30, r=30, t=30, b=60),
+        hovermode="x unified",
+        height=380,
+    )
+    st.plotly_chart(
+        fig_river_ntu, use_container_width=True, config={"responsive": True}
+    )
+  else:
+    st.warning("No data available for River Water Quality page.")
 
 # ==========================================
 # PAGE 4: CASES TRACKER
 # ==========================================
-elif selected_page == "Cases Tracker":
+elif selected__page := (
+    selected_page == "Cases Tracker"
+):  # Diselaraskan untuk Cases Tracker
   st.title("⚠️ Environmental Cases Tracker")
   st.caption("Detailed breakdown of ongoing cases and corrective actions.")
   st.markdown("---")
