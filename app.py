@@ -1068,7 +1068,7 @@ elif selected_page == "River Water Quality":
     )
 
 # ==========================================
-# PAGE 4: CASES TRACKER (MATRIX TABLE + DONUT CHART DENGAN DATE RANGE)
+# PAGE 4: CASES TRACKER (MATRIX TABLE + DONUT CHART MENGIKUT SIDEBAR FILTER)
 # ==========================================
 elif selected_page == "Cases Tracker":
   st.markdown(
@@ -1112,11 +1112,26 @@ elif selected_page == "Cases Tracker":
           .replace({"Open": "No Action", "open": "No Action"})
       )
 
-    total_cases = len(df_cases)
+    # Tapis df_cases mengikut tarikh filter sidebar (selected_date_range)
+    df_filtered_cases = df_cases.copy()
+    if date_col and len(selected_date_range) == 2:
+      s_date, e_date = selected_date_range
+      df_filtered_cases = df_filtered_cases[
+          (df_filtered_cases[date_col].dt.date >= s_date)
+          & (df_filtered_cases[date_col].dt.date <= e_date)
+      ]
+      date_range_label = (
+          f"Range: {s_date.strftime('%d %b %Y')} –"
+          f" {e_date.strftime('%d %b %Y')}"
+      )
+    else:
+      date_range_label = "All Records"
+
+    total_cases = len(df_filtered_cases)
     no_action_cases = (
         len(
-            df_cases[
-                df_cases[status_col].str.lower().str.contains("no action")
+            df_filtered_cases[
+                df_filtered_cases[status_col].str.lower().str.contains("no action")
             ]
         )
         if status_col
@@ -1124,8 +1139,8 @@ elif selected_page == "Cases Tracker":
     )
     closed_cases = (
         len(
-            df_cases[
-                df_cases[status_col].str.lower().str.contains("closed")
+            df_filtered_cases[
+                df_filtered_cases[status_col].str.lower().str.contains("closed")
             ]
         )
         if status_col
@@ -1133,21 +1148,15 @@ elif selected_page == "Cases Tracker":
     )
     proposed_cases = (
         len(
-            df_cases[
-                df_cases[status_col].str.lower().str.contains("proposed")
+            df_filtered_cases[
+                df_filtered_cases[status_col]
+                .str.lower()
+                .str.contains("proposed")
             ]
         )
         if status_col
         else 0
     )
-
-    if date_col and pd.api.types.is_datetime64_any_dtype(df_cases[date_col]):
-      min_c_date = df_cases[date_col].min().strftime("%d %b %Y")
-      max_c_date = df_cases[date_col].max().strftime("%d %b %Y")
-      date_range_label = f"Range: {min_c_date} – {max_c_date}"
-    else:
-      min_c_date, max_c_date = "N/A", "N/A"
-      date_range_label = "All Records"
 
     # Kad KPI Kes
     c1, c2, c3, c4 = st.columns(4)
@@ -1178,25 +1187,30 @@ elif selected_page == "Cases Tracker":
 
     with col_t:
       st.subheader("📋 Cases Summary Matrix Table")
-      if loc_col and issue_col and status_col:
+      if not df_filtered_cases.empty and loc_col and issue_col and status_col:
         matrix_table = pd.crosstab(
-            index=[df_cases[loc_col], df_cases[issue_col]],
-            columns=df_cases[status_col],
+            index=[df_filtered_cases[loc_col], df_filtered_cases[issue_col]],
+            columns=df_filtered_cases[status_col],
             margins=True,
             margins_name="Total",
         )
         st.dataframe(matrix_table, use_container_width=True)
       else:
-        st.dataframe(df_cases, use_container_width=True)
+        st.info("No cases found within the selected date filter range.")
 
     with col_d:
       st.subheader("🍩 Case Status Distribution")
-      st.caption(
-          f"📅 Date Range Evaluated: **{min_c_date} to {max_c_date}**"
-      )
+      if len(selected_date_range) == 2:
+        st.caption(
+            f"📅 Date Range Evaluated: **{selected_date_range[0].strftime('%d %b %Y')} to {selected_date_range[1].strftime('%d %b %Y')}**"
+        )
+      else:
+        st.caption("📅 Date Range Evaluated: **All Records**")
 
-      if status_col:
-        status_counts = df_cases[status_col].value_counts().reset_index()
+      if not df_filtered_cases.empty and status_col:
+        status_counts = (
+            df_filtered_cases[status_col].value_counts().reset_index()
+        )
         status_counts.columns = ["Status", "Count"]
 
         fig_donut = px.pie(
@@ -1228,6 +1242,8 @@ elif selected_page == "Cases Tracker":
         st.plotly_chart(
             fig_donut, use_container_width=True, config={"responsive": True}
         )
+      else:
+        st.warning("No data available for donut chart in this date range.")
 
   else:
     st.warning("No data found in Cases Tracker sheet.")
