@@ -23,8 +23,8 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
   st.markdown(
-      "<p style='font-size: 11px; letter-spacing: 1.2px; color:"
-      " #94a3b8; font-family: Inter, sans-serif;'>ENVIRONMENTAL SYSTEM</p>",
+      "<p style='font-size: 20px; letter-spacing: 1.2px; color:"
+      " #94a3b8; font-family: Inter, sans-serif;'>ENVIRONMENTAL MONITORING SYSTEM</p>",
       unsafe_allow_html=True,
   )
   st.markdown("---")
