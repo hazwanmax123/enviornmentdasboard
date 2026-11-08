@@ -587,7 +587,8 @@ elif selected_page == "Discharge Compliance":
     ntu_pm_col = [c for c in df.columns if "ntu" in c.lower()][-1]
 
   if not df.empty:
-    max_ph_val = df[[ph_am_col, ph_pm_col]].max().max()
+    # Ditukar kepada .min() untuk mengambil nilai pH paling rendah
+    min_ph_val = df[[ph_am_col, ph_pm_col]].min().min()
     max_ntu_val = df[[ntu_am_col, ntu_pm_col]].max().max()
 
     limit_val = (
@@ -607,9 +608,10 @@ elif selected_page == "Discharge Compliance":
       st.markdown("#### 📌 Parameter Extremes (Filtered Range)")
       st.markdown("<br>", unsafe_allow_html=True)
       st.metric(
-          label="Max pH Recorded (FDP)",
-          value=f"{max_ph_val:.2f}",
-          delta="Peak pH Value",
+          label="Lowest pH Recorded (FDP)",
+          value=f"{min_ph_val:.2f}",
+          delta="Critical Acidic Value",
+          delta_color="inverse",
       )
       st.markdown("<br>", unsafe_allow_html=True)
       st.metric(
@@ -779,7 +781,7 @@ elif selected_page == "Discharge Compliance":
     st.warning("No data available for Discharge Compliance page.")
 
 # ==========================================
-# PAGE 3: RIVER WATER QUALITY (MENGAMBIL DATA AVG DARI EXCEL)
+# PAGE 3: RIVER WATER QUALITY
 # ==========================================
 elif selected_page == "River Water Quality":
   st.markdown(
@@ -799,7 +801,6 @@ elif selected_page == "River Water Quality":
       unsafe_allow_html=True,
   )
 
-  # Mengesan kolum AVG pH dan AVG Turbidity secara automatik dari fail Excel kau
   us_ph_avg_col = next(
       (
           c
@@ -842,7 +843,6 @@ elif selected_page == "River Water Quality":
       None,
   )
 
-  # Fallback manual jika nama kolum berbeza
   if not us_ph_avg_col:
     us_ph_avg_col = df.columns[3]
   if not ds_ph_avg_col:
@@ -852,7 +852,6 @@ elif selected_page == "River Water Quality":
   if not ds_ntu_avg_col:
     ds_ntu_avg_col = df.columns[9]
 
-  # Kolum AM/PM untuk graf di bawah
   us_ph_am = next(
       (
           c
@@ -947,7 +946,6 @@ elif selected_page == "River Water Quality":
     df_sorted_rw = df.sort_values(by="Date")
     latest_rw = df_sorted_rw.iloc[-1]
 
-    # Mengambil nilai purata (Avg) untuk kad KPI pada tarikh terkini
     us_ph_latest = latest_rw.get(us_ph_avg_col, 0)
     ds_ph_latest = latest_rw.get(ds_ph_avg_col, 0)
     us_ntu_latest = latest_rw.get(us_ntu_avg_col, 0)
@@ -989,9 +987,6 @@ elif selected_page == "River Water Quality":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ==========================================
-    # 1. GRAF PH OF SG. DURI
-    # ==========================================
     st.subheader("pH of Sg. Duri")
     ph_session_filter = st.selectbox(
         "Select Session for pH", options=["AM", "PM"], key="ph_session"
@@ -1058,9 +1053,6 @@ elif selected_page == "River Water Quality":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ==========================================
-    # 2. GRAF TURBIDITY OF SG. DURI
-    # ==========================================
     st.subheader("Turbidity of Sg. Duri")
     ntu_session_filter = st.selectbox(
         "Select Session for Turbidity", options=["AM", "PM"], key="ntu_session"
