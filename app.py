@@ -453,6 +453,7 @@ if selected_page == "Overview":
         )
     )
 
+    # Tambah sliders (range slider) supaya bar navigasi bawah graf wujud semula
     fig.update_layout(
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -462,6 +463,7 @@ if selected_page == "Overview":
             showgrid=False,
             linecolor="#cbd5e1",
             tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
         ),
         yaxis=dict(
             title=dict(
@@ -483,25 +485,18 @@ if selected_page == "Overview":
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.35,
+            y=-0.45,
             xanchor="center",
             x=0.5,
             font=dict(size=10),
         ),
-        margin=dict(l=30, r=30, t=10, b=60),
+        margin=dict(l=30, r=30, t=10, b=80),
         hovermode="x unified",
-        height=380,
+        height=400,
     )
 
-    # Graf kekal saiz asal (tidak compress), boleh skrol sisi di telefon dan buang toolbar
-    st.plotly_chart(
-        fig,
-        use_container_width=False,
-        config={
-            "responsive": False,
-            "displayModeBar": False,
-        },
-    )
+    # Guna container width supaya auto fit, tapi rangeslider bawah aktif semula
+    st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
   else:
     st.warning("No valid data available for the selected filter range.")
 
@@ -517,7 +512,9 @@ elif selected_page == "Discharge Compliance":
 
 elif selected_page == "River Water Quality":
   st.title("💧 River Water Quality (Upstream vs Downstream)")
-  st.caption("Monitoring Sungai Duri upstream and downstream parameters.")
+  st.monitoring_stations = (
+      "Monitoring Sungai Duri upstream and downstream parameters."
+  )
   st.markdown("---")
 
 elif selected_page == "Cases Tracker":
