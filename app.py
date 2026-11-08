@@ -470,13 +470,13 @@ if selected_page == "Overview":
         legend=dict(
             orientation="h",
             yanchor="top",
-            y=0.98,
-            xanchor="right",
-            x=0.98,
+            y=1.12,
+            xanchor="center",
+            x=0.5,
             font=dict(size=10, color="#0f172a"),
             bgcolor="rgba(255, 255, 255, 0.8)",
         ),
-        margin=dict(l=30, r=30, t=10, b=60),
+        margin=dict(l=30, r=30, t=30, b=60),
         hovermode="x unified",
         height=400,
     )
@@ -566,7 +566,7 @@ elif selected_page == "Discharge Compliance":
     )
 
   if not df.empty:
-    # 1. GRAF pH OF FINAL DISCHARGE
+    # 1. GRAF pH OF FINAL DISCHARGE (Top Centre Legend)
     st.subheader("pH of Final Discharge (AM vs PM)")
     fig_ph = go.Figure()
 
@@ -617,13 +617,13 @@ elif selected_page == "Discharge Compliance":
         legend=dict(
             orientation="h",
             yanchor="top",
-            y=0.98,
-            xanchor="right",
-            x=0.98,
+            y=1.12,
+            xanchor="center",
+            x=0.5,
             font=dict(size=10, color="#0f172a"),
             bgcolor="rgba(255, 255, 255, 0.8)",
         ),
-        margin=dict(l=30, r=30, t=10, b=60),
+        margin=dict(l=30, r=30, t=30, b=60),
         hovermode="x unified",
         height=380,
     )
@@ -633,7 +633,7 @@ elif selected_page == "Discharge Compliance":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # 2. GRAF TURBIDITY AM & PM
+    # 2. GRAF TURBIDITY AM & PM (Top Centre Legend)
     st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
     fig_ntu = go.Figure()
 
@@ -679,13 +679,13 @@ elif selected_page == "Discharge Compliance":
         legend=dict(
             orientation="h",
             yanchor="top",
-            y=0.98,
-            xanchor="right",
-            x=0.98,
+            y=1.12,
+            xanchor="center",
+            x=0.5,
             font=dict(size=10, color="#0f172a"),
             bgcolor="rgba(255, 255, 255, 0.8)",
         ),
-        margin=dict(l=30, r=30, t=10, b=60),
+        margin=dict(l=30, r=30, t=30, b=60),
         hovermode="x unified",
         height=380,
     )
