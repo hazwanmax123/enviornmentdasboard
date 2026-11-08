@@ -315,7 +315,7 @@ if selected_page == "Overview":
     else:
       compliance_rate = 100.0
   else:
-      compliance_rate = 0.0
+    compliance_rate = 0.0
 
   bmp_performance = 0.0
   bmp_col = next(
@@ -716,7 +716,7 @@ elif selected_page == "River Water Quality":
       )
 
 # ==========================================
-# PAGE 4: CASES TRACKER (PAKSI X = DATE, Y = JUMLAH, WARNA = STATUS, NAMA KES DI ATAS BAR)
+# PAGE 4: CASES TRACKER (1 GRAF GABUNGAN: LOKASI + STATUS & NAMA KES)
 # ==========================================
 elif selected_page == "Cases Tracker":
   st.markdown(
@@ -747,6 +747,9 @@ elif selected_page == "Cases Tracker":
     )
     issue_col = next(
         (c for c in df_cases.columns if "issue" in c.lower()), None
+    )
+    loc_col = next(
+        (c for c in df_cases.columns if "location" in c.lower()), None
     )
 
     total_cases = len(df_cases)
@@ -818,22 +821,29 @@ elif selected_page == "Cases Tracker":
       )
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
-    st.subheader("📊 Cases Timeline & Status Distribution")
+    st.subheader("📊 Cases Summary & Location Distribution")
 
-    # Graf Bar: Paksi X = Date Raised, Paksi Y = Jumlah Kes (1), Warna = Status, Text = Nama Kes (Issue)
-    if date_col and issue_col and status_col:
-      df_cases["Count"] = 1  # Setiap bar mewakili 1 kes
+    # Sediakan data untuk graf gabungan
+    df_plot = df_cases.copy()
+    if date_col:
+      df_plot["Formatted_Date"] = df_plot[date_col].dt.strftime("%d %b %Y")
+    else:
+      df_plot["Formatted_Date"] = "N/A"
 
-      fig_timeline = px.bar(
-          df_cases,
-          x=date_col,
-          y="Count",
+    df_plot["Count"] = 1
+
+    if loc_col and issue_col and status_col:
+      fig_combined = px.bar(
+          df_plot,
+          x="Count",
+          y=loc_col,
           color=status_col,
-          text=issue_col,  # Nama kes dipaparkan di atas bar
-          title="Cases Raised by Date (Colored by Status)",
+          text=issue_col,
+          orientation="h",
+          title="Cases by Location (Colored by Status & Labeled by Issue Type)",
           labels={
-              date_col: "Date Raised",
               "Count": "Total Cases",
+              loc_col: "Location",
               status_col: "Status",
           },
           color_discrete_map={
@@ -843,31 +853,27 @@ elif selected_page == "Cases Tracker":
               "Closed": "#10b981",
           },
       )
-      fig_timeline.update_traces(
-          textposition="outside"
-      )  # Letak nama kes di atas bar
-      fig_timeline.update_layout(
+      fig_combined.update_traces(textposition="inside", textfont_color="white")
+      fig_combined.update_layout(
+          barmode="stack",
           plot_bgcolor="#ffffff",
           paper_bgcolor="rgba(0,0,0,0)",
           font=dict(color="#0f172a", family="Inter", size=11),
           xaxis=dict(
-              title=dict(text="Date Raised", font=dict(color="#0f172a", size=12)),
-              showgrid=False,
-              tickformat="%b %d, %Y",
-          ),
-          yaxis=dict(
-              title=dict(
-                  text="Total Cases", font=dict(color="#0f172a", size=12)
-              ),
+              title=dict(text="Total Cases", font=dict(color="#0f172a", size=12)),
               showgrid=True,
               gridcolor="rgba(100,100,100,0.06)",
               dtick=1,
           ),
+          yaxis=dict(
+              title=dict(text="Location", font=dict(color="#0f172a", size=12)),
+              autorange="reversed",
+          ),
           margin=dict(l=20, r=20, t=50, b=20),
-          height=420,
+          height=450,
       )
       st.plotly_chart(
-          fig_timeline, use_container_width=True, config={"responsive": True}
+          fig_combined, use_container_width=True, config={"responsive": True}
       )
   else:
     st.warning("No data found in Cases Tracker sheet.")
