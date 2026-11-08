@@ -697,6 +697,127 @@ elif selected_page == "Discharge Compliance":
           fig_pie, use_container_width=True, config={"responsive": True}
       )
 
+    st.markdown("<br><hr><br>", unsafe_allow_html=True)
+    st.subheader("pH of Final Discharge (AM vs PM)")
+
+    fig_ph = go.Figure()
+    fig_ph.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[ph_am_col],
+            name="AM Reading",
+            mode="lines+markers",
+            line=dict(color="#0f172a", width=2, shape="spline"),
+            marker=dict(size=4, color="#0f172a"),
+            fill="tozeroy",
+            fillcolor="rgba(15, 23, 42, 0.08)",
+        )
+    )
+    fig_ph.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[ph_pm_col],
+            name="PM Reading",
+            mode="lines+markers",
+            line=dict(color="#d97706", width=2, shape="spline"),
+            marker=dict(size=4, color="#d97706"),
+            fill="tozeroy",
+            fillcolor="rgba(217, 119, 6, 0.1)",
+        )
+    )
+    fig_ph.update_layout(
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11),
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(
+            title=dict(text="pH Value", font=dict(color="#0f172a", size=11)),
+            tickfont=dict(color="#0f172a", size=10),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=1.12,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10, color="#0f172a"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+        ),
+        margin=dict(l=30, r=30, t=30, b=60),
+        hovermode="x unified",
+        height=380,
+    )
+    st.plotly_chart(
+        fig_ph, use_container_width=True, config={"responsive": True}
+    )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
+
+    fig_ntu = go.Figure()
+    fig_ntu.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[ntu_am_col],
+            name="AM Reading",
+            marker_color="#0f172a",
+        )
+    )
+    fig_ntu.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[ntu_pm_col],
+            name="PM Reading",
+            marker_color="#d97706",
+        )
+    )
+    fig_ntu.update_layout(
+        barmode="group",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11),
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(
+            title=dict(
+                text="Turbidity (NTU)", font=dict(color="#0f172a", size=11)
+            ),
+            tickfont=dict(color="#0f172a", size=10),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=1.12,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10, color="#0f172a"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+        ),
+        margin=dict(l=30, r=30, t=30, b=60),
+        hovermode="x unified",
+        height=380,
+    )
+    st.plotly_chart(
+        fig_ntu, use_container_width=True, config={"responsive": True}
+    )
+
 # ==========================================
 # PAGE 3: RIVER WATER QUALITY
 # ==========================================
@@ -759,6 +880,96 @@ elif selected_page == "River Water Quality":
       df.columns[9],
   )
 
+  us_ph_am = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "us" in c.lower()
+          and "ph" in c.lower()
+          and "am" in c.lower()
+      ),
+      df.columns[3],
+  )
+  us_ph_pm = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "us" in c.lower()
+          and "ph" in c.lower()
+          and "pm" in c.lower()
+      ),
+      df.columns[4],
+  )
+  ds_ph_am = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ph" in c.lower()
+          and "am" in c.lower()
+      ),
+      df.columns[7],
+  )
+  ds_ph_pm = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ph" in c.lower()
+          and "pm" in c.lower()
+      ),
+      df.columns[8],
+  )
+
+  us_ntu_am = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "us" in c.lower()
+          and "ntu" in c.lower()
+          and "am" in c.lower()
+      ),
+      df.columns[5],
+  )
+  us_ntu_pm = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "us" in c.lower()
+          and "ntu" in c.lower()
+          and "pm" in c.lower()
+      ),
+      df.columns[6],
+  )
+  ds_ntu_am = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ntu" in c.lower()
+          and "am" in c.lower()
+      ),
+      df.columns[9],
+  )
+  ds_ntu_pm = next(
+      (
+          c
+          for c in df.columns
+          if "duri" in c.lower()
+          and "ds" in c.lower()
+          and "ntu" in c.lower()
+          and "pm" in c.lower()
+      ),
+      df.columns[10],
+  )
+
   if not df.empty:
     df_sorted_rw = df.sort_values(by="Date")
     latest_rw = df_sorted_rw.iloc[-1]
@@ -785,8 +996,170 @@ elif selected_page == "River Water Quality":
           ),
       )
 
+    row2_c1, row2_c2 = st.columns(2)
+    with row2_c1:
+      st.metric(
+          label="Net Impact (pH)",
+          value=f"{net_ph:+.2f}",
+          delta="Acidic Shift" if net_ph < 0 else "Alkaline Shift",
+          delta_color="inverse" if net_ph < 0 else "normal",
+      )
+    with row2_c2:
+      st.metric(
+          label="Net Impact (Turbidity)",
+          value=f"{net_ntu:+.1f} NTU",
+          delta="Silt Addition" if net_ntu > 0 else "Clearer",
+          delta_color="inverse" if net_ntu > 0 else "normal",
+      )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("pH of Sg. Duri")
+
+    ph_session_filter = st.selectbox(
+        "Select Session for pH", options=["AM", "PM"], key="ph_session"
+    )
+
+    selected_us_ph = us_ph_am if ph_session_filter == "AM" else us_ph_pm
+    selected_ds_ph = ds_ph_am if ph_session_filter == "AM" else ds_ph_pm
+
+    fig_river_ph = go.Figure()
+    fig_river_ph.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[selected_us_ph],
+            name="Sg. Duri Upstream",
+            mode="lines+markers",
+            line=dict(color="#0284c7", width=2, shape="spline"),
+            marker=dict(size=4, color="#0284c7"),
+        )
+    )
+    fig_river_ph.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[selected_ds_ph],
+            name="Sg. Duri Downstream",
+            mode="lines+markers",
+            line=dict(color="#0f172a", width=2, shape="spline"),
+            marker=dict(size=4, color="#0f172a"),
+        )
+    )
+    fig_river_ph.update_layout(
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11),
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(
+            title=dict(text="pH Value", font=dict(color="#0f172a", size=11)),
+            tickfont=dict(color="#0f172a", size=10),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=1.12,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10, color="#0f172a"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+        ),
+        margin=dict(l=30, r=30, t=30, b=60),
+        hovermode="x unified",
+        height=380,
+    )
+    st.plotly_chart(
+        fig_river_ph, use_container_width=True, config={"responsive": True}
+    )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("Turbidity of Sg. Duri")
+
+    ntu_session_filter = st.selectbox(
+        "Select Session for Turbidity", options=["AM", "PM"], key="ntu_session"
+    )
+
+    selected_us_ntu = us_ntu_am if ntu_session_filter == "AM" else us_ntu_pm
+    selected_ds_ntu = ds_ntu_am if ntu_session_filter == "AM" else ds_ntu_pm
+
+    us_colors = [
+        "#ef4444" if val > 250 else "#0284c7" for val in df[selected_us_ntu]
+    ]
+    ds_colors = [
+        "#ef4444" if val > 250 else "#0f172a" for val in df[selected_ds_ntu]
+    ]
+
+    fig_river_ntu = go.Figure()
+    fig_river_ntu.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[selected_us_ntu],
+            name="Sg. Duri Upstream",
+            marker_color=us_colors,
+        )
+    )
+    fig_river_ntu.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[selected_ds_ntu],
+            name="Sg. Duri Downstream",
+            marker_color=ds_colors,
+        )
+    )
+    fig_river_ntu.add_hline(
+        y=250,
+        line_dash="dash",
+        line_color="#ef4444",
+        annotation_text="Max Limit (250 NTU)",
+        annotation_position="top right",
+        annotation_font=dict(color="#ef4444", size=10),
+    )
+    fig_river_ntu.update_layout(
+        barmode="group",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0f172a", family="Inter", size=11),
+        xaxis=dict(
+            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
+            showgrid=False,
+            linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11),
+            tickformat="%b %d",
+            rangeslider=dict(visible=True, thickness=0.08),
+        ),
+        yaxis=dict(
+            title=dict(
+                text="Turbidity (NTU)", font=dict(color="#0f172a", size=11)
+            ),
+            tickfont=dict(color="#0f172a", size=10),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=1.12,
+            xanchor="center",
+            x=0.5,
+            font=dict(size=10, color="#0f172a"),
+            bgcolor="rgba(255, 255, 255, 0.8)",
+        ),
+        margin=dict(l=30, r=30, t=30, b=60),
+        hovermode="x unified",
+        height=380,
+    )
+    st.plotly_chart(
+        fig_river_ntu, use_container_width=True, config={"responsive": True}
+    )
+
 # ==========================================
-# PAGE 4: CASES TRACKER (DENGAN GRAF & KPI CARD)
+# PAGE 4: CASES TRACKER (GRAF BAR: X = DATE RAISED, Y = ISSUE)
 # ==========================================
 elif selected_page == "Cases Tracker":
   st.markdown(
@@ -888,71 +1261,39 @@ elif selected_page == "Cases Tracker":
       )
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
-    st.subheader("📊 Cases Analytics & Distribution")
+    st.subheader("📊 Cases Timeline & Distribution")
 
-    # Paparkan 2 Graf Sebelah-menyebelah (Jenis Kes & Lokasi)
-    g_col1, g_col2 = st.columns(2)
-
-    with g_col1:
-      if issue_col:
-        issue_counts = df_cases[issue_col].value_counts().reset_index()
-        issue_counts.columns = ["Issue", "Count"]
-        fig_issue = px.bar(
-            issue_counts,
-            x="Count",
-            y="Issue",
-            orientation="h",
-            title="Cases by Issue Type",
-            text="Count",
-            color_discrete_sequence=["#0284c7"],
-        )
-        fig_issue.update_layout(
-            plot_bgcolor="#ffffff",
-            paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#0f172a", family="Inter", size=11),
-            xaxis=dict(showgrid=True, gridcolor="rgba(100,100,100,0.06)"),
-            yaxis=dict(autorange="reversed"),
-            margin=dict(l=20, r=20, t=40, b=20),
-            height=300,
-        )
-        st.plotly_chart(
-            fig_issue, use_container_width=True, config={"responsive": True}
-        )
-
-    with g_col2:
-      if loc_col:
-        loc_counts = df_cases[loc_col].value_counts().reset_index()
-        loc_counts.columns = ["Location", "Count"]
-        fig_loc = px.bar(
-            loc_counts,
-            x="Count",
-            y="Location",
-            orientation="h",
-            title="Cases by Location",
-            text="Count",
-            color_discrete_sequence=["#0f172a"],
-        )
-        fig_loc.update_layout(
-            plot_bgcolor="#ffffff",
-            paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#0f172a", family="Inter", size=11),
-            xaxis=dict(showgrid=True, gridcolor="rgba(100,100,100,0.06)"),
-            yaxis=dict(autorange="reversed"),
-            margin=dict(l=20, r=20, t=40, b=20),
-            height=300,
-        )
-        st.plotly_chart(
-            fig_loc, use_container_width=True, config={"responsive": True}
-        )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("📋 Cases Tracker Detailed Records")
-
-    # Format tarikh supaya nampak bersih dalam jadual
-    display_df = df_cases.copy()
-    if date_col and pd.api.types.is_datetime64_any_dtype(display_df[date_col]):
-      display_df[date_col] = display_df[date_col].dt.strftime("%d %b %Y")
-
-    st.dataframe(display_df, use_container_width=True)
+    # Graf Bar Timeline (Paksi X = Date Raised, Paksi Y = Jenis Kes / Jumlah)
+    if date_col and issue_col:
+      fig_timeline = px.bar(
+          df_cases,
+          x=date_col,
+          y=issue_col,
+          color=issue_col,
+          title="Cases Raised by Date and Issue Type",
+          labels={date_col: "Date Raised", issue_col: "Issue Type"},
+          text_auto=True,
+      )
+      fig_timeline.update_layout(
+          plot_bgcolor="#ffffff",
+          paper_bgcolor="rgba(0,0,0,0)",
+          font=dict(color="#0f172a", family="Inter", size=11),
+          xaxis=dict(
+              title=dict(text="Date Raised", font=dict(color="#0f172a", size=12)),
+              showgrid=False,
+              tickformat="%b %d, %Y",
+          ),
+          yaxis=dict(
+              title=dict(text="Issue Type", font=dict(color="#0f172a", size=12)),
+              showgrid=True,
+              gridcolor="rgba(100,100,100,0.06)",
+          ),
+          showlegend=False,
+          margin=dict(l=20, r=20, t=40, b=20),
+          height=380,
+      )
+      st.plotly_chart(
+          fig_timeline, use_container_width=True, config={"responsive": True}
+      )
   else:
     st.warning("No data found in Cases Tracker sheet.")
