@@ -587,7 +587,6 @@ elif selected_page == "Discharge Compliance":
     ntu_pm_col = [c for c in df.columns if "ntu" in c.lower()][-1]
 
   if not df.empty:
-    # Cari nilai minimum pH dan tarikh rekodnya
     df_ph_stacked = pd.melt(
         df,
         id_vars=["Date"],
@@ -603,7 +602,6 @@ elif selected_page == "Discharge Compliance":
       min_ph_val = 0.0
       min_ph_date = "N/A"
 
-    # Cari nilai maksimum Turbidity dan tarikh rekodnya
     df_ntu_stacked = pd.melt(
         df,
         id_vars=["Date"],
@@ -619,7 +617,6 @@ elif selected_page == "Discharge Compliance":
       max_ntu_val = 0.0
       max_ntu_date = "N/A"
 
-    # Dapatkan julat tarikh yang sedang ditapis
     start_date_str = df["Date"].min().strftime("%d %b %Y")
     end_date_str = df["Date"].max().strftime("%d %b %Y")
 
@@ -1168,9 +1165,84 @@ elif selected_page == "River Water Quality":
     st.warning("No data available for River Water Quality page.")
 
 # ==========================================
-# PAGE 4: CASES TRACKER
+# PAGE 4: CASES TRACKER (CLOSED & ONGOING STATUS)
 # ==========================================
 elif selected_page == "Cases Tracker":
-  st.title("⚠️ Environmental Cases Tracker")
-  st.caption("Detailed breakdown of ongoing cases and corrective actions.")
-  st.markdown("---")
+  st.markdown(
+      "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
+      " margin-bottom: 2px; font-family: Inter, sans-serif;'>⚠️ Environmental"
+      " Cases Tracker</h1>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
+      " 25px; font-family: Inter, sans-serif;'>Comprehensive overview of site"
+      " incidents, corrective actions, and closure records.</p>",
+      unsafe_allow_html=True,
+  )
+
+  # Mengesan kolum-kolum berkaitan kes
+  case_ongoing_col = next(
+      (c for c in df.columns if "ongoing" in c.lower() and "case" in c.lower()),
+      None,
+  )
+  case_total_col = next(
+      (
+          c
+          for c in df.columns
+          if "total" in c.lower() and ("case" in c.lower() or "issue" in c.lower())
+      ),
+      None,
+  )
+
+  if not df.empty:
+    latest_case_row = df.sort_values(by="Date").iloc[-1]
+    ongoing_count = (
+        int(latest_case_row[case_ongoing_col])
+        if case_ongoing_col and pd.notna(latest_case_row[case_ongoing_col])
+        else 0
+    )
+    total_count = (
+        int(latest_case_row[case_total_col])
+        if case_total_col and pd.notna(latest_case_row[case_total_col])
+        else len(df[df[f_ntu] > 250])
+    )
+    closed_count = max(0, total_count - ongoing_count)
+
+    # Ringkasan KPI Kes
+    c1, c2, c3 = st.columns(3)
+    with c1:
+      st.metric(label="Total Recorded Cases", value=total_count)
+    with c2:
+      st.metric(
+          label="Ongoing Cases", value=ongoing_count, delta="Requires Action"
+      )
+    with c3:
+      st.metric(
+          label="Closed Cases",
+          value=closed_count,
+          delta="Action Completed",
+          delta_color="normal",
+      )
+
+    st.markdown("<br><hr><br>", unsafe_allow_html=True)
+    st.subheader("📋 Log Records & Case Breakdown")
+
+    # Paparkan senarai rekod yang mengandungi kes
+    case_df = df.copy()
+    case_df["Date"] = case_df["Date"].dt.strftime("%d %b %Y")
+
+    # Memilih kolum utama untuk dipaparkan
+    cols_to_show = ["Date", f_ph, f_ntu]
+    for c in case_df.columns:
+      if any(
+          k in c.lower() for k in ["case", "action", "remark", "status", "issue"]
+      ) and c not in cols_to_show:
+        cols_to_show.append(c)
+
+    st.dataframe(
+        case_df[cols_to_show].sort_values(by="Date", ascending=False),
+        use_container_width=True,
+    )
+  else:
+    st.warning("No case data available for the selected filter range.")
