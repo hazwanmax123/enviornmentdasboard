@@ -64,14 +64,12 @@ st.markdown(
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    /* Latar Belakang Canvas Utama Cerah (Clean Light) */
     .stApp {
         background-color: #f4f7fc;
         color: #1e293b;
         font-family: 'Inter', sans-serif;
     }
     
-    /* Sidebar Gelap Pekat Ala Rujukan */
     [data-testid="stSidebar"] {
         background-color: #0d1322;
         border-right: 1px solid rgba(255, 255, 255, 0.05);
@@ -93,7 +91,6 @@ st.markdown(
         font-family: 'Inter', sans-serif;
     }
 
-    /* Stail Kad KPI Putih Bersih Bertingkat (Clean White Cards) */
     div[data-testid="stMetric"] {
         background: #ffffff;
         border: 1px solid #e2e8f0;
@@ -123,7 +120,6 @@ st.markdown(
         font-family: 'Inter', sans-serif;
     }
 
-    /* Container Jadual Responsif */
     .table-container {
         width: 100%;
         overflow-x: auto;
@@ -133,7 +129,6 @@ st.markdown(
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
     }
 
-    /* Styling Badge Status Matriks */
     .badge-pass {
         background-color: #d1fae5;
         color: #065f46;
@@ -169,7 +164,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# PASTE LINK CSV KAU DI SINI (Satu untuk Sheet 2026, satu lagi untuk Sheet Cases tracker)
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=0&single=true&output=csv"
+CASES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=1959925791&single=true&output=csv"
 
 
 @st.cache_data
@@ -196,10 +193,24 @@ def load_data():
   return df
 
 
+@st.cache_data
+def load_cases_data():
+  df_cases = pd.read_csv(CASES_CSV_URL)
+  df_cases.columns = df_cases.columns.str.strip()
+  if "Date Raised" in df_cases.columns:
+    df_cases["Date Raised"] = pd.to_datetime(
+        df_cases["Date Raised"], errors="coerce"
+    )
+  return df_cases
+
+
 try:
   df_raw = load_data()
+  df_cases = load_cases_data()
 except Exception as e:
-  st.error(f"Error loading data: {e}")
+  st.error(
+      f"Error loading data. Sila pastikan link CSV betul: {e}"
+  )
   st.stop()
 
 # Tapis Data Mengikut Sidebar
@@ -274,11 +285,13 @@ if selected_page == "Overview":
   last_sample_date = (
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
-  open_cases = (
-      int(df["Ongoing case"].dropna().iloc[-1])
-      if "Ongoing case" in df.columns and not df["Ongoing case"].dropna().empty
-      else 0
-  )
+
+  # Kira kes terbuka (Open/Ongoing) dari sheet cases
+  open_cases_count = 0
+  if not df_cases.empty and "Status" in df_cases.columns:
+    open_cases_count = df_cases[
+        df_cases["Status"].astype(str).str.lower().str.contains("open")
+    ].shape[0]
 
   if not df.empty:
     valid_recs = df.dropna(subset=[f_ph, f_ntu])
@@ -326,7 +339,7 @@ if selected_page == "Overview":
     )
   with col2:
     st.metric(
-        label="Open Cases", value=open_cases, delta="Requires Action"
+        label="Open Cases", value=open_cases_count, delta="Requires Action"
     )
   with col3:
     st.metric(label="Last Sample Date", value=last_sample_date)
@@ -439,7 +452,6 @@ if selected_page == "Overview":
     st.markdown(matrix_html, unsafe_allow_html=True)
 
   st.markdown("<br>", unsafe_allow_html=True)
-
   st.subheader("📊 Final Discharge Condition Analytics")
 
   if not df.empty:
@@ -689,8 +701,8 @@ elif selected_page == "Discharge Compliance":
       )
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
-
     st.subheader("pH of Final Discharge (AM vs PM)")
+
     fig_ph = go.Figure()
     fig_ph.add_trace(
         go.Scatter(
@@ -720,6 +732,7 @@ elif selected_page == "Discharge Compliance":
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
+        transition=dict(duration=500, easing="cubic-in-out"),
         xaxis=dict(
             title=dict(text="Date", font=dict(color="#0f172a", size=12)),
             showgrid=False,
@@ -752,8 +765,8 @@ elif selected_page == "Discharge Compliance":
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
-
     st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
+
     fig_ntu = go.Figure()
     fig_ntu.add_trace(
         go.Bar(
@@ -776,6 +789,7 @@ elif selected_page == "Discharge Compliance":
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
+        transition=dict(duration=500, easing="cubic-in-out"),
         xaxis=dict(
             title=dict(text="Date", font=dict(color="#0f172a", size=12)),
             showgrid=False,
@@ -1017,8 +1031,8 @@ elif selected_page == "River Water Quality":
       )
 
     st.markdown("<br>", unsafe_allow_html=True)
-
     st.subheader("pH of Sg. Duri")
+
     ph_session_filter = st.selectbox(
         "Select Session for pH", options=["AM", "PM"], key="ph_session"
     )
@@ -1051,6 +1065,7 @@ elif selected_page == "River Water Quality":
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
+        transition=dict(duration=500, easing="cubic-in-out"),
         xaxis=dict(
             title=dict(text="Date", font=dict(color="#0f172a", size=12)),
             showgrid=False,
@@ -1083,8 +1098,8 @@ elif selected_page == "River Water Quality":
     )
 
     st.markdown("<br>", unsafe_allow_html=True)
-
     st.subheader("Turbidity of Sg. Duri")
+
     ntu_session_filter = st.selectbox(
         "Select Session for Turbidity", options=["AM", "PM"], key="ntu_session"
     )
@@ -1129,6 +1144,7 @@ elif selected_page == "River Water Quality":
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
+        transition=dict(duration=500, easing="cubic-in-out"),
         xaxis=dict(
             title=dict(text="Date", font=dict(color="#0f172a", size=12)),
             showgrid=False,
@@ -1165,7 +1181,7 @@ elif selected_page == "River Water Quality":
     st.warning("No data available for River Water Quality page.")
 
 # ==========================================
-# PAGE 4: CASES TRACKER (CLOSED & ONGOING STATUS)
+# PAGE 4: CASES TRACKER (FROM DEDICATED SHEET)
 # ==========================================
 elif selected_page == "Cases Tracker":
   st.markdown(
@@ -1177,72 +1193,62 @@ elif selected_page == "Cases Tracker":
   st.markdown(
       "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
       " 25px; font-family: Inter, sans-serif;'>Comprehensive overview of site"
-      " incidents, corrective actions, and closure records.</p>",
+      " incidents, locations, and closure status.</p>",
       unsafe_allow_html=True,
   )
 
-  # Mengesan kolum-kolum berkaitan kes
-  case_ongoing_col = next(
-      (c for c in df.columns if "ongoing" in c.lower() and "case" in c.lower()),
-      None,
-  )
-  case_total_col = next(
-      (
-          c
-          for c in df.columns
-          if "total" in c.lower() and ("case" in c.lower() or "issue" in c.lower())
-      ),
-      None,
-  )
+  if not df_cases.empty:
+    # Pembersihan nama kolum
+    df_cases.columns = df_cases.columns.str.strip()
 
-  if not df.empty:
-    latest_case_row = df.sort_values(by="Date").iloc[-1]
-    ongoing_count = (
-        int(latest_case_row[case_ongoing_col])
-        if case_ongoing_col and pd.notna(latest_case_row[case_ongoing_col])
+    # Kira bilangan kes berdasarkan status (Open / Closed)
+    status_col = next(
+        (c for c in df_cases.columns if "status" in c.lower()), None
+    )
+
+    total_cases = len(df_cases)
+    open_cases = (
+        len(
+            df_cases[
+                df_cases[status_col].astype(str).str.lower().str.contains("open")
+            ]
+        )
+        if status_col
         else 0
     )
-    total_count = (
-        int(latest_case_row[case_total_col])
-        if case_total_col and pd.notna(latest_case_row[case_total_col])
-        else len(df[df[f_ntu] > 250])
+    closed_cases = (
+        len(
+            df_cases[
+                df_cases[status_col]
+                .astype(str)
+                .str.lower()
+                .str.contains("closed")
+            ]
+        )
+        if status_col
+        else 0
     )
-    closed_count = max(0, total_count - ongoing_count)
 
-    # Ringkasan KPI Kes
+    # Kad KPI Kes
     c1, c2, c3 = st.columns(3)
     with c1:
-      st.metric(label="Total Recorded Cases", value=total_count)
+      st.metric(label="Total Recorded Cases", value=total_cases)
     with c2:
       st.metric(
-          label="Ongoing Cases", value=ongoing_count, delta="Requires Action"
+          label="Open Cases", value=open_cases, delta="Requires Action"
       )
     with c3:
       st.metric(
           label="Closed Cases",
-          value=closed_count,
+          value=closed_cases,
           delta="Action Completed",
           delta_color="normal",
       )
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
-    st.subheader("📋 Log Records & Case Breakdown")
-
-    # Paparkan senarai rekod yang mengandungi kes
-    case_df = df.copy()
-    case_df["Date"] = case_df["Date"].dt.strftime("%d %b %Y")
-
-    # Memilih kolum utama untuk dipaparkan
-    cols_to_show = ["Date", f_ph, f_ntu]
-    for c in case_df.columns:
-      if any(
-          k in c.lower() for k in ["case", "action", "remark", "status", "issue"]
-      ) and c not in cols_to_show:
-        cols_to_show.append(c)
-
-    st.dataframe(
-        case_df[cols_to_show].sort_values(by="Date", ascending=False),
-        use_container_width=True,
-    )
+    st.subheader("📋 Cases Tracker Records")
+    st.dataframe(df_cases, use_container_width=True)
   else:
-    st.warning("No case data available for the selected filter range.")
+    st.warning(
+        "No data found in Cases Tracker sheet. Sila pastikan pautan CSV betul."
+    )
