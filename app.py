@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# CUSTOM CSS: CLEAN LIGHT CANVAS + DARK SIDEBAR + ENHANCED FONT
+# CUSTOM CSS: CLEAN LIGHT CANVAS + DARK SIDEBAR + DRONE BANNER STYLING
 # ==========================================
 st.markdown(
     """
@@ -306,9 +306,20 @@ if not f_ntu:
   f_ntu = [c for c in df.columns if "ntu" in c.lower()][-1]
 
 # ==========================================
-# PAGE 1: OVERVIEW
+# PAGE 1: OVERVIEW (DENGAN DRONE HEADER IMAGE)
 # ==========================================
 if selected_page == "Overview":
+  # Paparkan Gambar Drone Header di Bahagian Atas
+  try:
+    st.image(
+        "header_bg.jpg",
+        use_container_width=True,
+        caption="RBA Engineering | Tin Mining Site Aerial View",
+    )
+  except Exception:
+    # Fallback jika fail gambar belum diupload atau salah nama
+    pass
+
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
       " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
@@ -574,7 +585,7 @@ if selected_page == "Overview":
     st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
 
 # ==========================================
-# PAGE 2: DISCHARGE COMPLIANCE
+# PAGE 2: DISCHARGE COMPLIANCE (DENGAN LOGIK pH BARU)
 # ==========================================
 elif selected_page == "Discharge Compliance":
   st.markdown(
@@ -647,6 +658,14 @@ elif selected_page == "Discharge Compliance":
         else "N/A"
     )
 
+    # LOGIK pH BARU: Selagi nilai tidak < 6, jangan letak critical, jika < 6 letak Warning Alert
+    if min_ph_val < 6.0:
+      ph_delta_label = "⚠️ Warning Alert (Acidic)"
+      ph_delta_color = "inverse"
+    else:
+      ph_delta_label = "Optimal Range"
+      ph_delta_color = "normal"
+
     df_ntu_stacked = pd.melt(
         df,
         id_vars=["Date"],
@@ -686,8 +705,8 @@ elif selected_page == "Discharge Compliance":
       st.metric(
           label=f"Lowest pH Recorded (FDP) • {min_ph_date}",
           value=f"{min_ph_val:.2f}",
-          delta="Critical Acidic Value",
-          delta_color="inverse",
+          delta=ph_delta_label,
+          delta_color=ph_delta_color,
       )
       st.markdown("<br>", unsafe_allow_html=True)
       st.metric(
@@ -1115,7 +1134,7 @@ elif selected_page == "River Water Quality":
     )
 
 # ==========================================
-# PAGE 4: CASES TRACKER (CORRECTLY PLACED CARRY FORWARD TABLE)
+# PAGE 4: CASES TRACKER
 # ==========================================
 elif selected_page == "Cases Tracker":
   st.markdown(
