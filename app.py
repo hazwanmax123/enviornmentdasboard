@@ -1350,8 +1350,7 @@ elif selected_page == "Cases Tracker":
 elif selected_page == "Monthly Monitoring Map":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA"
-      " Master Topography Map</h1>",
+      " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA",
       unsafe_allow_html=True,
   )
   st.markdown(
