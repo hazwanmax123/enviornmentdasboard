@@ -147,7 +147,6 @@ def load_data():
   return df
 
 
-# DI BUANG @st.cache_data SUPAYA DIA TAK SIMPAN CACHE LAMA
 def load_cases_data():
   df_cases = pd.read_csv(CASES_CSV_URL)
   df_cases.columns = df_cases.columns.str.strip()
@@ -326,7 +325,7 @@ if selected_page == "Overview":
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
 
-  # PENGIRAAN KESELURUHAN OPEN CASES (TIDAK TERIKAT SIDEBAR, MENGIRA SEMUA NO ACTION & PROPOSED IN MEETING)
+  # PENGIRAAN KESELURUHAN OPEN CASES (TIDAK TERIKAT SIDEBAR)
   open_cases_count = 0
   if not df_cases_raw.empty:
     raw_status_col = next(
@@ -403,7 +402,7 @@ if selected_page == "Overview":
 
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
-      "📋 Station Status by Parameter (Latest Sample)"
+      "📋 Station Status by Parameter (Latest Sample - Using Avg Columns)"
   )
 
   if not df.empty:
@@ -503,77 +502,6 @@ if selected_page == "Overview":
         </div>
         """
     st.markdown(matrix_html, unsafe_allow_html=True)
-
-  st.markdown("<br>", unsafe_allow_html=True)
-  st.subheader("📊 Final Discharge Condition Analytics")
-
-  if not df.empty:
-    fig = go.Figure()
-    fig.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[f_ntu],
-            name="Discharge Turbidity (NTU)",
-            marker_color="#0284c7",
-            yaxis="y1",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[f_ph],
-            name="pH Level",
-            mode="lines+markers",
-            line=dict(color="#0f172a", width=2, shape="spline"),
-            marker=dict(size=5, color="#0f172a"),
-            fill="tozeroy",
-            fillcolor="rgba(15, 23, 42, 0.05)",
-            yaxis="y2",
-        )
-    )
-    fig.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(
-            title=dict(
-                text="Turbidity (NTU)", font=dict(color="#0284c7", size=11)
-            ),
-            tickfont=dict(color="#0284c7", size=10),
-            side="left",
-            showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.06)",
-        ),
-        yaxis2=dict(
-            title=dict(text="pH Level", font=dict(color="#0f172a", size=11)),
-            tickfont=dict(color="#0f172a", size=10),
-            overlaying="y",
-            side="right",
-            showgrid=False,
-            range=[6.0, 8.5],
-        ),
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=1.12,
-            xanchor="center",
-            x=0.5,
-            font=dict(size=10, color="#0f172a"),
-            bgcolor="rgba(255, 255, 255, 0.8)",
-        ),
-        margin=dict(l=30, r=30, t=30, b=60),
-        hovermode="x unified",
-        height=400,
-    )
-    st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
 
 # ==========================================
 # PAGE 2: DISCHARGE COMPLIANCE
@@ -735,85 +663,6 @@ elif selected_page == "Discharge Compliance":
           fig_pie, use_container_width=True, config={"responsive": True}
       )
 
-    st.markdown("<br><hr><br>", unsafe_allow_html=True)
-    st.subheader("pH of Final Discharge (AM vs PM)")
-
-    fig_ph = go.Figure()
-    fig_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[ph_am_col],
-            name="AM Reading",
-            mode="lines+markers",
-            line=dict(color="#0f172a", width=2, shape="spline"),
-        )
-    )
-    fig_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[ph_pm_col],
-            name="PM Reading",
-            mode="lines+markers",
-            line=dict(color="#d97706", width=2, shape="spline"),
-        )
-    )
-    fig_ph.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        xaxis=dict(
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
-        margin=dict(l=30, r=30, t=30, b=60),
-        height=380,
-    )
-    st.plotly_chart(
-        fig_ph, use_container_width=True, config={"responsive": True}
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
-
-    fig_ntu = go.Figure()
-    fig_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[ntu_am_col],
-            name="AM Reading",
-            marker_color="#0f172a",
-        )
-    )
-    fig_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[ntu_pm_col],
-            name="PM Reading",
-            marker_color="#d97706",
-        )
-    )
-    fig_ntu.update_layout(
-        barmode="group",
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        xaxis=dict(
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
-        margin=dict(l=30, r=30, t=30, b=60),
-        height=380,
-    )
-    st.plotly_chart(
-        fig_ntu, use_container_width=True, config={"responsive": True}
-    )
-
 # ==========================================
 # PAGE 3: RIVER WATER QUALITY
 # ==========================================
@@ -876,96 +725,6 @@ elif selected_page == "River Water Quality":
       df.columns[9],
   )
 
-  us_ph_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ph" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[3],
-  )
-  us_ph_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ph" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[4],
-  )
-  ds_ph_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ph" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[7],
-  )
-  ds_ph_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ph" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[8],
-  )
-
-  us_ntu_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ntu" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[5],
-  )
-  us_ntu_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ntu" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[6],
-  )
-  ds_ntu_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ntu" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[9],
-  )
-  ds_ntu_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ntu" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[10],
-  )
-
   if not df.empty:
     df_sorted_rw = df.sort_values(by="Date")
     latest_rw = df_sorted_rw.iloc[-1]
@@ -992,132 +751,8 @@ elif selected_page == "River Water Quality":
           ),
       )
 
-    row2_c1, row2_c2 = st.columns(2)
-    with row2_c1:
-      st.metric(
-          label="Net Impact (pH)",
-          value=f"{net_ph:+.2f}",
-          delta="Acidic Shift" if net_ph < 0 else "Alkaline Shift",
-          delta_color="inverse" if net_ph < 0 else "normal",
-      )
-    with row2_c2:
-      st.metric(
-          label="Net Impact (Turbidity)",
-          value=f"{net_ntu:+.1f} NTU",
-          delta="Silt Addition" if net_ntu > 0 else "Clearer",
-          delta_color="inverse" if net_ntu > 0 else "normal",
-      )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("pH of Sg. Duri")
-
-    ph_session_filter = st.selectbox(
-        "Select Session for pH", options=["AM", "PM"], key="ph_session"
-    )
-
-    selected_us_ph = us_ph_am if ph_session_filter == "AM" else us_ph_pm
-    selected_ds_ph = ds_ph_am if ph_session_filter == "AM" else ds_ph_pm
-
-    fig_river_ph = go.Figure()
-    fig_river_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[selected_us_ph],
-            name="Sg. Duri Upstream",
-            mode="lines+markers",
-            line=dict(color="#0284c7", width=2, shape="spline"),
-        )
-    )
-    fig_river_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[selected_ds_ph],
-            name="Sg. Duri Downstream",
-            mode="lines+markers",
-            line=dict(color="#0f172a", width=2, shape="spline"),
-        )
-    )
-    fig_river_ph.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        xaxis=dict(
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
-        margin=dict(l=30, r=30, t=30, b=60),
-        height=380,
-    )
-    st.plotly_chart(
-        fig_river_ph, use_container_width=True, config={"responsive": True}
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("Turbidity of Sg. Duri")
-
-    ntu_session_filter = st.selectbox(
-        "Select Session for Turbidity", options=["AM", "PM"], key="ntu_session"
-    )
-
-    selected_us_ntu = us_ntu_am if ntu_session_filter == "AM" else us_ntu_pm
-    selected_ds_ntu = ds_ntu_am if ntu_session_filter == "AM" else ds_ntu_pm
-
-    us_colors = [
-        "#ef4444" if val > 250 else "#0284c7" for val in df[selected_us_ntu]
-    ]
-    ds_colors = [
-        "#ef4444" if val > 250 else "#0f172a" for val in df[selected_ds_ntu]
-    ]
-
-    fig_river_ntu = go.Figure()
-    fig_river_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[selected_us_ntu],
-            name="Sg. Duri Upstream",
-            marker_color=us_colors,
-        )
-    )
-    fig_river_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[selected_ds_ntu],
-            name="Sg. Duri Downstream",
-            marker_color=ds_colors,
-        )
-    )
-    fig_river_ntu.add_hline(
-        y=250,
-        line_dash="dash",
-        line_color="#ef4444",
-        annotation_text="Max Limit (250 NTU)",
-        annotation_position="top right",
-        annotation_font=dict(color="#ef4444", size=10),
-    )
-    fig_river_ntu.update_layout(
-        barmode="group",
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        xaxis=dict(
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
-        margin=dict(l=30, r=30, t=30, b=60),
-        height=380,
-    )
-    st.plotly_chart(
-        fig_river_ntu, use_container_width=True, config={"responsive": True}
-    )
-
 # ==========================================
-# PAGE 4: CASES TRACKER
+# PAGE 4: CASES TRACKER (PROFESSIONAL SEPARATION: CURRENT VS CARRY FORWARD)
 # ==========================================
 elif selected_page == "Cases Tracker":
   st.markdown(
@@ -1134,6 +769,7 @@ elif selected_page == "Cases Tracker":
   )
 
   if not df_cases.empty and status_col and date_col:
+    # 1. Tapis kes HANYA untuk bulan semasa (Current Month Selected)
     df_filtered_cases = df_cases.copy()
     if len(selected_date_range) == 2:
       s_date, e_date = selected_date_range
@@ -1181,14 +817,15 @@ elif selected_page == "Cases Tracker":
         else 0
     )
 
+    # KPI Bulanan Semasa
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-      st.metric(label="Total Cases", value=total_cases, delta=date_range_label)
+      st.metric(label="Total Cases (Month)", value=total_cases, delta=date_range_label)
     with c2:
       st.metric(
-          label="Open Cases",
+          label="Open Cases (Month)",
           value=open_cases_selected,
-          delta="Requires Action / Review",
+          delta="Requires Action",
       )
     with c3:
       st.metric(
@@ -1207,6 +844,7 @@ elif selected_page == "Cases Tracker":
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
 
+    # 2. Visualisasi Utama Bulanan (Matrix & Donut Chart) - BERSIH TANPA CAMPUR KES LAMA
     col_t, col_d = st.columns([1.2, 1])
 
     with col_t:
@@ -1223,7 +861,7 @@ elif selected_page == "Cases Tracker":
         st.info("No cases found within the selected date filter range.")
 
     with col_d:
-      st.subheader("🍩 Case Status Distribution")
+      st.subheader("🍩 Case Status Distribution (Month)")
       if len(selected_date_range) == 2:
         st.caption(
             f"📅 Date Range Evaluated: **{selected_date_range[0].strftime('%d %b %Y')} to {selected_date_range[1].strftime('%d %b %Y')}**"
@@ -1269,17 +907,16 @@ elif selected_page == "Cases Tracker":
       else:
         st.warning("No data available for donut chart in this date range.")
 
-    # ==========================================
-    # SEKSYEN KHAS: PREVIOUS OPEN CASES / REMARKS TABLE
-    # ==========================================
+    # 3. SEKSYEN KHAS DI BAWAH: CARRY FORWARD / UNRESOLVED CASES (PROFESSIONAL SEPARATION)
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
     st.subheader(
-        "📌 Carried Forward / Unresolved Cases from Previous Months (Open Status)"
+        "📌 Carried Forward / Outstanding Cases from Previous Months"
     )
     st.markdown(
-        "<p style='color: #64748b; font-size: 13px;'>Senarai kes dari"
-        " bulan-bulan sebelum tarikh mula yang dipilih, yang masih berstatus"
-        " <b>No Action</b> atau <b>Proposed In Meeting</b>.</p>",
+        "<p style='color: #64748b; font-size: 13px;'>Bahagian pengasingan"
+        " rasmi untuk kes-kes tertunggak dari bulan-bulan sebelum tarikh mula"
+        " terpilih yang masih belum ditutup (Open / No Action / Proposed in"
+        " Meeting).</p>",
         unsafe_allow_html=True,
     )
 
@@ -1297,7 +934,8 @@ elif selected_page == "Cases Tracker":
         st.dataframe(prev_open_cases, use_container_width=True)
       else:
         st.success(
-            "Tiada kes tertunggak (open cases) dari bulan-bulan sebelum ini!"
+            "Syabas! Tiada kes tertunggak (carried forward cases) dari bulan"
+            " sebelumnya."
         )
     else:
       st.info("Sila pastikan julat tarikh dipilih dengan betul.")
