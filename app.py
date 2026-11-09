@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# CUSTOM CSS: CLEAN LIGHT CANVAS + DARK SIDEBAR + ENHANCED FONT
+# CUSTOM CSS: COMPACT BANNER HEADER + MODERN UI
 # ==========================================
 st.markdown(
     """
@@ -47,6 +47,39 @@ st.markdown(
     }
     
     p, span, label {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* KEMAS BANNER HEADER STYLE */
+    .hero-banner {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        background: linear-gradient(rgba(15, 23, 42, 0.65), rgba(15, 23, 42, 0.65)), url('header_bg.JPG');
+        background-size: cover;
+        background-position: center;
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 35px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .hero-title {
+        color: #ffffff !important;
+        font-size: 28px !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-family: 'Inter', sans-serif;
+    }
+    .hero-subtitle {
+        color: #38bdf8 !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        margin-top: 6px !important;
+        letter-spacing: 0.5px;
         font-family: 'Inter', sans-serif;
     }
 
@@ -306,28 +339,17 @@ if not f_ntu:
   f_ntu = [c for c in df.columns if "ntu" in c.lower()][-1]
 
 # ==========================================
-# PAGE 1: OVERVIEW
+# PAGE 1: OVERVIEW (DENGAN COMPACT HERO BANNER)
 # ==========================================
 if selected_page == "Overview":
-  # Paparkan gambar Header (Guna Header_bg.JPG dengan betul)
-  try:
-    st.image(
-        "Header_bg.JPG",
-        use_container_width=True,
-        caption="RBA Engineering | Tin Mining Site Aerial View",
-    )
-  except:
-    pass
-
+  # Paparkan Compact Banner Header dengan teks di sebelah kiri atas gambar lombong
   st.markdown(
-      "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top:"
-      " 0; margin-bottom: 2px; font-family: Inter, sans-serif;'>RBA Engineering"
-      " | Tin Mining PH ML087</p>",
+      """
+        <div class="hero-banner">
+            <h1 class="hero-title">Welcome</h1>
+            <p class="hero-subtitle">RBA Engineering Sdn Bhd | Tin Mining ML087</p>
+        </div>
+    """,
       unsafe_allow_html=True,
   )
 
