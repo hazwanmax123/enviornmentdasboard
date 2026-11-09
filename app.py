@@ -1353,7 +1353,6 @@ elif selected_page == "Monthly Monitoring Map":
       unsafe_allow_html=True,
   )
 
-  # Data rasmi lengkap dengan status Active / Not Active
   master_map_data = pd.DataFrame({
       "Station": [
           "WQ1",
@@ -1422,7 +1421,6 @@ elif selected_page == "Monthly Monitoring Map":
       ],
   })
 
-  # Dropdown untuk pilih stesen
   selected_station = st.selectbox(
       "🔍 Pilih Stesen untuk Semakan Status & Keputusan Makmal:",
       options=master_map_data["Station"].tolist(),
@@ -1432,33 +1430,16 @@ elif selected_page == "Monthly Monitoring Map":
       master_map_data["Station"] == selected_station
   ].iloc[0]
 
-  # Peta Interaktif Master (OpenStreetMap latar belakang topografi/hutan)
-  fig_map = px.scatter_mapbox(
-      master_map_data,
-      lat="lat",
-      lon="lon",
-      text="Station",
-      custom_data=["Station", "Type", "Sampling Status"],
-      zoom=13.5,
-      center={"lat": station_info["lat"], "lon": station_info["lon"]},
-      height=450,
-  )
-
-  fig_map.update_traces(
-      marker=dict(size=14, color="#0284c7", symbol="circle"),
-      selector=dict(mode="markers+text"),
-  )
-
-  fig_map.update_layout(
-      mapbox_style="open-street-map",
-      margin=dict(l=0, r=0, t=0, b=0),
-      paper_bgcolor="rgba(0,0,0,0)",
-      plot_bgcolor="rgba(0,0,0,0)",
-      font=dict(family="Inter", size=12, color="#0f172a"),
-  )
-
-  st.plotly_chart(
-      fig_map, use_container_width=True, config={"responsive": True}
+  st.map(
+      pd.DataFrame(
+          {
+              "lat": [station_info["lat"]],
+              "lon": [station_info["lon"]],
+          }
+      ),
+      zoom=14,
+      size=60,
+      color="#0284c7",
   )
 
   st.markdown("<br>", unsafe_allow_html=True)
