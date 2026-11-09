@@ -306,19 +306,15 @@ if not f_ntu:
   f_ntu = [c for c in df.columns if "ntu" in c.lower()][-1]
 
 # ==========================================
-# PAGE 1: OVERVIEW (DENGAN DRONE HEADER IMAGE)
+# PAGE 1: OVERVIEW
 # ==========================================
 if selected_page == "Overview":
-  # Paparkan Gambar Drone Header di Bahagian Atas
-  try:
-    st.image(
-        "header_bg.jpg",
-        use_container_width=True,
-        caption="RBA Engineering | Tin Mining Site Aerial View",
-    )
-  except Exception:
-    # Fallback jika fail gambar belum diupload atau salah nama
-    pass
+  # Paparkan terus menggunakan nama fail sebenar dalam folder kau
+  st.image(
+      "Header_bg.JPG",
+      use_container_width=True,
+      caption="RBA Engineering | Tin Mining Site Aerial View",
+  )
 
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
@@ -331,7 +327,6 @@ if selected_page == "Overview":
       " | Tin Mining PH ML087</p>",
       unsafe_allow_html=True,
   )
-
   last_sample_date = (
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
