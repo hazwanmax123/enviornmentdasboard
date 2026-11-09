@@ -119,7 +119,7 @@ st.markdown(
 )
 
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=0&single=true&output=csv"
-CASES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=1959925791&single=true&output=csv"
+CASES_CSV_URL = "PASTE_LINK_CSV_SHEET_CASES_TRACKER_KAU_KAT_SINI"
 
 
 @st.cache_data
@@ -1337,24 +1337,24 @@ elif selected_page == "Cases Tracker":
     st.warning("No data found in Cases Tracker sheet.")
 
 # ==========================================
-# PAGE 5: MONTHLY MONITORING (INTERACTIVE MAP)
+# PAGE 5: MONTHLY MONITORING (MASTER MAP)
 # ==========================================
 elif selected_page == "Monthly Monitoring Map":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
       " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA"
-      " Sampling Stations Map</h1>",
+      " Master Sampling Map</h1>",
       unsafe_allow_html=True,
   )
   st.markdown(
       "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>Spatial map of WQ1 – WQ8, Final"
-      " Discharge, GW, and ANV monitoring points.</p>",
+      " 25px; font-family: Inter, sans-serif;'>Paparan master peta semua"
+      " stesen pemantauan (WQ1 – WQ8, Final Discharge, GW, dan ANV).</p>",
       unsafe_allow_html=True,
   )
 
-  # Data koordinat rasmi EIA
-  map_data = pd.DataFrame({
+  # Data rasmi lengkap dengan status Active / Not Active
+  master_map_data = pd.DataFrame({
       "Station": [
           "WQ1",
           "WQ2",
@@ -1395,89 +1395,126 @@ elif selected_page == "Monthly Monitoring Map":
           101.09836,
       ],
       "Type": [
-          "River Monitoring Point",
-          "River Monitoring Point",
-          "River Monitoring Point",
-          "River Monitoring Point",
-          "River Monitoring Point",
-          "River Monitoring Point",
-          "River Monitoring Point",
-          "River Monitoring Point",
-          "Final Discharge Point",
-          "Groundwater Station",
-          "Ambient Noise & Air Station",
+          "River Monitoring",
+          "River Monitoring",
+          "River Monitoring",
+          "River Monitoring",
+          "River Monitoring",
+          "River Monitoring",
+          "River Monitoring",
+          "River Monitoring",
+          "Discharge Point",
+          "Groundwater",
+          "Ambient Noise/Air",
+      ],
+      "Sampling Status": [
+          "Active",
+          "Active",
+          "Active",
+          "Not Active",
+          "Active",
+          "Active",
+          "Not Active",
+          "Active",
+          "Active",
+          "Active",
+          "Active",
       ],
   })
 
+  # Dropdown untuk pilih stesen
   selected_station = st.selectbox(
-      "📍 Pilih Stesen Pemantauan untuk Paparan Lokasi & Result:",
-      options=map_data["Station"].tolist(),
+      "🔍 Pilih Stesen untuk Semakan Status & Keputusan Makmal:",
+      options=master_map_data["Station"].tolist(),
   )
 
-  station_info = map_data[map_data["Station"] == selected_station].iloc[0]
+  station_info = master_map_data[
+      master_map_data["Station"] == selected_station
+  ].iloc[0]
 
-  c_m1, c_m2, c_m3 = st.columns(3)
-  with c_m1:
-    st.metric(label="Selected Station", value=station_info["Station"])
-  with c_m2:
-    st.metric(label="Station Category", value=station_info["Type"])
-  with c_m3:
-    st.metric(
-        label="Coordinates",
-        value=f"{station_info['lat']:.5f}° N, {station_info['lon']:.5f}° E",
-    )
+  # Peta Interaktif Master (OpenStreetMap latar belakang topografi/hutan)
+  fig_map = px.scatter_mapbox(
+      master_map_data,
+      lat="lat",
+      lon="lon",
+      text="Station",
+      custom_data=["Station", "Type", "Sampling Status"],
+      zoom=13.5,
+      center={"lat": station_info["lat"], "lon": station_info["lon"]},
+      height=450,
+  )
+
+  fig_map.update_traces(
+      marker=dict(size=14, color="#0284c7", symbol="circle"),
+      selector=dict(mode="markers+text"),
+  )
+
+  fig_map.update_layout(
+      mapbox_style="open-street-map",
+      margin=dict(l=0, r=0, t=0, b=0),
+      paper_bgcolor="rgba(0,0,0,0)",
+      plot_bgcolor="rgba(0,0,0,0)",
+      font=dict(family="Inter", size=12, color="#0f172a"),
+  )
+
+  st.plotly_chart(
+      fig_map, use_container_width=True, config={"responsive": True}
+  )
 
   st.markdown("<br>", unsafe_allow_html=True)
 
-  # Peta Interaktif Streamlit
-  st.map(
-      pd.DataFrame(
-          {
-              "lat": [station_info["lat"]],
-              "lon": [station_info["lon"]],
-          }
-      ),
-      zoom=14,
-      size=60,
-      color="#0284c7",
+  status_badge = (
+      "<span class='badge-pass'>🟢 Active (Sampled)</span>"
+      if station_info["Sampling Status"] == "Active"
+      else "<span class='badge-breach'>🔴 Not Active</span>"
   )
+
+  c_m1, c_m2, c_m3, c_m4 = st.columns(4)
+  with c_m1:
+    st.metric(label="Station ID", value=station_info["Station"])
+  with c_m2:
+    st.metric(label="Category", value=station_info["Type"])
+  with c_m3:
+    st.markdown(
+        f"<div style='background: #ffffff; border: 1px solid #e2e8f0; padding:"
+        f" 16px; border-radius: 14px;'><p style='font-size: 11px; color:"
+        f" #64748b; font-weight: 600; margin: 0;'>SAMPLING STATUS</p><div"
+        f" style='margin-top: 6px;'>{status_badge}</div></div>",
+        unsafe_allow_html=True,
+    )
+  with c_m4:
+    st.metric(
+        label="GPS Coordinates",
+        value=f"{station_info['lat']:.4f}°N, {station_info['lon']:.4f}°E",
+    )
 
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
       f"📈 Keputusan Analisis Parameter Bulanan — Stesen {selected_station}"
   )
 
-  st.info(
-      f"ℹ️ Keputusan makmal untuk stesen **{selected_station}** bersedia"
-      " disambungkan ke Google Sheets bulanan."
-  )
-
-  # Placeholder Table Parameter
   dummy_results = pd.DataFrame({
       "Parameter": [
           "pH Level",
           "Turbidity (NTU)",
-          "Total Suspended Solids - TSS (mg/L)",
-          "Iron - Fe (mg/L)",
-          "Arsenic - As (mg/L)",
-          "Biological Oxygen Demand - BOD5 (mg/L)",
+          "Total Suspended Solids (mg/L)",
+          "Iron, Fe (mg/L)",
+          "Arsenic, As (mg/L)",
       ],
-      "Baseline Limit (EIA Standard)": [
-          "6.0 - 9.0",
-          "< 250 NTU",
-          "< 50 mg/L",
-          "< 5.0 mg/L",
-          "< 0.05 mg/L",
-          "< 20 mg/L",
+      "Baseline Limit": ["6.0 - 9.0", "< 250", "< 50", "< 5.0", "< 0.05"],
+      "Latest Result": [
+          "Pending Lab",
+          "Pending Lab",
+          "Pending Lab",
+          "Pending Lab",
+          "Pending Lab",
       ],
-      "Latest Reading": [
-          "Pending",
-          "Pending",
-          "Pending",
-          "Pending",
-          "Pending",
-          "Pending",
+      "Compliance Status": [
+          "No Data",
+          "No Data",
+          "No Data",
+          "No Data",
+          "No Data",
       ],
-      "Status": ["No Data", "No Data", "No Data", "No Data", "No Data", "No Data"],
   })
   st.table(dummy_results)
