@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# CUSTOM CSS: CLEAN LIGHT CANVAS + DARK SIDEBAR + DRONE BANNER STYLING
+# CUSTOM CSS: CLEAN LIGHT CANVAS + DARK SIDEBAR + ENHANCED FONT
 # ==========================================
 st.markdown(
     """
@@ -309,12 +309,22 @@ if not f_ntu:
 # PAGE 1: OVERVIEW
 # ==========================================
 if selected_page == "Overview":
-  # Paparkan terus menggunakan nama fail sebenar dalam folder kau
-  st.image(
-      "Header_bg.JPG",
-      use_container_width=True,
-      caption="RBA Engineering | Tin Mining Site Aerial View",
-  )
+  # Cuba paparkan gambar Header dengan selamat (mengelakkan crash jika fail tak dijumpai)
+  try:
+    st.image(
+        "Header_bg.JPG",
+        use_container_width=True,
+        caption="RBA Engineering | Tin Mining Site Aerial View",
+    )
+  except Exception:
+    try:
+      st.image(
+          "header_bg.jpg",
+          use_container_width=True,
+          caption="RBA Engineering | Tin Mining Site Aerial View",
+      )
+    except Exception:
+      pass
 
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
@@ -327,6 +337,7 @@ if selected_page == "Overview":
       " | Tin Mining PH ML087</p>",
       unsafe_allow_html=True,
   )
+
   last_sample_date = (
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
@@ -580,7 +591,7 @@ if selected_page == "Overview":
     st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
 
 # ==========================================
-# PAGE 2: DISCHARGE COMPLIANCE (DENGAN LOGIK pH BARU)
+# PAGE 2: DISCHARGE COMPLIANCE (DENGAN LOGIK pH < 6 WARNING ALERT)
 # ==========================================
 elif selected_page == "Discharge Compliance":
   st.markdown(
@@ -653,7 +664,7 @@ elif selected_page == "Discharge Compliance":
         else "N/A"
     )
 
-    # LOGIK pH BARU: Selagi nilai tidak < 6, jangan letak critical, jika < 6 letak Warning Alert
+    # LOGIK pH: Selagi tak < 6, jangan letak critical. Kalau < 6, letak Warning Alert.
     if min_ph_val < 6.0:
       ph_delta_label = "⚠️ Warning Alert (Acidic)"
       ph_delta_color = "inverse"
