@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# CUSTOM CSS: FIXED AXIS & MOBILE RESPONSIVE
+# CUSTOM CSS: FIXED AXIS & RESPONSIVE
 # ==========================================
 st.markdown(
     """
@@ -1012,14 +1012,30 @@ elif selected_page == "River Water Quality":
     net_ph = ds_ph_latest - us_ph_latest
     net_ntu = ds_ntu_latest - us_ntu_latest
 
-    # Responsive metrics grid untuk telefon
-    m1, m2 = st.columns(2)
-    with m1:
-      st.metric(label="Upstream pH (Latest)", value=us_ph_latest)
-      st.metric(label="Net Impact (pH)", value=f"{net_ph:+.2f}", delta="Acidic Shift" if net_ph < 0 else "Alkaline Shift", delta_color="inverse" if net_ph < 0 else "normal")
-    with m2:
-      st.metric(label="Downstream pH (Latest)", value=ds_ph_latest)
-      st.metric(label="Net Impact (Turbidity)", value=f"{net_ntu:+.1f} NTU", delta="Silt Addition" if net_ntu > 0 else "Clearer", delta_color="inverse" if net_ntu > 0 else "normal")
+    # Susunan KPI 4 kad penuh (pH & Turbidity Upstream/Downstream) yang mesra paparan telefon
+    rw_c1, rw_c2 = st.columns(2)
+    with rw_c1:
+      st.metric(
+          label="pH Level (Upstream vs Downstream Latest Avg)",
+          value=f"US: {us_ph_latest}  |  DS: {ds_ph_latest}",
+      )
+      st.metric(
+          label="Net Impact (pH)",
+          value=f"{net_ph:+.2f}",
+          delta="Acidic Shift" if net_ph < 0 else "Alkaline Shift",
+          delta_color="inverse" if net_ph < 0 else "normal",
+      )
+    with rw_c2:
+      st.metric(
+          label="Turbidity (Upstream vs Downstream Latest Avg)",
+          value=f"US: {us_ntu_latest} NTU  |  DS: {ds_ntu_latest} NTU",
+      )
+      st.metric(
+          label="Net Impact (Turbidity)",
+          value=f"{net_ntu:+.1f} NTU",
+          delta="Silt Addition" if net_ntu > 0 else "Clearer",
+          delta_color="inverse" if net_ntu > 0 else "normal",
+      )
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("pH of Sg. Duri")
