@@ -217,7 +217,6 @@ with st.sidebar:
 df = df_raw.copy()
 df_cases = df_cases_raw.copy()
 
-# Standardize status column in cases
 status_col = next((c for c in df_cases.columns if "status" in c.lower()), None)
 date_col = next(
     (c for c in df_cases.columns if "date" in c.lower() or "raised" in c.lower()),
@@ -231,7 +230,7 @@ if status_col:
       df_cases[status_col]
       .astype(str)
       .str.strip()
-      .replace({"Open": "No Action", "open": "No Action"})
+      .replace({"Open": "No action", "open": "No action", "No Action": "No action"})
   )
 
 # 1. Filter Year
@@ -330,12 +329,30 @@ if selected_page == "Overview":
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
 
-  # Hitung jumlah Open Cases (No Action + Proposed in meeting) keseluruhan
+  # HITUNG KESELURUHAN OPEN CASES (TANPA DITAPIS SIDEBAR)
   open_cases_count = 0
-  if not df_cases.empty and status_col:
-    open_cases_count = df_cases[
-        df_cases[status_col].str.lower().isin(["no action", "proposed in meeting"])
-    ].shape[0]
+  if not df_cases_raw.empty:
+    raw_status_col = next(
+        (c for c in df_cases_raw.columns if "status" in c.lower()), None
+    )
+    if raw_status_col:
+      df_cases_raw[raw_status_col] = (
+          df_cases_raw[raw_status_col]
+          .astype(str)
+          .str.strip()
+          .replace(
+              {
+                  "Open": "No action",
+                  "open": "No action",
+                  "No Action": "No action",
+              }
+          )
+      )
+      open_cases_count = df_cases_raw[
+          df_cases_raw[raw_status_col]
+          .str.lower()
+          .isin(["no action", "proposed in meeting"])
+      ].shape[0]
 
   if not df.empty:
     valid_recs = df.dropna(subset=[f_ph, f_ntu])
@@ -1127,7 +1144,6 @@ elif selected_page == "Cases Tracker":
   )
 
   if not df_cases.empty and status_col and date_col:
-    # Tapis mengikut tarikh filter sidebar untuk bulan yang dipilih
     df_filtered_cases = df_cases.copy()
     if len(selected_date_range) == 2:
       s_date, e_date = selected_date_range
@@ -1142,7 +1158,6 @@ elif selected_page == "Cases Tracker":
     else:
       date_range_label = "All Records"
 
-    # KPI Hitungan untuk bulan yang dipilih
     total_cases = len(df_filtered_cases)
     open_cases_selected = (
         len(
@@ -1185,7 +1200,6 @@ elif selected_page == "Cases Tracker":
         else 0
     )
 
-    # Kad KPI Kes
     c1, c2, c3, c4 = st.columns(4)
     with c1:
       st.metric(label="Total Cases", value=total_cases, delta=date_range_label)
@@ -1249,7 +1263,7 @@ elif selected_page == "Cases Tracker":
             hole=0.5,
             color="Status",
             color_discrete_map={
-                "No Action": "#ef4444",
+                "No action": "#ef4444",
                 "Proposed in meeting": "#f59e0b",
                 "Closed": "#10b981",
             },
@@ -1284,18 +1298,17 @@ elif selected_page == "Cases Tracker":
     st.markdown(
         "<p style='color: #64748b; font-size: 13px;'>Senarai kes dari"
         " bulan-bulan sebelum tarikh mula yang dipilih, yang masih berstatus"
-        " <b>No Action</b> atau <b>Proposed in meeting</b>.</p>",
+        " <b>No action</b> atau <b>Proposed in meeting</b>.</p>",
         unsafe_allow_html=True,
     )
 
     if len(selected_date_range) == 2:
-      # Cari kes sebelum tarikh mula yang masih belum ditutup (Open)
       prev_open_cases = df_cases[
           (df_cases[date_col].dt.date < selected_date_range[0])
           & (
               df_cases[status_col]
               .str.lower()
-              .isin(["no action", "proposed in meeting"])
+              .isin(["no action", "proposed in meeting", "no action"])
           )
       ]
 
