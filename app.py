@@ -209,7 +209,7 @@ with st.sidebar:
           "Discharge Compliance",
           "River Water Quality",
           "Cases Tracker",
-          "Monthly Monitoring Record",
+          "Monthly Monitoring Map",
       ],
       label_visibility="collapsed",
   )
@@ -1361,7 +1361,6 @@ elif selected_page == "Monthly Monitoring Map":
       unsafe_allow_html=True,
   )
 
-  # Senarai GPS master stesen
   master_coords = {
       "WQ1": (5.63544, 101.05941, "River Monitoring"),
       "WQ2": (5.63369, 101.05975, "River Monitoring"),
@@ -1385,30 +1384,43 @@ elif selected_page == "Monthly Monitoring Map":
 
   st_lat, st_lon, st_type = master_coords[selected_station]
 
-  # Semak data stesen dari Google Sheet Monthly Sampling
+  # Baca baris stesen dan Status dari sheet Monthly Sampling
   station_data = pd.DataFrame()
-  has_data = False
+  raw_status_val = "Not Active"
 
-  if not df_monthly_raw.empty:
-    st_col_name = next(
-        (
-            c
-            for c in df_monthly_raw.columns
-            if "station" in c.lower() or "stesen" in c.lower()
-        ),
-        None,
-    )
-    if st_col_name:
-      station_data = df_monthly_raw[
-          df_monthly_raw[st_col_name].astype(str).str.strip().str.upper()
-          == selected_station.upper()
-      ]
-      if not station_data.empty:
-        # Jika ada data & tidak kosong
-        has_data = True
+  try:
+    if not df_monthly_raw.empty:
+      # Cari kolum 'Station Id' atau yang berkaitan
+      stat_id_col = next(
+          (c for c in df_monthly_raw.columns if "station" in c.lower()), None
+      )
+      stat_status_col = next(
+          (c for c in df_monthly_raw.columns if "status" in c.lower()), None
+      )
 
-  # Tentukan Status secara Automatik
-  sampling_status = "Active" if has_data else "Not Active"
+      if stat_id_col:
+        matched_rows = df_monthly_raw[
+            df_monthly_raw[stat_id_col]
+            .astype(str)
+            .str.strip()
+            .str.upper()
+            == selected_station.upper()
+        ]
+        if not matched_rows.empty:
+          station_data = matched_rows
+          if stat_status_col:
+            raw_status_val = str(
+                matched_rows[stat_status_col].iloc[0]
+            ).strip()
+  except Exception as err:
+    pass
+
+  # Tentukan status warna penanda peta berdasarkan Status dalam Sheet
+  # Kalau status diletakkan "Lab Pending" atau mengandungi "Active", kita anggap Active (Hijau). Kalau "Not Active", Merah.
+  is_active_status = (
+      "active" in raw_status_val.lower()
+      or "pending" in raw_status_val.lower()
+  )
 
   # Bina Peta Folium
   m = folium.Map(
@@ -1418,18 +1430,33 @@ elif selected_page == "Monthly Monitoring Map":
       attr="OpenTopoMap",
   )
 
-  # Penanda untuk semua stesen
   for st_name, (lat, lon, s_type) in master_coords.items():
-    # Semak status stesen masing-masing
-    st_has_data = False
-    if not df_monthly_raw.empty and "Station" in df_monthly_raw.columns:
-      st_has_data = not df_monthly_raw[
-          df_monthly_raw["Station"].astype(str).str.strip().str.upper()
-          == st_name.upper()
-      ].empty
+    st_status_str = "Not Active"
+    try:
+      if not df_monthly_raw.empty:
+        stat_id_col = next(
+            (c for c in df_monthly_raw.columns if "station" in c.lower()), None
+        )
+        stat_status_col = next(
+            (c for c in df_monthly_raw.columns if "status" in c.lower()), None
+        )
+        if stat_id_col:
+          m_row = df_monthly_raw[
+              df_monthly_raw[stat_id_col]
+              .astype(str)
+              .str.strip()
+              .str.upper()
+              == st_name.upper()
+          ]
+          if not m_row.empty and stat_status_col:
+            st_status_str = str(m_row[stat_status_col].iloc[0]).strip()
+    except:
+      pass
 
-    icon_color = "green" if st_has_data else "red"
-    st_status_str = "Active" if st_has_data else "Not Active"
+    st_is_active = (
+        "active" in st_status_str.lower() or "pending" in st_status_str.lower()
+    )
+    icon_color = "green" if st_is_active else "red"
     popup_txt = (
         f"<b>Stesen: {st_name}</b><br>Kategori: {s_type}<br>Status:"
         f" {st_status_str}"
@@ -1454,11 +1481,14 @@ elif selected_page == "Monthly Monitoring Map":
 
   st.markdown("<br>", unsafe_allow_html=True)
 
-  status_badge = (
-      "<span class='badge-pass'>🟢 Active (Sampled)</span>"
-      if sampling_status == "Active"
-      else "<span class='badge-breach'>🔴 Not Active (Pending Sampling)</span>"
-  )
+  if "pending" in raw_status_val.lower():
+    status_badge = (
+        f"<span class='badge-alert'>🟡 {raw_status_val} (Sampled)</span>"
+    )
+  elif "active" in raw_status_val.lower():
+    status_badge = f"<span class='badge-pass'>🟢 {raw_status_val}</span>"
+  else:
+    status_badge = f"<span class='badge-breach'>🔴 {raw_status_val}</span>"
 
   c_m1, c_m2, c_m3, c_m4 = st.columns(4)
   with c_m1:
@@ -1483,13 +1513,12 @@ elif selected_page == "Monthly Monitoring Map":
       f"📈 Keputusan Analisis Parameter Makmal — Stesen {selected_station}"
   )
 
-  # Papar Data dari Sheet jika Active, atau Papar Status Pending jika Not Active
-  if has_data:
+  if not station_data.empty:
     st.dataframe(station_data, use_container_width=True)
   else:
     st.info(
-        f"📌 Stesen **{selected_station}** belum mempunyai sampel/data makmal"
-        " dalam Google Sheet Monthly Sampling."
+        f"📌 Stesen **{selected_station}** belum mempunyai rekod dalam Google"
+        " Sheet Monthly Sampling."
     )
     dummy_results = pd.DataFrame({
         "Parameter": [
