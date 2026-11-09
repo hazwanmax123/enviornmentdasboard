@@ -147,7 +147,7 @@ def load_data():
   return df
 
 
-@st.cache_data
+# DI BUANG @st.cache_data SUPAYA DIA TAK SIMPAN CACHE LAMA
 def load_cases_data():
   df_cases = pd.read_csv(CASES_CSV_URL)
   df_cases.columns = df_cases.columns.str.strip()
@@ -217,7 +217,6 @@ with st.sidebar:
 df = df_raw.copy()
 df_cases = df_cases_raw.copy()
 
-# Pembersihan Lajur Status Kes Secara Global & Seragam
 status_col = next((c for c in df_cases.columns if "status" in c.lower()), None)
 date_col = next(
     (c for c in df_cases.columns if "date" in c.lower() or "raised" in c.lower()),
@@ -229,7 +228,7 @@ loc_col = next((c for c in df_cases.columns if "location" in c.lower()), None)
 if status_col:
   df_cases[status_col] = (
       df_cases[status_col].astype(str).str.strip().str.title()
-  )  # Jadikan Title Case seragam (Cth: No Action, Proposed In Meeting, Closed)
+  )
 
 # 1. Filter Year
 years = sorted(df["Year"].unique(), reverse=True)
@@ -1280,7 +1279,7 @@ elif selected_page == "Cases Tracker":
     st.markdown(
         "<p style='color: #64748b; font-size: 13px;'>Senarai kes dari"
         " bulan-bulan sebelum tarikh mula yang dipilih, yang masih berstatus"
-        " <b>No Action</b> atau <b>Proposed in Meeting</b>.</p>",
+        " <b>No Action</b> atau <b>Proposed In Meeting</b>.</p>",
         unsafe_allow_html=True,
     )
 
