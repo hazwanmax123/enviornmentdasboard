@@ -3,6 +3,7 @@ import datetime
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import pydeck as pdk
 import streamlit as st
 
 # ==========================================
@@ -1337,19 +1338,20 @@ elif selected_page == "Cases Tracker":
     st.warning("No data found in Cases Tracker sheet.")
 
 # ==========================================
-# PAGE 5: MONTHLY MONITORING (MASTER MAP)
+# PAGE 5: MONTHLY MONITORING (PYDECK 3D/TERRAIN MASTER MAP)
 # ==========================================
 elif selected_page == "Monthly Monitoring Map":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
       " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA"
-      " Master Sampling Map</h1>",
+      " 3D Master Sampling Map</h1>",
       unsafe_allow_html=True,
   )
   st.markdown(
       "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>Paparan master peta semua"
-      " stesen pemantauan (WQ1 – WQ8, Final Discharge, GW, dan ANV).</p>",
+      " 25px; font-family: Inter, sans-serif;'>Paparan master peta topografi"
+      " 3D semua stesen pemantauan (WQ1 – WQ8, Final Discharge, GW, dan"
+      " ANV).</p>",
       unsafe_allow_html=True,
   )
 
@@ -1422,7 +1424,7 @@ elif selected_page == "Monthly Monitoring Map":
   })
 
   selected_station = st.selectbox(
-      "🔍 Pilih Stesen untuk Semakan Status & Keputusan Makmal:",
+      "🔍 Pilih Stesen untuk Zoom Lokasi & Semakan Keputusan Makmal:",
       options=master_map_data["Station"].tolist(),
   )
 
@@ -1430,17 +1432,50 @@ elif selected_page == "Monthly Monitoring Map":
       master_map_data["Station"] == selected_station
   ].iloc[0]
 
-  st.map(
-      pd.DataFrame(
-          {
-              "lat": [station_info["lat"]],
-              "lon": [station_info["lon"]],
-          }
-      ),
-      zoom=14,
-      size=60,
-      color="#0284c7",
+  # Konfigurasi Pydeck 3D Terrain Map (Paparan rupa bumi berserta tiang 3D lokasi stesen)
+  layer = pdk.Layer(
+      "ColumnLayer",
+      data=master_map_data,
+      get_position=["lon", "lat"],
+      get_elevation=120,
+      elevation_scale=10,
+      radius=80,
+      get_fill_color=[
+          2,
+          132,
+          199,
+          200,
+      ],  # Warna biru korporat stesen pemantauan
+      pickable=True,
+      auto_highlight=True,
   )
+
+  # Tambah lapisan teks nama stesen di atas peta
+  text_layer = pdk.Layer(
+      "TextLayer",
+      data=master_map_data,
+      get_position=["lon", "lat"],
+      get_text="Station",
+      get_size=14,
+      get_color=[15, 23, 42],
+      get_alignment_baseline="'bottom'",
+  )
+
+  view_state = pdk.ViewState(
+      latitude=station_info["lat"],
+      longitude=station_info["lon"],
+      zoom=14.5,
+      pitch=45,  # Sudut senget 3D gaya GIS
+      bearing=0,
+  )
+
+  r = pdk.Deck(
+      layers=[layer, text_layer],
+      initial_view_state=view_state,
+      map_style="mapbox://styles/mapbox/outdoors-v11",  # Gaya peta topografi/hutan rasmi
+  )
+
+  st.pydeck_chart(r)
 
   st.markdown("<br>", unsafe_allow_html=True)
 
