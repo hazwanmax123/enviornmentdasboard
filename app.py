@@ -1,10 +1,11 @@
 import calendar
 import datetime
+import folium
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import pydeck as pdk
 import streamlit as st
+from streamlit_folium import st_folium
 
 # ==========================================
 # PAGE CONFIG
@@ -1338,19 +1339,19 @@ elif selected_page == "Cases Tracker":
     st.warning("No data found in Cases Tracker sheet.")
 
 # ==========================================
-# PAGE 5: MONTHLY MONITORING (PYDECK 3D/TERRAIN MASTER MAP)
+# PAGE 5: MONTHLY MONITORING (FOLIUM TOPOGRAPHY MAP)
 # ==========================================
 elif selected_page == "Monthly Monitoring Map":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
       " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA"
-      " 3D Master Sampling Map</h1>",
+      " Master Topography Map</h1>",
       unsafe_allow_html=True,
   )
   st.markdown(
       "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>Paparan master peta topografi"
-      " 3D semua stesen pemantauan (WQ1 – WQ8, Final Discharge, GW, dan"
+      " 25px; font-family: Inter, sans-serif;'>Paparan peta muka bumi / terrain"
+      " interaktif stesen pemantauan (WQ1 – WQ8, Final Discharge, GW, dan"
       " ANV).</p>",
       unsafe_allow_html=True,
   )
@@ -1432,50 +1433,39 @@ elif selected_page == "Monthly Monitoring Map":
       master_map_data["Station"] == selected_station
   ].iloc[0]
 
-  # Konfigurasi Pydeck 3D Terrain Map (Paparan rupa bumi berserta tiang 3D lokasi stesen)
-  layer = pdk.Layer(
-      "ColumnLayer",
-      data=master_map_data,
-      get_position=["lon", "lat"],
-      get_elevation=120,
-      elevation_scale=10,
-      radius=80,
-      get_fill_color=[
-          2,
-          132,
-          199,
-          200,
-      ],  # Warna biru korporat stesen pemantauan
-      pickable=True,
-      auto_highlight=True,
+  # Bina Peta Topografi / Muka Bumi Folium
+  m = folium.Map(
+      location=[station_info["lat"], station_info["lon"]],
+      zoom_start=14,
+      tiles="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+      attr="OpenTopoMap",
   )
 
-  # Tambah lapisan teks nama stesen di atas peta
-  text_layer = pdk.Layer(
-      "TextLayer",
-      data=master_map_data,
-      get_position=["lon", "lat"],
-      get_text="Station",
-      get_size=14,
-      get_color=[15, 23, 42],
-      get_alignment_baseline="'bottom'",
-  )
+  # Tambah semua stesen ke dalam peta
+  for idx, row in master_map_data.iterrows():
+    icon_color = "green" if row["Sampling Status"] == "Active" else "red"
+    popup_txt = (
+        f"<b>Stesen: {row['Station']}</b><br>Kategori:"
+        f" {row['Type']}<br>Status: {row['Sampling Status']}"
+    )
 
-  view_state = pdk.ViewState(
-      latitude=station_info["lat"],
-      longitude=station_info["lon"],
-      zoom=14.5,
-      pitch=45,  # Sudut senget 3D gaya GIS
-      bearing=0,
-  )
+    # Highlight stesen yang dipilih dengan icon khas
+    if row["Station"] == selected_station:
+      folium.Marker(
+          location=[row["lat"], row["lon"]],
+          popup=popup_txt,
+          tooltip=f"🎯 SELECTED: {row['Station']}",
+          icon=folium.Icon(color="blue", icon="star"),
+      ).add_to(m)
+    else:
+      folium.Marker(
+          location=[row["lat"], row["lon"]],
+          popup=popup_txt,
+          tooltip=row["Station"],
+          icon=folium.Icon(color=icon_color, icon="info-sign"),
+      ).add_to(m)
 
-  r = pdk.Deck(
-      layers=[layer, text_layer],
-      initial_view_state=view_state,
-      map_style="mapbox://styles/mapbox/outdoors-v11",  # Gaya peta topografi/hutan rasmi
-  )
-
-  st.pydeck_chart(r)
+  st_folium(m, width="100%", height=450)
 
   st.markdown("<br>", unsafe_allow_html=True)
 
