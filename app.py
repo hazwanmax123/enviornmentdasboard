@@ -1347,7 +1347,7 @@ elif selected_page == "Cases Tracker":
 # ==========================================
 # PAGE 5: MONTHLY MONITORING (DYNAMIC FROM GOOGLE SHEET)
 # ==========================================
-elif selected_page == "Monthly Monitoring Map":
+elif selected_page == "Monthly Monitoring Record":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
       " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA",
