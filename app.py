@@ -311,7 +311,7 @@ if not f_ntu:
 if selected_page == "Overview":
   # Paparkan gambar header drone melintang kemas di atas sekali
   try:
-    st.image("header_bg.JPG", use_container_width=True)
+    st.image("Headerbaru_bg.JPG", use_container_width=True)
   except:
     pass
 
