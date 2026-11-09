@@ -1355,7 +1355,6 @@ elif selected_page == "Monthly Monitoring Record":
   )
   st.markdown(
       "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>Data terkini terus dari Google"
       " Sheet Monthly Sampling.</p>",
       unsafe_allow_html=True,
   )
