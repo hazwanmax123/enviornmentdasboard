@@ -122,6 +122,7 @@ st.markdown(
 
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=0&single=true&output=csv"
 CASES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=1959925791&single=true&output=csv"
+MONTHLY_SAMPLING_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=1267713168&single=true&output=csv"
 
 
 @st.cache_data
@@ -160,9 +161,20 @@ def load_cases_data():
   return df_cases
 
 
+@st.cache_data
+def load_monthly_sampling_data():
+  try:
+    df_m = pd.read_csv(MONTHLY_SAMPLING_CSV_URL)
+    df_m.columns = df_m.columns.str.strip()
+    return df_m
+  except Exception:
+    return pd.DataFrame()
+
+
 try:
   df_raw = load_data()
   df_cases_raw = load_cases_data()
+  df_monthly_raw = load_monthly_sampling_data()
 except Exception as e:
   st.error(f"Error loading data: {e}")
   st.stop()
@@ -197,7 +209,7 @@ with st.sidebar:
           "Discharge Compliance",
           "River Water Quality",
           "Cases Tracker",
-          "Monthly Monitoring Map",
+          "Monthly Monitoring Record",
       ],
       label_visibility="collapsed",
   )
@@ -253,11 +265,7 @@ if selected_month:
 selected_year_int = (
     int(selected_year)
     if selected_year != "All"
-    else (
-        df["Year"].max()
-        if not df.empty
-        else pd.Timestamp.now().year
-    )
+    else (df["Year"].max() if not df.empty else pd.Timestamp.now().year)
 )
 selected_month_num = list(calendar.month_name).index(selected_month)
 
@@ -398,9 +406,7 @@ if selected_page == "Overview":
   with col3:
     st.metric(label="Last Sample Date", value=last_sample_date)
   with col4:
-    st.metric(
-        label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%"
-    )
+    st.metric(label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%")
 
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
@@ -451,7 +457,6 @@ if selected_page == "Overview":
         df.columns[9],
     )
 
-
     def get_status_badge(val, param_type):
       if pd.isna(val):
         return "<span class='badge-alert'>No Data</span>"
@@ -468,7 +473,6 @@ if selected_page == "Overview":
         else:
           return "<span class='badge-pass'>🟢 Within limit</span>"
       return "<span>-</span>"
-
 
     fdp_ph_val = latest_row.get(f_ph, 0)
     fdp_ntu_val = latest_row.get(f_ntu, 0)
@@ -1216,7 +1220,11 @@ elif selected_page == "Cases Tracker":
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-      st.metric(label="Total Cases (Month)", value=total_cases, delta=date_range_label)
+      st.metric(
+          label="Total Cases (Month)",
+          value=total_cases,
+          delta=date_range_label,
+      )
     with c2:
       st.metric(
           label="Open Cases (Month)",
@@ -1240,7 +1248,6 @@ elif selected_page == "Cases Tracker":
 
     st.markdown("<br><hr><br>", unsafe_allow_html=True)
 
-    # Matrix Table & Donut Chart
     col_t, col_d = st.columns([1.2, 1])
 
     with col_t:
@@ -1260,7 +1267,9 @@ elif selected_page == "Cases Tracker":
       st.subheader("🍩 Case Status Distribution (Month)")
       if len(selected_date_range) == 2:
         st.caption(
-            f"📅 Date Range Evaluated: **{selected_date_range[0].strftime('%d %b %Y')} to {selected_date_range[1].strftime('%d %b %Y')}**"
+            f"📅 Date Range Evaluated:"
+            f" **{selected_date_range[0].strftime('%d %b %Y')} to"
+            f" {selected_date_range[1].strftime('%d %b %Y')}**"
         )
       else:
         st.caption("📅 Date Range Evaluated: **All Records**")
@@ -1303,11 +1312,8 @@ elif selected_page == "Cases Tracker":
       else:
         st.warning("No data available for donut chart in this date range.")
 
-    # TEPAT DI BAWAH MATRIX TABLE: CARRY FORWARD / UNRESOLVED CASES TABLE
     st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader(
-        "📌 Carried Forward / Outstanding Cases from Previous Months"
-    )
+    st.subheader("📌 Carried Forward / Outstanding Cases from Previous Months")
     st.markdown(
         "<p style='color: #64748b; font-size: 13px;'>Senarai kes dari"
         " bulan-bulan sebelum tarikh mula yang dipilih dan masih belum"
@@ -1339,7 +1345,7 @@ elif selected_page == "Cases Tracker":
     st.warning("No data found in Cases Tracker sheet.")
 
 # ==========================================
-# PAGE 5: MONTHLY MONITORING (FOLIUM TOPOGRAPHY MAP)
+# PAGE 5: MONTHLY MONITORING (DYNAMIC FROM GOOGLE SHEET)
 # ==========================================
 elif selected_page == "Monthly Monitoring Map":
   st.markdown(
@@ -1350,118 +1356,97 @@ elif selected_page == "Monthly Monitoring Map":
   )
   st.markdown(
       "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>Paparan peta muka bumi / terrain"
-      " interaktif stesen pemantauan (WQ1 – WQ8, Final Discharge, GW, dan"
-      " ANV).</p>",
+      " 25px; font-family: Inter, sans-serif;'>Data terkini terus dari Google"
+      " Sheet Monthly Sampling.</p>",
       unsafe_allow_html=True,
   )
 
-  master_map_data = pd.DataFrame({
-      "Station": [
-          "WQ1",
-          "WQ2",
-          "WQ3",
-          "WQ4",
-          "WQ5",
-          "WQ6",
-          "WQ7",
-          "WQ8",
-          "Final Discharge",
-          "GW",
-          "ANV",
-      ],
-      "lat": [
-          5.63544,
-          5.63369,
-          5.63216,
-          5.62686,
-          5.62983,
-          5.62416,
-          5.62293,
-          5.61956,
-          5.63367,
-          5.63561,
-          5.63692,
-      ],
-      "lon": [
-          101.05941,
-          101.05975,
-          101.07157,
-          101.07851,
-          101.08350,
-          101.07847,
-          101.07244,
-          101.08815,
-          101.07182,
-          101.07193,
-          101.09836,
-      ],
-      "Type": [
-          "River Monitoring",
-          "River Monitoring",
-          "River Monitoring",
-          "River Monitoring",
-          "River Monitoring",
-          "River Monitoring",
-          "River Monitoring",
-          "River Monitoring",
-          "Discharge Point",
-          "Groundwater",
-          "Ambient Noise/Air",
-      ],
-      "Sampling Status": [
-          "Active",
-          "Active",
-          "Active",
-          "Not Active",
-          "Active",
-          "Active",
-          "Not Active",
-          "Active",
-          "Active",
-          "Active",
-          "Active",
-      ],
-  })
+  # Senarai GPS master stesen
+  master_coords = {
+      "WQ1": (5.63544, 101.05941, "River Monitoring"),
+      "WQ2": (5.63369, 101.05975, "River Monitoring"),
+      "WQ3": (5.63216, 101.07157, "River Monitoring"),
+      "WQ4": (5.62686, 101.07851, "River Monitoring"),
+      "WQ5": (5.62983, 101.08350, "River Monitoring"),
+      "WQ6": (5.62416, 101.07847, "River Monitoring"),
+      "WQ7": (5.62293, 101.07244, "River Monitoring"),
+      "WQ8": (5.61956, 101.08815, "River Monitoring"),
+      "Final Discharge": (5.63367, 101.07182, "Discharge Point"),
+      "GW": (5.63561, 101.07193, "Groundwater"),
+      "ANV": (5.63692, 101.09836, "Ambient Noise/Air"),
+  }
+
+  stations_list = list(master_coords.keys())
 
   selected_station = st.selectbox(
       "🔍 Pilih Stesen untuk Zoom Lokasi & Semakan Keputusan Makmal:",
-      options=master_map_data["Station"].tolist(),
+      options=stations_list,
   )
 
-  station_info = master_map_data[
-      master_map_data["Station"] == selected_station
-  ].iloc[0]
+  st_lat, st_lon, st_type = master_coords[selected_station]
 
-  # Bina Peta Topografi / Muka Bumi Folium
+  # Semak data stesen dari Google Sheet Monthly Sampling
+  station_data = pd.DataFrame()
+  has_data = False
+
+  if not df_monthly_raw.empty:
+    st_col_name = next(
+        (
+            c
+            for c in df_monthly_raw.columns
+            if "station" in c.lower() or "stesen" in c.lower()
+        ),
+        None,
+    )
+    if st_col_name:
+      station_data = df_monthly_raw[
+          df_monthly_raw[st_col_name].astype(str).str.strip().str.upper()
+          == selected_station.upper()
+      ]
+      if not station_data.empty:
+        # Jika ada data & tidak kosong
+        has_data = True
+
+  # Tentukan Status secara Automatik
+  sampling_status = "Active" if has_data else "Not Active"
+
+  # Bina Peta Folium
   m = folium.Map(
-      location=[station_info["lat"], station_info["lon"]],
+      location=[st_lat, st_lon],
       zoom_start=14,
       tiles="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
       attr="OpenTopoMap",
   )
 
-  # Tambah semua stesen ke dalam peta
-  for idx, row in master_map_data.iterrows():
-    icon_color = "green" if row["Sampling Status"] == "Active" else "red"
+  # Penanda untuk semua stesen
+  for st_name, (lat, lon, s_type) in master_coords.items():
+    # Semak status stesen masing-masing
+    st_has_data = False
+    if not df_monthly_raw.empty and "Station" in df_monthly_raw.columns:
+      st_has_data = not df_monthly_raw[
+          df_monthly_raw["Station"].astype(str).str.strip().str.upper()
+          == st_name.upper()
+      ].empty
+
+    icon_color = "green" if st_has_data else "red"
+    st_status_str = "Active" if st_has_data else "Not Active"
     popup_txt = (
-        f"<b>Stesen: {row['Station']}</b><br>Kategori:"
-        f" {row['Type']}<br>Status: {row['Sampling Status']}"
+        f"<b>Stesen: {st_name}</b><br>Kategori: {s_type}<br>Status:"
+        f" {st_status_str}"
     )
 
-    # Highlight stesen yang dipilih dengan icon khas
-    if row["Station"] == selected_station:
+    if st_name == selected_station:
       folium.Marker(
-          location=[row["lat"], row["lon"]],
+          location=[lat, lon],
           popup=popup_txt,
-          tooltip=f"🎯 SELECTED: {row['Station']}",
+          tooltip=f"🎯 SELECTED: {st_name}",
           icon=folium.Icon(color="blue", icon="star"),
       ).add_to(m)
     else:
       folium.Marker(
-          location=[row["lat"], row["lon"]],
+          location=[lat, lon],
           popup=popup_txt,
-          tooltip=row["Station"],
+          tooltip=st_name,
           icon=folium.Icon(color=icon_color, icon="info-sign"),
       ).add_to(m)
 
@@ -1471,15 +1456,15 @@ elif selected_page == "Monthly Monitoring Map":
 
   status_badge = (
       "<span class='badge-pass'>🟢 Active (Sampled)</span>"
-      if station_info["Sampling Status"] == "Active"
-      else "<span class='badge-breach'>🔴 Not Active</span>"
+      if sampling_status == "Active"
+      else "<span class='badge-breach'>🔴 Not Active (Pending Sampling)</span>"
   )
 
   c_m1, c_m2, c_m3, c_m4 = st.columns(4)
   with c_m1:
-    st.metric(label="Station ID", value=station_info["Station"])
+    st.metric(label="Station ID", value=selected_station)
   with c_m2:
-    st.metric(label="Category", value=station_info["Type"])
+    st.metric(label="Category", value=st_type)
   with c_m3:
     st.markdown(
         f"<div style='background: #ffffff; border: 1px solid #e2e8f0; padding:"
@@ -1490,37 +1475,44 @@ elif selected_page == "Monthly Monitoring Map":
     )
   with c_m4:
     st.metric(
-        label="GPS Coordinates",
-        value=f"{station_info['lat']:.4f}°N, {station_info['lon']:.4f}°E",
+        label="GPS Coordinates", value=f"{st_lat:.4f}°N, {st_lon:.4f}°E"
     )
 
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
-      f"📈 Keputusan Analisis Parameter Bulanan — Stesen {selected_station}"
+      f"📈 Keputusan Analisis Parameter Makmal — Stesen {selected_station}"
   )
 
-  dummy_results = pd.DataFrame({
-      "Parameter": [
-          "pH Level",
-          "Turbidity (NTU)",
-          "Total Suspended Solids (mg/L)",
-          "Iron, Fe (mg/L)",
-          "Arsenic, As (mg/L)",
-      ],
-      "Baseline Limit": ["6.0 - 9.0", "< 250", "< 50", "< 5.0", "< 0.05"],
-      "Latest Result": [
-          "Pending Lab",
-          "Pending Lab",
-          "Pending Lab",
-          "Pending Lab",
-          "Pending Lab",
-      ],
-      "Compliance Status": [
-          "No Data",
-          "No Data",
-          "No Data",
-          "No Data",
-          "No Data",
-      ],
-  })
-  st.table(dummy_results)
+  # Papar Data dari Sheet jika Active, atau Papar Status Pending jika Not Active
+  if has_data:
+    st.dataframe(station_data, use_container_width=True)
+  else:
+    st.info(
+        f"📌 Stesen **{selected_station}** belum mempunyai sampel/data makmal"
+        " dalam Google Sheet Monthly Sampling."
+    )
+    dummy_results = pd.DataFrame({
+        "Parameter": [
+            "pH Level",
+            "Turbidity (NTU)",
+            "Total Suspended Solids (mg/L)",
+            "Iron, Fe (mg/L)",
+            "Arsenic, As (mg/L)",
+        ],
+        "Baseline Limit": ["6.0 - 9.0", "< 250", "< 50", "< 5.0", "< 0.05"],
+        "Latest Result": [
+            "Pending Lab",
+            "Pending Lab",
+            "Pending Lab",
+            "Pending Lab",
+            "Pending Lab",
+        ],
+        "Compliance Status": [
+            "No Data",
+            "No Data",
+            "No Data",
+            "No Data",
+            "No Data",
+        ],
+    })
+    st.table(dummy_results)
