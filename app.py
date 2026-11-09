@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# CUSTOM CSS: IMMERSIVE WIDE BANNER HEADER
+# CUSTOM CSS: CLEAN LIGHT CANVAS + DARK SIDEBAR
 # ==========================================
 st.markdown(
     """
@@ -48,41 +48,6 @@ st.markdown(
     
     p, span, label {
         font-family: 'Inter', sans-serif;
-    }
-
-    /* IMMERSIVE WIDE BANNER STYLE (MACAM CONTOH RUJUKAN) */
-    .hero-banner {
-        position: relative;
-        width: 100%;
-        height: 220px;
-        background: linear-gradient(rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.7)), url('header_bg.JPG');
-        background-size: cover;
-        background-position: center;
-        border-radius: 14px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        padding: 25px 35px;
-        margin-bottom: 25px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    }
-    .hero-title {
-        color: #ffffff !important;
-        font-size: 32px !important;
-        font-weight: 700 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        font-family: 'Inter', sans-serif;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    }
-    .hero-subtitle {
-        color: #38bdf8 !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        margin-top: 6px !important;
-        letter-spacing: 0.8px;
-        font-family: 'Inter', sans-serif;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
     div[data-testid="stMetric"] {
@@ -341,17 +306,24 @@ if not f_ntu:
   f_ntu = [c for c in df.columns if "ntu" in c.lower()][-1]
 
 # ==========================================
-# PAGE 1: OVERVIEW (IMMERSIVE WIDE BANNER)
+# PAGE 1: OVERVIEW
 # ==========================================
 if selected_page == "Overview":
-  # Paparkan Immersive Wide Banner dengan tajuk terapung di atas background lombong
+  # Paparkan gambar header drone melintang kemas di atas sekali
+  try:
+    st.image("header_bg.JPG", use_container_width=True)
+  except:
+    pass
+
   st.markdown(
-      """
-        <div class="hero-banner">
-            <h1 class="hero-title">Welcome</h1>
-            <p class="hero-subtitle">RBA Engineering | Tin Mining PH ML087</p>
-        </div>
-    """,
+      "<h1 style='font-size: 28px; font-weight: 700; color: #0f172a;"
+      " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top:"
+      " 0; margin-bottom: 20px; font-family: Inter, sans-serif;'>RBA Engineering"
+      " Sdn Bhd | Tin Mining ML087</p>",
       unsafe_allow_html=True,
   )
 
