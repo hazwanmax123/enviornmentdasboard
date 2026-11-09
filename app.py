@@ -212,7 +212,7 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
 
-# Tapis Data Mengikut Sidebar & Gabungkan Julat Tarikh (Main Sheet + Cases Sheet)
+# Gabung maklumat tarikh daripada kedua-dua sheet untuk julat sidebar yang lengkap
 df = df_raw.copy()
 df_cases = df_cases_raw.copy()
 
@@ -223,16 +223,9 @@ selected_year = st.sidebar.selectbox(
 if selected_year != "All":
   df = df[df["Year"] == selected_year]
 
-months = [m for m in df["Month"].unique() if pd.notna(m)]
-selected_month = st.sidebar.multiselect(
-    "Select Month", options=months, default=months
-)
-if selected_month:
-  df = df[df["Month"].isin(selected_month)]
-
-# Cari min & max date merangkumi kedua-dua sheet supaya tak terhalang
-all_dates = list(df["Date"].dropna())
-c_date_col = next(
+# Gabung senarai bulan dari df & df_cases supaya bulan 9 (September) turut muncul
+all_months_list = list(df["Month"].dropna().unique())
+c_date_col_sidebar = next(
     (
         c
         for c in df_cases.columns
@@ -240,8 +233,22 @@ c_date_col = next(
     ),
     None,
 )
-if c_date_col and not df_cases.empty:
-  all_dates.extend(list(df_cases[c_date_col].dropna()))
+if c_date_col_sidebar and not df_cases.empty:
+  case_months = df_cases[c_date_col_sidebar].dt.strftime("%B").dropna().unique()
+  for m in case_months:
+    if m not in all_months_list:
+      all_months_list.append(m)
+
+selected_month = st.sidebar.multiselect(
+    "Select Month", options=all_months_list, default=all_months_list
+)
+if selected_month:
+  df = df[df["Month"].isin(selected_month)]
+
+# Cari julat tarikh minimum & maksimum merangkumi kedua-dua sheet
+all_dates = list(df["Date"].dropna())
+if c_date_col_sidebar and not df_cases.empty:
+  all_dates.extend(list(df_cases[c_date_col_sidebar].dropna()))
 
 if all_dates:
   min_d = min(all_dates).date()
