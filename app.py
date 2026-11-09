@@ -16,7 +16,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# CUSTOM CSS: CLEAN LIGHT CANVAS + DARK SIDEBAR
+# CUSTOM CSS: FIXED AXIS & MOBILE RESPONSIVE
 # ==========================================
 st.markdown(
     """
@@ -53,27 +53,22 @@ st.markdown(
     div[data-testid="stMetric"] {
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        padding: 18px 22px;
+        padding: 16px 20px;
         border-radius: 14px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-        transition: all 0.2s ease-in-out;
-    }
-    
-    div[data-testid="stMetric"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-        border-color: #cbd5e1;
+        margin-bottom: 10px;
+        word-break: break-word;
     }
 
     [data-testid="stMetricValue"] {
-        font-size: 22px !important;
+        font-size: 18px !important;
         font-weight: 700 !important;
         color: #0f172a !important;
         font-family: 'Inter', sans-serif;
     }
     
     [data-testid="stMetricLabel"] {
-        font-size: 12px !important;
+        font-size: 11px !important;
         color: #64748b !important;
         font-weight: 600 !important;
         font-family: 'Inter', sans-serif;
@@ -309,7 +304,6 @@ if not f_ntu:
 # PAGE 1: OVERVIEW
 # ==========================================
 if selected_page == "Overview":
-  # Paparkan gambar Header_bg.jpg dengan selamat dan kemas
   try:
     st.image("Header_bg.JPG", use_container_width=True)
   except:
@@ -540,25 +534,31 @@ if selected_page == "Overview":
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
         xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
+            title=dict(
+                text="Date", font=dict(color="#0f172a", size=12, weight="600")
+            ),
             showgrid=False,
             linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
+            tickfont=dict(color="#0f172a", size=11, weight="600"),
             tickformat="%b %d",
             rangeslider=dict(visible=True, thickness=0.08),
         ),
         yaxis=dict(
             title=dict(
-                text="Turbidity (NTU)", font=dict(color="#0284c7", size=11)
+                text="Turbidity (NTU)",
+                font=dict(color="#0f172a", size=11, weight="600"),
             ),
-            tickfont=dict(color="#0284c7", size=10),
+            tickfont=dict(color="#0f172a", size=10, weight="600"),
             side="left",
             showgrid=True,
             gridcolor="rgba(100, 100, 100, 0.06)",
         ),
         yaxis2=dict(
-            title=dict(text="pH Level", font=dict(color="#0f172a", size=11)),
-            tickfont=dict(color="#0f172a", size=10),
+            title=dict(
+                text="pH Level",
+                font=dict(color="#0f172a", size=11, weight="600"),
+            ),
+            tickfont=dict(color="#0f172a", size=10, weight="600"),
             overlaying="y",
             side="right",
             showgrid=False,
@@ -773,12 +773,24 @@ elif selected_page == "Discharge Compliance":
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
         xaxis=dict(
+            title=dict(
+                text="Date", font=dict(color="#0f172a", size=12, weight="600")
+            ),
             showgrid=False,
             linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11, weight="600"),
             tickformat="%b %d",
             rangeslider=dict(visible=True, thickness=0.08),
         ),
-        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
+        yaxis=dict(
+            title=dict(
+                text="pH Level",
+                font=dict(color="#0f172a", size=11, weight="600"),
+            ),
+            tickfont=dict(color="#0f172a", size=10, weight="600"),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
         margin=dict(l=30, r=30, t=30, b=60),
         height=380,
     )
@@ -812,12 +824,24 @@ elif selected_page == "Discharge Compliance":
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
         xaxis=dict(
+            title=dict(
+                text="Date", font=dict(color="#0f172a", size=12, weight="600")
+            ),
             showgrid=False,
             linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11, weight="600"),
             tickformat="%b %d",
             rangeslider=dict(visible=True, thickness=0.08),
         ),
-        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
+        yaxis=dict(
+            title=dict(
+                text="Turbidity (NTU)",
+                font=dict(color="#0f172a", size=11, weight="600"),
+            ),
+            tickfont=dict(color="#0f172a", size=10, weight="600"),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
         margin=dict(l=30, r=30, t=30, b=60),
         height=380,
     )
@@ -988,36 +1012,14 @@ elif selected_page == "River Water Quality":
     net_ph = ds_ph_latest - us_ph_latest
     net_ntu = ds_ntu_latest - us_ntu_latest
 
-    row1_c1, row1_c2 = st.columns(2)
-    with row1_c1:
-      st.metric(
-          label="pH Level (Upstream vs Downstream Latest Avg)",
-          value=f"Upstream: {us_ph_latest}  |  Downstream: {ds_ph_latest}",
-      )
-    with row1_c2:
-      st.metric(
-          label="Turbidity (Upstream vs Downstream Latest Avg)",
-          value=(
-              f"Upstream: {us_ntu_latest} NTU  |  Downstream:"
-              f" {ds_ntu_latest} NTU"
-          ),
-      )
-
-    row2_c1, row2_c2 = st.columns(2)
-    with row2_c1:
-      st.metric(
-          label="Net Impact (pH)",
-          value=f"{net_ph:+.2f}",
-          delta="Acidic Shift" if net_ph < 0 else "Alkaline Shift",
-          delta_color="inverse" if net_ph < 0 else "normal",
-      )
-    with row2_c2:
-      st.metric(
-          label="Net Impact (Turbidity)",
-          value=f"{net_ntu:+.1f} NTU",
-          delta="Silt Addition" if net_ntu > 0 else "Clearer",
-          delta_color="inverse" if net_ntu > 0 else "normal",
-      )
+    # Responsive metrics grid untuk telefon
+    m1, m2 = st.columns(2)
+    with m1:
+      st.metric(label="Upstream pH (Latest)", value=us_ph_latest)
+      st.metric(label="Net Impact (pH)", value=f"{net_ph:+.2f}", delta="Acidic Shift" if net_ph < 0 else "Alkaline Shift", delta_color="inverse" if net_ph < 0 else "normal")
+    with m2:
+      st.metric(label="Downstream pH (Latest)", value=ds_ph_latest)
+      st.metric(label="Net Impact (Turbidity)", value=f"{net_ntu:+.1f} NTU", delta="Silt Addition" if net_ntu > 0 else "Clearer", delta_color="inverse" if net_ntu > 0 else "normal")
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("pH of Sg. Duri")
@@ -1053,12 +1055,24 @@ elif selected_page == "River Water Quality":
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
         xaxis=dict(
+            title=dict(
+                text="Date", font=dict(color="#0f172a", size=12, weight="600")
+            ),
             showgrid=False,
             linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11, weight="600"),
             tickformat="%b %d",
             rangeslider=dict(visible=True, thickness=0.08),
         ),
-        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
+        yaxis=dict(
+            title=dict(
+                text="pH Level",
+                font=dict(color="#0f172a", size=11, weight="600"),
+            ),
+            tickfont=dict(color="#0f172a", size=10, weight="600"),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
         margin=dict(l=30, r=30, t=30, b=60),
         height=380,
     )
@@ -1114,12 +1128,24 @@ elif selected_page == "River Water Quality":
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#0f172a", family="Inter", size=11),
         xaxis=dict(
+            title=dict(
+                text="Date", font=dict(color="#0f172a", size=12, weight="600")
+            ),
             showgrid=False,
             linecolor="#94a3b8",
+            tickfont=dict(color="#0f172a", size=11, weight="600"),
             tickformat="%b %d",
             rangeslider=dict(visible=True, thickness=0.08),
         ),
-        yaxis=dict(showgrid=True, gridcolor="rgba(100, 100, 100, 0.06)"),
+        yaxis=dict(
+            title=dict(
+                text="Turbidity (NTU)",
+                font=dict(color="#0f172a", size=11, weight="600"),
+            ),
+            tickfont=dict(color="#0f172a", size=10, weight="600"),
+            showgrid=True,
+            gridcolor="rgba(100, 100, 100, 0.06)",
+        ),
         margin=dict(l=30, r=30, t=30, b=60),
         height=380,
     )
