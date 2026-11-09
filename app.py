@@ -1,4 +1,5 @@
 import calendar
+import datetime
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -213,11 +214,27 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
 
-# Salinan data asal
 df = df_raw.copy()
 df_cases = df_cases_raw.copy()
 
-# 1. Filter Year (Dropdown tunggal)
+# Standardize status column in cases
+status_col = next((c for c in df_cases.columns if "status" in c.lower()), None)
+date_col = next(
+    (c for c in df_cases.columns if "date" in c.lower() or "raised" in c.lower()),
+    None,
+)
+issue_col = next((c for c in df_cases.columns if "issue" in c.lower()), None)
+loc_col = next((c for c in df_cases.columns if "location" in c.lower()), None)
+
+if status_col:
+  df_cases[status_col] = (
+      df_cases[status_col]
+      .astype(str)
+      .str.strip()
+      .replace({"Open": "No Action", "open": "No Action"})
+  )
+
+# 1. Filter Year
 years = sorted(df["Year"].unique(), reverse=True)
 selected_year = st.sidebar.selectbox(
     "Select Year", options=["All"] + list(years), index=1
@@ -225,8 +242,8 @@ selected_year = st.sidebar.selectbox(
 if selected_year != "All":
   df = df[df["Year"] == selected_year]
 
-# 2. Filter Month (Dropdown tunggal merangkumi SEMUA bulan dari January hingga December)
-all_months_options = list(calendar.month_name)[1:]  # January hingga December
+# 2. Filter Month (Dropdown tunggal Jan - Dec)
+all_months_options = list(calendar.month_name)[1:]
 default_month_idx = (
     all_months_options.index("October")
     if "October" in all_months_options
@@ -236,11 +253,10 @@ selected_month = st.sidebar.selectbox(
     "Select Month", options=all_months_options, index=default_month_idx
 )
 
-# Tapis data utama (df) mengikut bulan yang dipilih di dropdown
 if selected_month:
   df = df[df["Month"] == selected_month]
 
-# 3. Date Range DIKAWAL KETAT mengikut Bulan & Tahun yang dipilih di atas
+# 3. Date Range Terkawal mengikut Bulan & Tahun
 selected_year_int = (
     int(selected_year)
     if selected_year != "All"
@@ -252,20 +268,10 @@ selected_year_int = (
 )
 selected_month_num = list(calendar.month_name).index(selected_month)
 
-# Dapatkan hari pertama & hari terakhir untuk bulan & tahun tersebut
-import datetime
-
-import calendar
-
 num_days = calendar.monthrange(selected_year_int, selected_month_num)[1]
-month_start_date = datetime.date(
-    selected_year_int, selected_month_num, 1
-)
-month_end_date = datetime.date(
-    selected_year_int, selected_month_num, num_days
-)
+month_start_date = datetime.date(selected_year_int, selected_month_num, 1)
+month_end_date = datetime.date(selected_year_int, selected_month_num, num_days)
 
-# Paparkan date_input yang terkawal dalam bulan tersebut sahaja
 selected_date_range = st.sidebar.date_input(
     "Select Date Range",
     value=(month_start_date, month_end_date),
@@ -323,18 +329,13 @@ if selected_page == "Overview":
   last_sample_date = (
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
-  no_action_count = 0
-  if not df_cases.empty:
-    status_col = next(
-        (c for c in df_cases.columns if "status" in c.lower()), None
-    )
-    if status_col:
-      df_cases[status_col] = (
-          df_cases[status_col].astype(str).str.strip().replace("Open", "No Action")
-      )
-      no_action_count = df_cases[
-          df_cases[status_col].str.lower().str.contains("no action")
-      ].shape[0]
+
+  # Hitung jumlah Open Cases (No Action + Proposed in meeting) keseluruhan
+  open_cases_count = 0
+  if not df_cases.empty and status_col:
+    open_cases_count = df_cases[
+        df_cases[status_col].str.lower().isin(["no action", "proposed in meeting"])
+    ].shape[0]
 
   if not df.empty:
     valid_recs = df.dropna(subset=[f_ph, f_ntu])
@@ -382,7 +383,9 @@ if selected_page == "Overview":
     )
   with col2:
     st.metric(
-        label="No Action Cases", value=no_action_count, delta="Requires Action"
+        label="Open Cases",
+        value=open_cases_count,
+        delta="Requires Action / Review",
     )
   with col3:
     st.metric(label="Last Sample Date", value=last_sample_date)
@@ -1107,7 +1110,7 @@ elif selected_page == "River Water Quality":
     )
 
 # ==========================================
-# PAGE 4: CASES TRACKER (MATRIX TABLE + DONUT CHART MENGIKUT SIDEBAR FILTER)
+# PAGE 4: CASES TRACKER (WITH PREVIOUS OPEN CASES REMARKS)
 # ==========================================
 elif selected_page == "Cases Tracker":
   st.markdown(
@@ -1123,37 +1126,10 @@ elif selected_page == "Cases Tracker":
       unsafe_allow_html=True,
   )
 
-  if not df_cases.empty:
-    df_cases.columns = df_cases.columns.str.strip()
-    status_col = next(
-        (c for c in df_cases.columns if "status" in c.lower()), None
-    )
-    date_col = next(
-        (
-            c
-            for c in df_cases.columns
-            if "date" in c.lower() or "raised" in c.lower()
-        ),
-        None,
-    )
-    issue_col = next(
-        (c for c in df_cases.columns if "issue" in c.lower()), None
-    )
-    loc_col = next(
-        (c for c in df_cases.columns if "location" in c.lower()), None
-    )
-
-    if status_col:
-      df_cases[status_col] = (
-          df_cases[status_col]
-          .astype(str)
-          .str.strip()
-          .replace({"Open": "No Action", "open": "No Action"})
-      )
-
-    # Tapis df_cases mengikut tarikh filter sidebar yang dikawal ketat oleh dropdown Month
+  if not df_cases.empty and status_col and date_col:
+    # Tapis mengikut tarikh filter sidebar untuk bulan yang dipilih
     df_filtered_cases = df_cases.copy()
-    if date_col and len(selected_date_range) == 2:
+    if len(selected_date_range) == 2:
       s_date, e_date = selected_date_range
       df_filtered_cases = df_filtered_cases[
           (df_filtered_cases[date_col].dt.date >= s_date)
@@ -1166,20 +1142,23 @@ elif selected_page == "Cases Tracker":
     else:
       date_range_label = "All Records"
 
+    # KPI Hitungan untuk bulan yang dipilih
     total_cases = len(df_filtered_cases)
-    no_action_cases = (
+    open_cases_selected = (
         len(
             df_filtered_cases[
-                df_filtered_cases[status_col].str.lower().str.contains("no action")
+                df_filtered_cases[status_col]
+                .str.lower()
+                .isin(["no action", "proposed in meeting"])
             ]
         )
         if status_col
         else 0
     )
-    closed_cases = (
+    no_action_cases = (
         len(
             df_filtered_cases[
-                df_filtered_cases[status_col].str.lower().str.contains("closed")
+                df_filtered_cases[status_col].str.lower().str.contains("no action")
             ]
         )
         if status_col
@@ -1196,6 +1175,15 @@ elif selected_page == "Cases Tracker":
         if status_col
         else 0
     )
+    closed_cases = (
+        len(
+            df_filtered_cases[
+                df_filtered_cases[status_col].str.lower().str.contains("closed")
+            ]
+        )
+        if status_col
+        else 0
+    )
 
     # Kad KPI Kes
     c1, c2, c3, c4 = st.columns(4)
@@ -1203,7 +1191,9 @@ elif selected_page == "Cases Tracker":
       st.metric(label="Total Cases", value=total_cases, delta=date_range_label)
     with c2:
       st.metric(
-          label="No Action Cases", value=no_action_cases, delta="Requires Action"
+          label="Open Cases",
+          value=open_cases_selected,
+          delta="Requires Action / Review",
       )
     with c3:
       st.metric(
@@ -1225,7 +1215,7 @@ elif selected_page == "Cases Tracker":
     col_t, col_d = st.columns([1.2, 1])
 
     with col_t:
-      st.subheader("📋 Cases Summary Matrix Table")
+      st.subheader("📋 Cases Summary Matrix Table (Selected Period)")
       if not df_filtered_cases.empty and loc_col and issue_col and status_col:
         matrix_table = pd.crosstab(
             index=[df_filtered_cases[loc_col], df_filtered_cases[issue_col]],
@@ -1283,6 +1273,40 @@ elif selected_page == "Cases Tracker":
         )
       else:
         st.warning("No data available for donut chart in this date range.")
+
+    # ==========================================
+    # SEKSYEN KHAS: PREVIOUS OPEN CASES / REMARKS TABLE
+    # ==========================================
+    st.markdown("<br><hr><br>", unsafe_allow_html=True)
+    st.subheader(
+        "📌 Carried Forward / Unresolved Cases from Previous Months (Open Status)"
+    )
+    st.markdown(
+        "<p style='color: #64748b; font-size: 13px;'>Senarai kes dari"
+        " bulan-bulan sebelum tarikh mula yang dipilih, yang masih berstatus"
+        " <b>No Action</b> atau <b>Proposed in meeting</b>.</p>",
+        unsafe_allow_html=True,
+    )
+
+    if len(selected_date_range) == 2:
+      # Cari kes sebelum tarikh mula yang masih belum ditutup (Open)
+      prev_open_cases = df_cases[
+          (df_cases[date_col].dt.date < selected_date_range[0])
+          & (
+              df_cases[status_col]
+              .str.lower()
+              .isin(["no action", "proposed in meeting"])
+          )
+      ]
+
+      if not prev_open_cases.empty:
+        st.dataframe(prev_open_cases, use_container_width=True)
+      else:
+        st.success(
+            "Tiada kes tertunggak (open cases) dari bulan-bulan sebelum ini!"
+        )
+    else:
+      st.info("Sila pastikan julat tarikh dipilih dengan betul.")
 
   else:
     st.warning("No data found in Cases Tracker sheet.")
