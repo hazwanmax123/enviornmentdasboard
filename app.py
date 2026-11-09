@@ -1,3 +1,4 @@
+import calendar
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -212,10 +213,11 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
 
-# Gabung maklumat tarikh daripada kedua-dua sheet untuk julat sidebar yang lengkap
+# Salinan data asal
 df = df_raw.copy()
 df_cases = df_cases_raw.copy()
 
+# 1. Filter Year (Dropdown tunggal)
 years = sorted(df["Year"].unique(), reverse=True)
 selected_year = st.sidebar.selectbox(
     "Select Year", options=["All"] + list(years), index=1
@@ -223,44 +225,57 @@ selected_year = st.sidebar.selectbox(
 if selected_year != "All":
   df = df[df["Year"] == selected_year]
 
-# Gabung senarai bulan dari df & df_cases supaya bulan 9 (September) turut muncul
-all_months_list = list(df["Month"].dropna().unique())
-c_date_col_sidebar = next(
-    (
-        c
-        for c in df_cases.columns
-        if "date" in c.lower() or "raised" in c.lower()
-    ),
-    None,
+# 2. Filter Month (Dropdown tunggal merangkumi SEMUA bulan dari January hingga December)
+all_months_options = list(calendar.month_name)[1:]  # January hingga December
+default_month_idx = (
+    all_months_options.index("October")
+    if "October" in all_months_options
+    else 9
 )
-if c_date_col_sidebar and not df_cases.empty:
-  case_months = df_cases[c_date_col_sidebar].dt.strftime("%B").dropna().unique()
-  for m in case_months:
-    if m not in all_months_list:
-      all_months_list.append(m)
+selected_month = st.sidebar.selectbox(
+    "Select Month", options=all_months_options, index=default_month_idx
+)
 
-selected_month = st.sidebar.multiselect(
-    "Select Month", options=all_months_list, default=all_months_list
-)
+# Tapis data utama (df) mengikut bulan yang dipilih di dropdown
 if selected_month:
-  df = df[df["Month"].isin(selected_month)]
+  df = df[df["Month"] == selected_month]
 
-# Cari julat tarikh minimum & maksimum merangkumi kedua-dua sheet
-all_dates = list(df["Date"].dropna())
-if c_date_col_sidebar and not df_cases.empty:
-  all_dates.extend(list(df_cases[c_date_col_sidebar].dropna()))
+# 3. Date Range DIKAWAL KETAT mengikut Bulan & Tahun yang dipilih di atas
+selected_year_int = (
+    int(selected_year)
+    if selected_year != "All"
+    else (
+        df["Year"].max()
+        if not df.empty
+        else pd.Timestamp.now().year
+    )
+)
+selected_month_num = list(calendar.month_name).index(selected_month)
 
-if all_dates:
-  min_d = min(all_dates).date()
-  max_d = max(all_dates).date()
-  selected_date_range = st.sidebar.date_input(
-      "Select Date Range", value=(min_d, max_d), min_value=min_d, max_value=max_d
-  )
-  if len(selected_date_range) == 2:
-    s_date, e_date = selected_date_range
-    df = df[(df["Date"].dt.date >= s_date) & (df["Date"].dt.date <= e_date)]
-else:
-  selected_date_range = ()
+# Dapatkan hari pertama & hari terakhir untuk bulan & tahun tersebut
+import datetime
+
+import calendar
+
+num_days = calendar.monthrange(selected_year_int, selected_month_num)[1]
+month_start_date = datetime.date(
+    selected_year_int, selected_month_num, 1
+)
+month_end_date = datetime.date(
+    selected_year_int, selected_month_num, num_days
+)
+
+# Paparkan date_input yang terkawal dalam bulan tersebut sahaja
+selected_date_range = st.sidebar.date_input(
+    "Select Date Range",
+    value=(month_start_date, month_end_date),
+    min_value=month_start_date,
+    max_value=month_end_date,
+)
+
+if len(selected_date_range) == 2:
+  s_date, e_date = selected_date_range
+  df = df[(df["Date"].dt.date >= s_date) & (df["Date"].dt.date <= e_date)]
 
 # ==========================================
 # GLOBAL VARIABLE DEFINITIONS (FDP)
@@ -1136,7 +1151,7 @@ elif selected_page == "Cases Tracker":
           .replace({"Open": "No Action", "open": "No Action"})
       )
 
-    # Tapis df_cases mengikut tarikh filter sidebar (selected_date_range)
+    # Tapis df_cases mengikut tarikh filter sidebar yang dikawal ketat oleh dropdown Month
     df_filtered_cases = df_cases.copy()
     if date_col and len(selected_date_range) == 2:
       s_date, e_date = selected_date_range
