@@ -195,6 +195,7 @@ with st.sidebar:
           "Discharge Compliance",
           "River Water Quality",
           "Cases Tracker",
+          "Monthly Monitoring Map",
       ],
       label_visibility="collapsed",
   )
@@ -1334,3 +1335,149 @@ elif selected_page == "Cases Tracker":
 
   else:
     st.warning("No data found in Cases Tracker sheet.")
+
+# ==========================================
+# PAGE 5: MONTHLY MONITORING (INTERACTIVE MAP)
+# ==========================================
+elif selected_page == "Monthly Monitoring Map":
+  st.markdown(
+      "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
+      " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA"
+      " Sampling Stations Map</h1>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
+      " 25px; font-family: Inter, sans-serif;'>Spatial map of WQ1 – WQ8, Final"
+      " Discharge, GW, and ANV monitoring points.</p>",
+      unsafe_allow_html=True,
+  )
+
+  # Data koordinat rasmi EIA
+  map_data = pd.DataFrame({
+      "Station": [
+          "WQ1",
+          "WQ2",
+          "WQ3",
+          "WQ4",
+          "WQ5",
+          "WQ6",
+          "WQ7",
+          "WQ8",
+          "Final Discharge",
+          "GW",
+          "ANV",
+      ],
+      "lat": [
+          5.63544,
+          5.63369,
+          5.63216,
+          5.62686,
+          5.62983,
+          5.62416,
+          5.62293,
+          5.61956,
+          5.63367,
+          5.63561,
+          5.63692,
+      ],
+      "lon": [
+          101.05941,
+          101.05975,
+          101.07157,
+          101.07851,
+          101.08350,
+          101.07847,
+          101.07244,
+          101.08815,
+          101.07182,
+          101.07193,
+          101.09836,
+      ],
+      "Type": [
+          "River Monitoring Point",
+          "River Monitoring Point",
+          "River Monitoring Point",
+          "River Monitoring Point",
+          "River Monitoring Point",
+          "River Monitoring Point",
+          "River Monitoring Point",
+          "River Monitoring Point",
+          "Final Discharge Point",
+          "Groundwater Station",
+          "Ambient Noise & Air Station",
+      ],
+  })
+
+  selected_station = st.selectbox(
+      "📍 Pilih Stesen Pemantauan untuk Paparan Lokasi & Result:",
+      options=map_data["Station"].tolist(),
+  )
+
+  station_info = map_data[map_data["Station"] == selected_station].iloc[0]
+
+  c_m1, c_m2, c_m3 = st.columns(3)
+  with c_m1:
+    st.metric(label="Selected Station", value=station_info["Station"])
+  with c_m2:
+    st.metric(label="Station Category", value=station_info["Type"])
+  with c_m3:
+    st.metric(
+        label="Coordinates",
+        value=f"{station_info['lat']:.5f}° N, {station_info['lon']:.5f}° E",
+    )
+
+  st.markdown("<br>", unsafe_allow_html=True)
+
+  # Peta Interaktif Streamlit
+  st.map(
+      pd.DataFrame(
+          {
+              "lat": [station_info["lat"]],
+              "lon": [station_info["lon"]],
+          }
+      ),
+      zoom=14,
+      size=60,
+      color="#0284c7",
+  )
+
+  st.markdown("<br>", unsafe_allow_html=True)
+  st.subheader(
+      f"📈 Keputusan Analisis Parameter Bulanan — Stesen {selected_station}"
+  )
+
+  st.info(
+      f"ℹ️ Keputusan makmal untuk stesen **{selected_station}** bersedia"
+      " disambungkan ke Google Sheets bulanan."
+  )
+
+  # Placeholder Table Parameter
+  dummy_results = pd.DataFrame({
+      "Parameter": [
+          "pH Level",
+          "Turbidity (NTU)",
+          "Total Suspended Solids - TSS (mg/L)",
+          "Iron - Fe (mg/L)",
+          "Arsenic - As (mg/L)",
+          "Biological Oxygen Demand - BOD5 (mg/L)",
+      ],
+      "Baseline Limit (EIA Standard)": [
+          "6.0 - 9.0",
+          "< 250 NTU",
+          "< 50 mg/L",
+          "< 5.0 mg/L",
+          "< 0.05 mg/L",
+          "< 20 mg/L",
+      ],
+      "Latest Reading": [
+          "Pending",
+          "Pending",
+          "Pending",
+          "Pending",
+          "Pending",
+          "Pending",
+      ],
+      "Status": ["No Data", "No Data", "No Data", "No Data", "No Data", "No Data"],
+  })
+  st.table(dummy_results)
