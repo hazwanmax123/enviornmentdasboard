@@ -329,29 +329,22 @@ if selected_page == "Overview":
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
 
-  # HITUNG KESELURUHAN OPEN CASES (TANPA DITAPIS SIDEBAR)
+ # Hitung keseluruhan Open Cases merentas SEMUA bulan (TIDAK terikat dengan sidebar filter)
   open_cases_count = 0
   if not df_cases_raw.empty:
     raw_status_col = next(
         (c for c in df_cases_raw.columns if "status" in c.lower()), None
     )
     if raw_status_col:
-      df_cases_raw[raw_status_col] = (
+      # Bersihkan dan seragamkan teks status supaya tepat
+      cleaned_status = (
           df_cases_raw[raw_status_col]
           .astype(str)
           .str.strip()
-          .replace(
-              {
-                  "Open": "No action",
-                  "open": "No action",
-                  "No Action": "No action",
-              }
-          )
+          .str.lower()
       )
       open_cases_count = df_cases_raw[
-          df_cases_raw[raw_status_col]
-          .str.lower()
-          .isin(["no action", "proposed in meeting"])
+          cleaned_status.isin(["no action", "proposed in meeting"])
       ].shape[0]
 
   if not df.empty:
