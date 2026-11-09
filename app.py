@@ -209,7 +209,7 @@ with st.sidebar:
           "Discharge Compliance",
           "River Water Quality",
           "Cases Tracker",
-          "Monthly Monitoring Map",
+          "Monthly Monitoring Record",
       ],
       label_visibility="collapsed",
   )
