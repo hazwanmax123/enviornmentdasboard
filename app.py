@@ -403,7 +403,7 @@ if selected_page == "Overview":
 
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
-      "📋 Station Status by Parameter (Latest Sample - Using Avg Columns)"
+      "📋 Station Status by Parameter (Latest Sample)"
   )
 
   if not df.empty:
