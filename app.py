@@ -311,7 +311,7 @@ if not f_ntu:
 if selected_page == "Overview":
   # Paparkan gambar Header_bg.jpg dengan selamat dan kemas
   try:
-    st.image("Header_bg.JPG, use_container_width=True)
+    st.image("Header_bg.JPG", use_container_width=True)
   except:
     pass
 
