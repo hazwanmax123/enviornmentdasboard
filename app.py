@@ -373,12 +373,13 @@ def generate_word_report(
 
   summary_text = (
       f"Laporan pemantauan alam sekitar bagi tapak perlombongan RBA Engineering"
-      f" (ML087) ini merangkumi data dari tarikh {start_date.strftime('%d %b"
-      f" %Y')} sehingga {end_date.strftime('%d %b %Y')}. "
-      f"Secara keseluruhan, kadar pematuhan pelepasan akhir (Discharge Compliance)"
-      f" bagi tempoh yang dipilih adalah pada tahap {compliance_rate:.1f}%. "
-      f"Terdapat sejumlah {open_cases} kes terbuka/tertunggak yang memerlukan"
-      f" tindakan segera daripada pihak pengurusan tapak."
+      f" (ML087) ini merangkumi data dari tarikh"
+      f" {start_date.strftime('%d %b %Y')} sehingga"
+      f" {end_date.strftime('%d %b %Y')}. Secara keseluruhan, kadar pematuhan"
+      f" pelepasan akhir (Discharge Compliance) bagi tempoh yang dipilih"
+      f" adalah pada tahap {compliance_rate:.1f}%. Terdapat sejumlah"
+      f" {open_cases} kes terbuka/tertunggak yang memerlukan tindakan segera"
+      f" daripada pihak pengurusan tapak."
   )
   doc.add_paragraph(summary_text)
 
