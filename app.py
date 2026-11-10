@@ -339,7 +339,7 @@ if not f_ntu:
 
 
 # ==========================================
-# FUNCTION: GENERATE COMPREHENSIVE WORD REPORT (AI-POWERED ANALYSIS)
+# FUNCTION: GENERATE COMPREHENSIVE WORD REPORT
 # ==========================================
 def generate_comprehensive_word_report(
     df_filtered,
@@ -381,29 +381,32 @@ def generate_comprehensive_word_report(
 
   doc.add_paragraph()
 
-  # SECTION 1: EXECUTIVE SUMMARY
-  h1 = doc.add_heading(level=1)
-  h1.add_run(
-      "1. Executive Summary & Compliance Overview",
-      attributes={"font.name": "Inter"},
-  )
+  # Helper untuk tambah heading dengan gaya seragam
+  def add_custom_heading(text):
+    h = doc.add_heading(level=1)
+    run = h.add_run(text)
+    run.font.name = "Inter"
+    run.font.size = Pt(12)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(2, 132, 199)
+    return h
 
+  # SECTION 1: EXECUTIVE SUMMARY
+  add_custom_heading("1. Executive Summary & Compliance Overview")
   summary_text = (
       f"Laporan pemantauan alam sekitar bersepadu bagi tapak perlombongan bijih"
       f" timah RBA Engineering (ML087) ini merangkumi analisis penuh merentas"
       f" semua modul pemantauan dari tarikh {start_date.strftime('%d %b %Y')}"
       f" hingga {end_date.strftime('%d %b %Y')}. Secara keseluruhan, kadar"
       f" pematuhan pelepasan akhir (Discharge Compliance) berada pada tahap"
-      f" {compliance_rate:.1f}%. Analisis AI mendapati prestasi kawalan"
-      f" kelodak dan keasidan air memerlukan perhatian berterusan bagi"
-      f" memastikan pematuhan ketat piawaian JAS."
+      f" {compliance_rate:.1f}%. Analisis mendapati prestasi kawalan kelodak"
+      f" dan keasidan air memerlukan perhatian berterusan bagi memastikan"
+      f" pematuhan ketat piawaian JAS."
   )
   doc.add_paragraph(summary_text)
 
   # SECTION 2: DISCHARGE COMPLIANCE ANALYSIS
-  h2 = doc.add_heading(level=1)
-  h2.add_run("2. Final Discharge (FDP) Compliance Analysis")
-
+  add_custom_heading("2. Final Discharge (FDP) Compliance Analysis")
   if not df_filtered.empty:
     ph_min = df_filtered[f_ph].min()
     ntu_max = df_filtered[f_ntu].max()
@@ -412,9 +415,7 @@ def generate_comprehensive_word_report(
         f" (FDP) dicatatkan pada paras {ph_min:.2f}, manakala bacaan maksimum"
         f" Turbiditi (NTU) mencecah {ntu_max:.1f} NTU. Tren AM dan PM"
         f" menunjukkan variasi harian yang dipengaruhi oleh aktiviti lombong"
-        f" serta taburan hujan semasa. Kawalan dos agen penawar (neutralizer)"
-        f" perlu dioptimumkan pada waktu petang (PM) apabila beban kelodak"
-        f" meningkat."
+        f" serta taburan hujan semasa."
     )
     doc.add_paragraph(discharge_analysis)
   else:
@@ -423,9 +424,9 @@ def generate_comprehensive_word_report(
     )
 
   # SECTION 3: RIVER WATER QUALITY (US vs DS)
-  h3 = doc.add_heading(level=1)
-  h3.add_run("3. River Water Quality Impact (Sg. Duri Upstream vs Downstream)")
-
+  add_custom_heading(
+      "3. River Water Quality Impact (Sg. Duri Upstream vs Downstream)"
+  )
   us_ph_avg = (
       df_filtered[
           [
@@ -452,48 +453,37 @@ def generate_comprehensive_word_report(
       if not df_filtered.empty
       else 0
   )
-
   river_analysis = (
       f"Analisis perbandingan air Sungai Duri menunjukkan purata pH hulu"
       f" (Upstream) adalah sekitar {us_ph_avg:.2f} berbanding hilir"
       f" (Downstream) pada paras {ds_ph_avg:.2f}. Perubahan net-impact ini"
-      f" merumuskan sejauh mana keberkesanan kolam perangkap kelodak (BMP)"
-      f" dalam menampan limpahan perlombongan sebelum air sungai"
-      f" meninggalkan sempadan tapak operasi ML087."
+      f" merumuskan keberkesanan struktur perangkap kelodak (BMP) dalam"
+      f" menampan limpahan aktiviti perlombongan."
   )
   doc.add_paragraph(river_analysis)
 
   # SECTION 4: CASES TRACKER & INCIDENTS
-  h4 = doc.add_heading(level=1)
-  h4.add_run("4. Environmental Cases & Incident Management Summary")
-
-  open_cases_count = open_cases
+  add_custom_heading("4. Environmental Cases & Incident Management Summary")
   cases_analysis = (
       f"Berdasarkan sistem penjejakan kes (Cases Tracker), terdapat sejumlah"
-      f" {open_cases_count} kes aktif atau tertunggak yang memerlukan tindakan"
-      f" pembaikan segera di lapangan. Pemantauan rapi terhadap struktur"
-      f" perparitan dan penyelenggaraan kolam kelodak dicadangkan bagi"
-      f" mengelakkan berulangnya isu ketidakpatuhan."
+      f" {open_cases} kes terbuka atau tertunggak yang memerlukan tindakan"
+      f" pembaikan segera di lapangan. Pemantauan rapi terhadap perparitan dan"
+      f" kolam kawalan sangat diutamakan."
   )
   doc.add_paragraph(cases_analysis)
 
   # SECTION 5: MONTHLY SAMPLING STATIONS STATUS
-  h5 = doc.add_heading(level=1)
-  h5.add_run("5. Monthly Sampling & Station Status Summary")
-
+  add_custom_heading("5. Monthly Sampling & Station Status Summary")
   monthly_summary_text = (
       f"Pemantauan stesen persampelan bulanan (WQ1 hingga WQ8, Final Discharge,"
       f" GW, dan ANV) diselaraskan terus melalui pangkalan data lapangan."
       f" Stesen yang berada dalam status 'Lab Pending' sedang melalui proses"
-      f" analisis makmal berwajib, manakala stesen aktif mempamerkan tren parameter"
-      f" yang stabil."
+      f" analisis makmal berwajib."
   )
   doc.add_paragraph(monthly_summary_text)
 
-  # TABLE DATA LOG
-  h6 = doc.add_heading(level=1)
-  h6.add_run("6. Raw Data Log Sample (Selected Period)")
-
+  # SECTION 6: RAW DATA LOG TABLE
+  add_custom_heading("6. Raw Data Log Sample (Selected Period)")
   if not df_filtered.empty:
     cols_to_show = [
         c
