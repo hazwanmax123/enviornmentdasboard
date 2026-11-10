@@ -46,7 +46,6 @@ st.markdown(
         font-family: 'Inter', sans-serif;
     }
 
-    /* BUTTON STYLE DALAM SIDEBAR (BIRU KORPORAT & JELAS) */
     [data-testid="stSidebar"] .stButton button {
         background-color: #0284c7 !important;
         color: #ffffff !important;
@@ -199,6 +198,34 @@ try:
 except Exception as e:
   st.error(f"Error loading data: {e}")
   st.stop()
+
+# ==========================================
+# GLOBAL VARIABLE DEFINITIONS (FDP)
+# ==========================================
+f_ph = next(
+    (
+        c
+        for c in df_raw.columns
+        if "ph" in c.lower()
+        and ("fdp" in c.lower() or "discharge" in c.lower())
+    ),
+    None,
+)
+if not f_ph:
+  f_ph = [c for c in df_raw.columns if "ph" in c.lower()][-1]
+
+f_ntu = next(
+    (
+        c
+        for c in df_raw.columns
+        if ("ntu" in c.lower() or "turb" in c.lower())
+        and ("fdp" in c.lower() or "discharge" in c.lower())
+    ),
+    None,
+)
+if not f_ntu:
+  f_ntu = [c for c in df_raw.columns if "ntu" in c.lower()][-1]
+
 
 # ==========================================
 # FUNCTION: GENERATE COMPREHENSIVE WORD REPORT
@@ -387,7 +414,6 @@ with st.sidebar:
   st.markdown("---")
 
   # 1. BUTANG DOWNLOAD REPORT DILETAK ATAS SEKALI (DI BAWAH LOGO)
-  # Hitung nilai pematuhan awal untuk report
   last_sample_date = (
       df_raw["Date"].max().strftime("%d %b %Y") if not df_raw.empty else "N/A"
   )
@@ -408,17 +434,14 @@ with st.sidebar:
           temp_status.isin(["no_action", "proposed in meeting", "open"])
       ].shape[0]
 
-  # Variabel sementara untuk butang download di sidebar
   temp_df_eval = df_raw.copy()
-  f_ph_temp = [c for c in temp_df_eval.columns if "ph" in c.lower()][-1]
-  f_ntu_temp = [c for c in temp_df_eval.columns if "ntu" in c.lower()][-1]
   if not temp_df_eval.empty:
-    v_recs = temp_df_eval.dropna(subset=[f_ph_temp, f_ntu_temp])
+    v_recs = temp_df_eval.dropna(subset=[f_ph, f_ntu])
     c_count = (
         v_recs[
-            (v_recs[f_ph_temp] >= 6.0)
-            & (v_recs[f_ph_temp] <= 9.0)
-            & (v_recs[f_ntu_temp] <= 50.0)
+            (v_recs[f_ph] >= 6.0)
+            & (v_recs[f_ph] <= 9.0)
+            & (v_recs[f_ntu] <= 50.0)
         ].shape[0]
         if not v_recs.empty
         else 0
@@ -521,7 +544,7 @@ selected_year = st.sidebar.selectbox(
 if selected_year != "All":
   df = df[df["Year"] == selected_year]
 
-# 2. Filter Month (Auto-detect bulan semasa supaya bukan bulan 10 lagi!)
+# 2. Filter Month (Auto-detect bulan semasa)
 all_months_options = list(calendar.month_name)[1:]
 current_month_name = datetime.date.today().strftime("%B")
 default_month_idx = (
@@ -547,7 +570,6 @@ selected_month_num = list(calendar.month_name).index(selected_month)
 
 num_days = calendar.monthrange(selected_year_int, selected_month_num)[1]
 month_start_date = datetime.date(selected_year_int, selected_month_num, 1)
-# Jika bulan semasa, hadkan end date ke hari ini, jika bulan lain ambil akhir bulan
 today_d = datetime.date.today()
 if (
     selected_year_int == today_d.year
@@ -568,33 +590,6 @@ selected_date_range = st.sidebar.date_input(
 if len(selected_date_range) == 2:
   s_date, e_date = selected_date_range
   df = df[(df["Date"].dt.date >= s_date) & (df["Date"].dt.date <= e_date)]
-
-# ==========================================
-# GLOBAL VARIABLE DEFINITIONS (FDP)
-# ==========================================
-f_ph = next(
-    (
-        c
-        for c in df.columns
-        if "ph" in c.lower()
-        and ("fdp" in c.lower() or "discharge" in c.lower())
-    ),
-    None,
-)
-if not f_ph:
-  f_ph = [c for c in df.columns if "ph" in c.lower()][-1]
-
-f_ntu = next(
-    (
-        c
-        for c in df.columns
-        if ("ntu" in c.lower() or "turb" in c.lower())
-        and ("fdp" in c.lower() or "discharge" in c.lower())
-    ),
-    None,
-)
-if not f_ntu:
-  f_ntu = [c for c in df.columns if "ntu" in c.lower()][-1]
 
 
 # ==========================================
@@ -1629,18 +1624,12 @@ elif selected_page == "Cases Tracker":
 # ==========================================
 # PAGE 5: MONTHLY MONITORING (DYNAMIC MAP)
 # ==========================================
-elif selected_page == "Monthly Monitoring Map":
+elif selected_page == "Monthly Monitoring Record":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
       " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA"
-      " Master Topography Map</h1>",
       unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>Data terkini terus dari Google"
-      " Sheet Monthly Sampling.</p>",
-      unsafe_allow_html=True,
+ 
   )
 
   master_coords = {
