@@ -1,5 +1,8 @@
 import calendar
 import datetime
+import io
+from docx import Document
+from docx.shared import Inches, Pt, RGBColor
 import folium
 import pandas as pd
 import plotly.express as px
@@ -125,7 +128,10 @@ CASES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqG
 MONTHLY_SAMPLING_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=1267713168&single=true&output=csv"
 
 
-@st.cache_data
+# ==========================================
+# DATA LOADING DENGAN TTL CACHE (Auto-refresh)
+# ==========================================
+@st.cache_data(ttl=60)
 def load_data():
   df = pd.read_csv(CSV_URL)
   df.columns = df.columns.str.strip()
@@ -145,6 +151,7 @@ def load_data():
   return df
 
 
+@st.cache_data(ttl=60)
 def load_cases_data():
   df_cases = pd.read_csv(CASES_CSV_URL)
   df_cases.columns = df_cases.columns.str.strip()
@@ -161,7 +168,7 @@ def load_cases_data():
   return df_cases
 
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def load_monthly_sampling_data():
   try:
     df_m = pd.read_csv(MONTHLY_SAMPLING_CSV_URL)
@@ -195,6 +202,12 @@ with st.sidebar:
   )
   st.markdown("---")
 
+  # BUTANG MANUAL REFRESH
+  if st.button("🔄 Refresh Data Terkini", use_container_width=True):
+    st.cache_data.clear()
+    st.rerun()
+
+  st.markdown("---")
   st.markdown(
       "<p"
       " style='font-size: 12px; font-weight: 700; color: #38bdf8;"
@@ -209,7 +222,7 @@ with st.sidebar:
           "Discharge Compliance",
           "River Water Quality",
           "Cases Tracker",
-          "Monthly Monitoring Record",
+          "Monthly Monitoring Map",
       ],
       label_visibility="collapsed",
   )
@@ -311,6 +324,106 @@ f_ntu = next(
 if not f_ntu:
   f_ntu = [c for c in df.columns if "ntu" in c.lower()][-1]
 
+
+# ==========================================
+# FUNCTION: GENERATE WORD REPORT
+# ==========================================
+def generate_word_report(
+    df_filtered,
+    start_date,
+    end_date,
+    sel_month,
+    sel_year,
+    compliance_rate,
+    open_cases,
+):
+  doc = Document()
+  for section in doc.sections:
+    section.top_margin = Inches(1)
+    section.bottom_margin = Inches(1)
+    section.left_margin = Inches(1)
+    section.right_margin = Inches(1)
+
+  p_title = doc.add_paragraph()
+  run_title = p_title.add_run(
+      "RBA ENGINEERING SDN BHD (TIN MINING ML087)\nEXECUTIVE ENVIRONMENTAL"
+      " MONITORING REPORT"
+  )
+  run_title.font.name = "Inter"
+  run_title.font.size = Pt(14)
+  run_title.font.bold = True
+  run_title.font.color.rgb = RGBColor(15, 23, 42)
+
+  p_sub = doc.add_paragraph()
+  run_sub = p_sub.add_run(
+      f"Reporting Period: {start_date.strftime('%d %b %Y')} to"
+      f" {end_date.strftime('%d %b %Y')} ({sel_month} {sel_year})"
+  )
+  run_sub.font.name = "Inter"
+  run_sub.font.size = Pt(10)
+  run_sub.font.color.rgb = RGBColor(100, 116, 139)
+
+  doc.add_paragraph()
+
+  h1 = doc.add_heading(level=1)
+  h1_run = h1.add_run("1. Executive Summary & Compliance Overview")
+  h1_run.font.name = "Inter"
+  h1_run.font.size = Pt(12)
+  h1_run.font.color.rgb = RGBColor(2, 132, 199)
+
+  summary_text = (
+      f"Laporan pemantauan alam sekitar bagi tapak perlombongan RBA Engineering"
+      f" (ML087) ini merangkumi data dari tarikh {start_date.strftime('%d %b"
+      f" %Y')} sehingga {end_date.strftime('%d %b %Y')}. "
+      f"Secara keseluruhan, kadar pematuhan pelepasan akhir (Discharge Compliance)"
+      f" bagi tempoh yang dipilih adalah pada tahap {compliance_rate:.1f}%. "
+      f"Terdapat sejumlah {open_cases} kes terbuka/tertunggak yang memerlukan"
+      f" tindakan segera daripada pihak pengurusan tapak."
+  )
+  doc.add_paragraph(summary_text)
+
+  h2 = doc.add_heading(level=1)
+  h2_run = h2.add_run("2. Summary Data Log (Selected Range)")
+  h2_run.font.name = "Inter"
+  h2_run.font.size = Pt(12)
+  h2_run.font.color.rgb = RGBColor(2, 132, 199)
+
+  if not df_filtered.empty:
+    cols_to_show = [
+        c
+        for c in ["Date", "Month", f_ph, f_ntu, "NTU Limit"]
+        if c in df_filtered.columns
+    ]
+    sub_df = df_filtered[cols_to_show].head(15)
+
+    table = doc.add_table(rows=1, cols=len(cols_to_show))
+    table.style = "Table Grid"
+
+    hdr_cells = table.rows[0].cells
+    for i, col_name in enumerate(cols_to_show):
+      hdr_cells[i].text = str(col_name)
+
+    for _, row in sub_df.iterrows():
+      row_cells = table.add_row().cells
+      for i, col_name in enumerate(cols_to_show):
+        val = row[col_name]
+        if pd.isna(val):
+          row_cells[i].text = "-"
+        elif isinstance(val, pd.Timestamp):
+          row_cells[i].text = val.strftime("%Y-%m-%d")
+        else:
+          row_cells[i].text = str(val)
+  else:
+    doc.add_paragraph(
+        "Tiada rekod data terperinci dijumpai untuk julat tarikh ini."
+    )
+
+  file_stream = io.BytesIO()
+  doc.save(file_stream)
+  file_stream.seek(0)
+  return file_stream
+
+
 # ==========================================
 # PAGE 1: OVERVIEW
 # ==========================================
@@ -407,6 +520,30 @@ if selected_page == "Overview":
     st.metric(label="Last Sample Date", value=last_sample_date)
   with col4:
     st.metric(label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%")
+
+  st.markdown("<br>", unsafe_allow_html=True)
+
+  # BUTANG DOWNLOAD WORD REPORT DALAM OVERVIEW
+  if len(selected_date_range) == 2:
+    word_file = generate_word_report(
+        df,
+        selected_date_range[0],
+        selected_date_range[1],
+        selected_month,
+        selected_year,
+        compliance_rate,
+        open_cases_count,
+    )
+    st.download_button(
+        label="📥 Muat Turun Laporan Rasmi (Word Document)",
+        data=word_file,
+        file_name=(
+            f"RBA_EIA_Report_{selected_month}_{selected_year}_{selected_date_range[0]}_to_{selected_date_range[1]}.docx"
+        ),
+        mime=(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ),
+    )
 
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
@@ -1345,16 +1482,18 @@ elif selected_page == "Cases Tracker":
     st.warning("No data found in Cases Tracker sheet.")
 
 # ==========================================
-# PAGE 5: MONTHLY MONITORING (DYNAMIC FROM GOOGLE SHEET)
+# PAGE 5: MONTHLY MONITORING (DYNAMIC MAP)
 # ==========================================
-elif selected_page == "Monthly Monitoring Record":
+elif selected_page == "Monthly Monitoring Map":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA",
+      " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA"
+      " Master Topography Map</h1>",
       unsafe_allow_html=True,
   )
   st.markdown(
       "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
+      " 25px; font-family: Inter, sans-serif;'>Data terkini terus dari Google"
       " Sheet Monthly Sampling.</p>",
       unsafe_allow_html=True,
   )
@@ -1382,13 +1521,11 @@ elif selected_page == "Monthly Monitoring Record":
 
   st_lat, st_lon, st_type = master_coords[selected_station]
 
-  # Baca baris stesen dan Status dari sheet Monthly Sampling
   station_data = pd.DataFrame()
   raw_status_val = "Not Active"
 
   try:
     if not df_monthly_raw.empty:
-      # Cari kolum 'Station Id' atau yang berkaitan
       stat_id_col = next(
           (c for c in df_monthly_raw.columns if "station" in c.lower()), None
       )
@@ -1410,17 +1547,9 @@ elif selected_page == "Monthly Monitoring Record":
             raw_status_val = str(
                 matched_rows[stat_status_col].iloc[0]
             ).strip()
-  except Exception as err:
+  except Exception:
     pass
 
-  # Tentukan status warna penanda peta berdasarkan Status dalam Sheet
-  # Kalau status diletakkan "Lab Pending" atau mengandungi "Active", kita anggap Active (Hijau). Kalau "Not Active", Merah.
-  is_active_status = (
-      "active" in raw_status_val.lower()
-      or "pending" in raw_status_val.lower()
-  )
-
-  # Bina Peta Folium
   m = folium.Map(
       location=[st_lat, st_lon],
       zoom_start=14,
