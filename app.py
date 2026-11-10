@@ -413,7 +413,7 @@ with st.sidebar:
   )
   st.markdown("---")
 
-  # 1. BUTANG DOWNLOAD REPORT DILETAK ATAS SEKALI (DI BAWAH LOGO)
+  # BUTANG DOWNLOAD REPORT DI ATAS SEKALI
   last_sample_date = (
       df_raw["Date"].max().strftime("%d %b %Y") if not df_raw.empty else "N/A"
   )
@@ -499,7 +499,7 @@ with st.sidebar:
           "Discharge Compliance",
           "River Water Quality",
           "Cases Tracker",
-          "Monthly Monitoring Map",
+          "Monthly Monitoring Record",
       ],
       label_visibility="collapsed",
   )
@@ -529,7 +529,7 @@ if status_col:
       df_cases[status_col].astype(str).str.strip().str.title()
   )
 
-# 1. Filter Year (Auto-detect tahun semasa / terkini dalam data)
+# 1. Filter Year (Auto-detect tahun semasa)
 years = sorted(df["Year"].unique(), reverse=True)
 current_year_val = datetime.date.today().year
 default_year_idx = (
@@ -863,14 +863,7 @@ if selected_page == "Overview":
 elif selected_page == "Discharge Compliance":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>🛡️ Discharge"
-      " Compliance</h1>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>In-depth breakdown of Final"
-      " Discharge (FDP) AM and PM readings for pH and Turbidity.</p>",
+      " margin-bottom: 2px;'>🛡️ Discharge Compliance</h1>",
       unsafe_allow_html=True,
   )
 
@@ -1125,18 +1118,8 @@ elif selected_page == "Discharge Compliance":
 elif selected_page == "River Water Quality":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>💧 River Water"
-      " Quality (Upstream vs Downstream)</h1>",
-      unsafe_allow_html=True,
-  )
-  latest_date_str = (
-      df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
-  )
-  st.markdown(
-      f"<p style='color: #64748b; font-size: 13px; margin-top: 0;"
-      f" margin-bottom: 25px; font-family: Inter, sans-serif;'>Comparison and"
-      f" net impact analysis based on latest dataset date: "
-      f"<b>{latest_date_str}</b>.</p>",
+      " margin-bottom: 2px;'>💧 River Water Quality (Upstream vs"
+      " Downstream)</h1>",
       unsafe_allow_html=True,
   )
 
@@ -1436,14 +1419,7 @@ elif selected_page == "River Water Quality":
 elif selected_page == "Cases Tracker":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>⚠️ Environmental"
-      " Cases Tracker</h1>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>Comprehensive overview of site"
-      " incidents, locations, and closure status.</p>",
+      " margin-bottom: 2px;'>⚠️ Environmental Cases Tracker</h1>",
       unsafe_allow_html=True,
   )
 
@@ -1591,12 +1567,6 @@ elif selected_page == "Cases Tracker":
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("📌 Carried Forward / Outstanding Cases from Previous Months")
-    st.markdown(
-        "<p style='color: #64748b; font-size: 13px;'>Senarai kes dari"
-        " bulan-bulan sebelum tarikh mula yang dipilih dan masih belum"
-        " ditutup.</p>",
-        unsafe_allow_html=True,
-    )
 
     if len(selected_date_range) == 2:
       prev_open_cases = df_cases[
@@ -1622,14 +1592,13 @@ elif selected_page == "Cases Tracker":
     st.warning("No data found in Cases Tracker sheet.")
 
 # ==========================================
-# PAGE 5: MONTHLY MONITORING (DYNAMIC MAP)
+# PAGE 5: MONTHLY MONITORING RECORD
 # ==========================================
 elif selected_page == "Monthly Monitoring Record":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA"
+      " margin-bottom: 2px;'>🗺️ RBA Mining EIA Master Topography Map</h1>",
       unsafe_allow_html=True,
- 
   )
 
   master_coords = {
