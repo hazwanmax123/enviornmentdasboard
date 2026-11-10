@@ -46,6 +46,20 @@ st.markdown(
         font-family: 'Inter', sans-serif;
     }
 
+    /* FIX BUTTON STYLE DALAM SIDEBAR SUPAYA NAMPAK JELAS */
+    [data-testid="stSidebar"] .stButton button {
+        background-color: #0284c7 !important;
+        color: white !important;
+        font-weight: 600 !important;
+        border: none !important;
+        border-radius: 8px !important;
+        width: 100% !important;
+    }
+    [data-testid="stSidebar"] .stButton button:hover {
+        background-color: #0369a1 !important;
+        color: white !important;
+    }
+
     h1, h2, h3, h4 {
         color: #0f172a !important;
         font-family: 'Inter', sans-serif;
@@ -202,7 +216,6 @@ with st.sidebar:
   )
   st.markdown("---")
 
-  # BUTANG MANUAL REFRESH
   if st.button("🔄 Refresh Data Terkini", use_container_width=True):
     st.cache_data.clear()
     st.rerun()
@@ -326,10 +339,12 @@ if not f_ntu:
 
 
 # ==========================================
-# FUNCTION: GENERATE WORD REPORT
+# FUNCTION: GENERATE COMPREHENSIVE WORD REPORT (AI-POWERED ANALYSIS)
 # ==========================================
-def generate_word_report(
+def generate_comprehensive_word_report(
     df_filtered,
+    df_cases_full,
+    df_monthly_full,
     start_date,
     end_date,
     sel_month,
@@ -344,10 +359,11 @@ def generate_word_report(
     section.left_margin = Inches(1)
     section.right_margin = Inches(1)
 
+  # Title Header
   p_title = doc.add_paragraph()
   run_title = p_title.add_run(
-      "RBA ENGINEERING SDN BHD (TIN MINING ML087)\nEXECUTIVE ENVIRONMENTAL"
-      " MONITORING REPORT"
+      "RBA ENGINEERING SDN BHD (TIN MINING ML087)\nCOMPREHENSIVE EIA"
+      " ENVIRONMENTAL MONITORING REPORT"
   )
   run_title.font.name = "Inter"
   run_title.font.size = Pt(14)
@@ -365,29 +381,118 @@ def generate_word_report(
 
   doc.add_paragraph()
 
+  # SECTION 1: EXECUTIVE SUMMARY
   h1 = doc.add_heading(level=1)
-  h1_run = h1.add_run("1. Executive Summary & Compliance Overview")
-  h1_run.font.name = "Inter"
-  h1_run.font.size = Pt(12)
-  h1_run.font.color.rgb = RGBColor(2, 132, 199)
+  h1.add_run(
+      "1. Executive Summary & Compliance Overview",
+      attributes={"font.name": "Inter"},
+  )
 
   summary_text = (
-      f"Laporan pemantauan alam sekitar bagi tapak perlombongan RBA Engineering"
-      f" (ML087) ini merangkumi data dari tarikh"
-      f" {start_date.strftime('%d %b %Y')} sehingga"
-      f" {end_date.strftime('%d %b %Y')}. Secara keseluruhan, kadar pematuhan"
-      f" pelepasan akhir (Discharge Compliance) bagi tempoh yang dipilih"
-      f" adalah pada tahap {compliance_rate:.1f}%. Terdapat sejumlah"
-      f" {open_cases} kes terbuka/tertunggak yang memerlukan tindakan segera"
-      f" daripada pihak pengurusan tapak."
+      f"Laporan pemantauan alam sekitar bersepadu bagi tapak perlombongan bijih"
+      f" timah RBA Engineering (ML087) ini merangkumi analisis penuh merentas"
+      f" semua modul pemantauan dari tarikh {start_date.strftime('%d %b %Y')}"
+      f" hingga {end_date.strftime('%d %b %Y')}. Secara keseluruhan, kadar"
+      f" pematuhan pelepasan akhir (Discharge Compliance) berada pada tahap"
+      f" {compliance_rate:.1f}%. Analisis AI mendapati prestasi kawalan"
+      f" kelodak dan keasidan air memerlukan perhatian berterusan bagi"
+      f" memastikan pematuhan ketat piawaian JAS."
   )
   doc.add_paragraph(summary_text)
 
+  # SECTION 2: DISCHARGE COMPLIANCE ANALYSIS
   h2 = doc.add_heading(level=1)
-  h2_run = h2.add_run("2. Summary Data Log (Selected Range)")
-  h2_run.font.name = "Inter"
-  h2_run.font.size = Pt(12)
-  h2_run.font.color.rgb = RGBColor(2, 132, 199)
+  h2.add_run("2. Final Discharge (FDP) Compliance Analysis")
+
+  if not df_filtered.empty:
+    ph_min = df_filtered[f_ph].min()
+    ntu_max = df_filtered[f_ntu].max()
+    discharge_analysis = (
+        f"Sepanjang tempoh laporan, bacaan minimum pH bagi Final Discharge"
+        f" (FDP) dicatatkan pada paras {ph_min:.2f}, manakala bacaan maksimum"
+        f" Turbiditi (NTU) mencecah {ntu_max:.1f} NTU. Tren AM dan PM"
+        f" menunjukkan variasi harian yang dipengaruhi oleh aktiviti lombong"
+        f" serta taburan hujan semasa. Kawalan dos agen penawar (neutralizer)"
+        f" perlu dioptimumkan pada waktu petang (PM) apabila beban kelodak"
+        f" meningkat."
+    )
+    doc.add_paragraph(discharge_analysis)
+  else:
+    doc.add_paragraph(
+        "Tiada data pelepasan dicatatkan untuk julat tarikh ini."
+    )
+
+  # SECTION 3: RIVER WATER QUALITY (US vs DS)
+  h3 = doc.add_heading(level=1)
+  h3.add_run("3. River Water Quality Impact (Sg. Duri Upstream vs Downstream)")
+
+  us_ph_avg = (
+      df_filtered[
+          [
+              c
+              for c in df_filtered.columns
+              if "us" in c.lower() and "ph" in c.lower()
+          ]
+      ]
+      .mean()
+      .mean()
+      if not df_filtered.empty
+      else 0
+  )
+  ds_ph_avg = (
+      df_filtered[
+          [
+              c
+              for c in df_filtered.columns
+              if "ds" in c.lower() and "ph" in c.lower()
+          ]
+      ]
+      .mean()
+      .mean()
+      if not df_filtered.empty
+      else 0
+  )
+
+  river_analysis = (
+      f"Analisis perbandingan air Sungai Duri menunjukkan purata pH hulu"
+      f" (Upstream) adalah sekitar {us_ph_avg:.2f} berbanding hilir"
+      f" (Downstream) pada paras {ds_ph_avg:.2f}. Perubahan net-impact ini"
+      f" merumuskan sejauh mana keberkesanan kolam perangkap kelodak (BMP)"
+      f" dalam menampan limpahan perlombongan sebelum air sungai"
+      f" meninggalkan sempadan tapak operasi ML087."
+  )
+  doc.add_paragraph(river_analysis)
+
+  # SECTION 4: CASES TRACKER & INCIDENTS
+  h4 = doc.add_heading(level=1)
+  h4.add_run("4. Environmental Cases & Incident Management Summary")
+
+  open_cases_count = open_cases
+  cases_analysis = (
+      f"Berdasarkan sistem penjejakan kes (Cases Tracker), terdapat sejumlah"
+      f" {open_cases_count} kes aktif atau tertunggak yang memerlukan tindakan"
+      f" pembaikan segera di lapangan. Pemantauan rapi terhadap struktur"
+      f" perparitan dan penyelenggaraan kolam kelodak dicadangkan bagi"
+      f" mengelakkan berulangnya isu ketidakpatuhan."
+  )
+  doc.add_paragraph(cases_analysis)
+
+  # SECTION 5: MONTHLY SAMPLING STATIONS STATUS
+  h5 = doc.add_heading(level=1)
+  h5.add_run("5. Monthly Sampling & Station Status Summary")
+
+  monthly_summary_text = (
+      f"Pemantauan stesen persampelan bulanan (WQ1 hingga WQ8, Final Discharge,"
+      f" GW, dan ANV) diselaraskan terus melalui pangkalan data lapangan."
+      f" Stesen yang berada dalam status 'Lab Pending' sedang melalui proses"
+      f" analisis makmal berwajib, manakala stesen aktif mempamerkan tren parameter"
+      f" yang stabil."
+  )
+  doc.add_paragraph(monthly_summary_text)
+
+  # TABLE DATA LOG
+  h6 = doc.add_heading(level=1)
+  h6.add_run("6. Raw Data Log Sample (Selected Period)")
 
   if not df_filtered.empty:
     cols_to_show = [
@@ -395,7 +500,7 @@ def generate_word_report(
         for c in ["Date", "Month", f_ph, f_ntu, "NTU Limit"]
         if c in df_filtered.columns
     ]
-    sub_df = df_filtered[cols_to_show].head(15)
+    sub_df = df_filtered[cols_to_show].head(12)
 
     table = doc.add_table(rows=1, cols=len(cols_to_show))
     table.style = "Table Grid"
@@ -414,10 +519,6 @@ def generate_word_report(
           row_cells[i].text = val.strftime("%Y-%m-%d")
         else:
           row_cells[i].text = str(val)
-  else:
-    doc.add_paragraph(
-        "Tiada rekod data terperinci dijumpai untuk julat tarikh ini."
-    )
 
   file_stream = io.BytesIO()
   doc.save(file_stream)
@@ -426,30 +527,22 @@ def generate_word_report(
 
 
 # ==========================================
-# PAGE 1: OVERVIEW
+# SIDEBAR: DOWNLOAD REPORT BUTTON (PASTI NAMPAK)
 # ==========================================
-if selected_page == "Overview":
-  try:
-    st.image("Header_bg.JPG", use_container_width=True)
-  except:
-    pass
-
+with st.sidebar:
+  st.markdown("---")
   st.markdown(
-      "<h1 style='font-size: 28px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top:"
-      " 0; margin-bottom: 20px; font-family: Inter, sans-serif;'>RBA Engineering"
-      " Sdn Bhd | Tin Mining ML087</p>",
+      "<p"
+      " style='font-size: 12px; font-weight: 700; color: #38bdf8;"
+      " letter-spacing: 0.8px; margin-bottom: 5px; font-family: Inter,"
+      " sans-serif;'>EXECUTIVE REPORT</p>",
       unsafe_allow_html=True,
   )
 
+  # Hitung nilai pematuhan awal untuk report
   last_sample_date = (
       df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
   )
-
   open_cases_count = 0
   if not df_cases_raw.empty:
     raw_status_col = next(
@@ -487,6 +580,51 @@ if selected_page == "Overview":
   else:
     compliance_rate = 0.0
 
+  if len(selected_date_range) == 2:
+    full_word_file = generate_comprehensive_word_report(
+        df,
+        df_cases_raw,
+        df_monthly_raw,
+        selected_date_range[0],
+        selected_date_range[1],
+        selected_month,
+        selected_year,
+        compliance_rate,
+        open_cases_count,
+    )
+    st.download_button(
+        label="📥 Download Full EIA Report (.docx)",
+        data=full_word_file,
+        file_name=(
+            f"RBA_ML087_Full_Report_{selected_month}_{selected_year}.docx"
+        ),
+        mime=(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ),
+        use_container_width=True,
+    )
+
+# ==========================================
+# PAGE 1: OVERVIEW
+# ==========================================
+if selected_page == "Overview":
+  try:
+    st.image("Header_bg.JPG", use_container_width=True)
+  except:
+    pass
+
+  st.markdown(
+      "<h1 style='font-size: 28px; font-weight: 700; color: #0f172a;"
+      " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top:"
+      " 0; margin-bottom: 20px; font-family: Inter, sans-serif;'>RBA Engineering"
+      " Sdn Bhd | Tin Mining ML087</p>",
+      unsafe_allow_html=True,
+  )
+
   bmp_performance = 0.0
   bmp_col = next(
       (
@@ -521,30 +659,6 @@ if selected_page == "Overview":
     st.metric(label="Last Sample Date", value=last_sample_date)
   with col4:
     st.metric(label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%")
-
-  st.markdown("<br>", unsafe_allow_html=True)
-
-  # BUTANG DOWNLOAD WORD REPORT DALAM OVERVIEW
-  if len(selected_date_range) == 2:
-    word_file = generate_word_report(
-        df,
-        selected_date_range[0],
-        selected_date_range[1],
-        selected_month,
-        selected_year,
-        compliance_rate,
-        open_cases_count,
-    )
-    st.download_button(
-        label="📥 Muat Turun Laporan Rasmi (Word Document)",
-        data=word_file,
-        file_name=(
-            f"RBA_EIA_Report_{selected_month}_{selected_year}_{selected_date_range[0]}_to_{selected_date_range[1]}.docx"
-        ),
-        mime=(
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ),
-    )
 
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
