@@ -46,10 +46,10 @@ st.markdown(
         font-family: 'Inter', sans-serif;
     }
 
-    /* FIX BUTTON STYLE DALAM SIDEBAR SUPAYA NAMPAK JELAS */
+    /* BUTTON STYLE DALAM SIDEBAR (BIRU KORPORAT & JELAS) */
     [data-testid="stSidebar"] .stButton button {
         background-color: #0284c7 !important;
-        color: white !important;
+        color: #ffffff !important;
         font-weight: 600 !important;
         border: none !important;
         border-radius: 8px !important;
@@ -57,7 +57,7 @@ st.markdown(
     }
     [data-testid="stSidebar"] .stButton button:hover {
         background-color: #0369a1 !important;
-        color: white !important;
+        color: #ffffff !important;
     }
 
     h1, h2, h3, h4 {
@@ -201,12 +201,182 @@ except Exception as e:
   st.stop()
 
 # ==========================================
+# FUNCTION: GENERATE COMPREHENSIVE WORD REPORT
+# ==========================================
+def generate_comprehensive_word_report(
+    df_filtered,
+    df_cases_full,
+    df_monthly_full,
+    start_date,
+    end_date,
+    sel_month,
+    sel_year,
+    compliance_rate,
+    open_cases,
+):
+  doc = Document()
+  for section in doc.sections:
+    section.top_margin = Inches(1)
+    section.bottom_margin = Inches(1)
+    section.left_margin = Inches(1)
+    section.right_margin = Inches(1)
+
+  p_title = doc.add_paragraph()
+  run_title = p_title.add_run(
+      "RBA ENGINEERING SDN BHD (TIN MINING ML087)\nCOMPREHENSIVE EIA"
+      " ENVIRONMENTAL MONITORING REPORT"
+  )
+  run_title.font.name = "Inter"
+  run_title.font.size = Pt(14)
+  run_title.font.bold = True
+  run_title.font.color.rgb = RGBColor(15, 23, 42)
+
+  p_sub = doc.add_paragraph()
+  run_sub = p_sub.add_run(
+      f"Reporting Period: {start_date.strftime('%d %b %Y')} to"
+      f" {end_date.strftime('%d %b %Y')} ({sel_month} {sel_year})"
+  )
+  run_sub.font.name = "Inter"
+  run_sub.font.size = Pt(10)
+  run_sub.font.color.rgb = RGBColor(100, 116, 139)
+
+  doc.add_paragraph()
+
+  def add_custom_heading(text):
+    h = doc.add_heading(level=1)
+    run = h.add_run(text)
+    run.font.name = "Inter"
+    run.font.size = Pt(12)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(2, 132, 199)
+    return h
+
+  add_custom_heading("1. Executive Summary & Compliance Overview")
+  summary_text = (
+      f"Laporan pemantauan alam sekitar bersepadu bagi tapak perlombongan bijih"
+      f" timah RBA Engineering (ML087) ini merangkumi analisis penuh merentas"
+      f" semua modul pemantauan dari tarikh {start_date.strftime('%d %b %Y')}"
+      f" hingga {end_date.strftime('%d %b %Y')}. Secara keseluruhan, kadar"
+      f" pematuhan pelepasan akhir (Discharge Compliance) berada pada tahap"
+      f" {compliance_rate:.1f}%. Analisis mendapati prestasi kawalan kelodak"
+      f" dan keasidan air memerlukan perhatian berterusan bagi memastikan"
+      f" pematuhan ketat piawaian JAS."
+  )
+  doc.add_paragraph(summary_text)
+
+  add_custom_heading("2. Final Discharge (FDP) Compliance Analysis")
+  if not df_filtered.empty:
+    ph_min = df_filtered[f_ph].min()
+    ntu_max = df_filtered[f_ntu].max()
+    discharge_analysis = (
+        f"Sepanjang tempoh laporan, bacaan minimum pH bagi Final Discharge"
+        f" (FDP) dicatatkan pada paras {ph_min:.2f}, manakala bacaan maksimum"
+        f" Turbiditi (NTU) mencecah {ntu_max:.1f} NTU. Tren AM dan PM"
+        f" menunjukkan variasi harian yang dipengaruhi oleh aktiviti lombong"
+        f" serta taburan hujan semasa."
+    )
+    doc.add_paragraph(discharge_analysis)
+  else:
+    doc.add_paragraph(
+        "Tiada data pelepasan dicatatkan untuk julat tarikh ini."
+    )
+
+  add_custom_heading(
+      "3. River Water Quality Impact (Sg. Duri Upstream vs Downstream)"
+  )
+  us_ph_avg = (
+      df_filtered[
+          [
+              c
+              for c in df_filtered.columns
+              if "us" in c.lower() and "ph" in c.lower()
+          ]
+      ]
+      .mean()
+      .mean()
+      if not df_filtered.empty
+      else 0
+  )
+  ds_ph_avg = (
+      df_filtered[
+          [
+              c
+              for c in df_filtered.columns
+              if "ds" in c.lower() and "ph" in c.lower()
+          ]
+      ]
+      .mean()
+      .mean()
+      if not df_filtered.empty
+      else 0
+  )
+  river_analysis = (
+      f"Analisis perbandingan air Sungai Duri menunjukkan purata pH hulu"
+      f" (Upstream) adalah sekitar {us_ph_avg:.2f} berbanding hilir"
+      f" (Downstream) pada paras {ds_ph_avg:.2f}. Perubahan net-impact ini"
+      f" merumuskan keberkesanan struktur perangkap kelodak (BMP) dalam"
+      f" menampan limpahan aktiviti perlombongan."
+  )
+  doc.add_paragraph(river_analysis)
+
+  add_custom_heading("4. Environmental Cases & Incident Management Summary")
+  cases_analysis = (
+      f"Berdasarkan sistem penjejakan kes (Cases Tracker), terdapat sejumlah"
+      f" {open_cases} kes terbuka atau tertunggak yang memerlukan tindakan"
+      f" pembaikan segera di lapangan. Pemantauan rapi terhadap perparitan dan"
+      f" kolam kawalan sangat diutamakan."
+  )
+  doc.add_paragraph(cases_analysis)
+
+  add_custom_heading("5. Monthly Sampling & Station Status Summary")
+  monthly_summary_text = (
+      f"Pemantauan stesen persampelan bulanan (WQ1 hingga WQ8, Final Discharge,"
+      f" GW, dan ANV) diselaraskan terus melalui pangkalan data lapangan."
+      f" Stesen yang berada dalam status 'Lab Pending' sedang melalui proses"
+      f" analisis makmal berwajib."
+  )
+  doc.add_paragraph(monthly_summary_text)
+
+  add_custom_heading("6. Raw Data Log Sample (Selected Period)")
+  if not df_filtered.empty:
+    cols_to_show = [
+        c
+        for c in ["Date", "Month", f_ph, f_ntu, "NTU Limit"]
+        if c in df_filtered.columns
+    ]
+    sub_df = df_filtered[cols_to_show].head(12)
+
+    table = doc.add_table(rows=1, cols=len(cols_to_show))
+    table.style = "Table Grid"
+
+    hdr_cells = table.rows[0].cells
+    for i, col_name in enumerate(cols_to_show):
+      hdr_cells[i].text = str(col_name)
+
+    for _, row in sub_df.iterrows():
+      row_cells = table.add_row().cells
+      for i, col_name in enumerate(cols_to_show):
+        val = row[col_name]
+        if pd.isna(val):
+          row_cells[i].text = "-"
+        elif isinstance(val, pd.Timestamp):
+          row_cells[i].text = val.strftime("%Y-%m-%d")
+        else:
+          row_cells[i].text = str(val)
+
+  file_stream = io.BytesIO()
+  doc.save(file_stream)
+  file_stream.seek(0)
+  return file_stream
+
+
+# ==========================================
 # SIDEBAR: NAVIGATION & CONTROLS
 # ==========================================
 with st.sidebar:
   st.markdown(
-      "<h2 style='font-size: 22px; font-weight: 700; color: #ffffff; "
-      "font-family: Inter, sans-serif;'>🌊 Mboard</h2>",
+      "<h2 style='font-size: 22px; font-weight: 700; color: #ffffff;"
+      " font-family: Inter, sans-serif;'>🌊 Mboard</h2>",
       unsafe_allow_html=True,
   )
   st.markdown(
@@ -215,6 +385,77 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
   st.markdown("---")
+
+  # 1. BUTANG DOWNLOAD REPORT DILETAK ATAS SEKALI (DI BAWAH LOGO)
+  # Hitung nilai pematuhan awal untuk report
+  last_sample_date = (
+      df_raw["Date"].max().strftime("%d %b %Y") if not df_raw.empty else "N/A"
+  )
+  open_cases_count = 0
+  if not df_cases_raw.empty:
+    raw_status_col = next(
+        (c for c in df_cases_raw.columns if "status" in c.lower()), None
+    )
+    if raw_status_col:
+      temp_status = (
+          df_cases_raw[raw_status_col]
+          .astype(str)
+          .str.strip()
+          .str.lower()
+          .str.replace("no action", "no_action")
+      )
+      open_cases_count = df_cases_raw[
+          temp_status.isin(["no_action", "proposed in meeting", "open"])
+      ].shape[0]
+
+  # Variabel sementara untuk butang download di sidebar
+  temp_df_eval = df_raw.copy()
+  f_ph_temp = [c for c in temp_df_eval.columns if "ph" in c.lower()][-1]
+  f_ntu_temp = [c for c in temp_df_eval.columns if "ntu" in c.lower()][-1]
+  if not temp_df_eval.empty:
+    v_recs = temp_df_eval.dropna(subset=[f_ph_temp, f_ntu_temp])
+    c_count = (
+        v_recs[
+            (v_recs[f_ph_temp] >= 6.0)
+            & (v_recs[f_ph_temp] <= 9.0)
+            & (v_recs[f_ntu_temp] <= 50.0)
+        ].shape[0]
+        if not v_recs.empty
+        else 0
+    )
+    initial_comp_rate = (
+        (c_count / len(v_recs)) * 100.0 if len(v_recs) > 0 else 100.0
+    )
+  else:
+    initial_comp_rate = 0.0
+
+  now_date = datetime.date.today()
+  initial_start = datetime.date(now_date.year, now_date.month, 1)
+  initial_end = now_date
+
+  full_word_file = generate_comprehensive_word_report(
+      temp_df_eval,
+      df_cases_raw,
+      df_monthly_raw,
+      initial_start,
+      initial_end,
+      now_date.strftime("%B"),
+      now_date.year,
+      initial_comp_rate,
+      open_cases_count,
+  )
+
+  st.download_button(
+      label="📥 Download Full EIA Report",
+      data=full_word_file,
+      file_name=(
+          f"RBA_ML087_Full_Report_{now_date.strftime('%B')}_{now_date.year}.docx"
+      ),
+      mime=(
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ),
+      use_container_width=True,
+  )
 
   if st.button("🔄 Refresh Data Terkini", use_container_width=True):
     st.cache_data.clear()
@@ -265,21 +506,30 @@ if status_col:
       df_cases[status_col].astype(str).str.strip().str.title()
   )
 
-# 1. Filter Year
+# 1. Filter Year (Auto-detect tahun semasa / terkini dalam data)
 years = sorted(df["Year"].unique(), reverse=True)
+current_year_val = datetime.date.today().year
+default_year_idx = (
+    years.index(current_year_val) + 1
+    if current_year_val in years
+    else (1 if len(years) > 0 else 0)
+)
+
 selected_year = st.sidebar.selectbox(
-    "Select Year", options=["All"] + list(years), index=1
+    "Select Year", options=["All"] + list(years), index=default_year_idx
 )
 if selected_year != "All":
   df = df[df["Year"] == selected_year]
 
-# 2. Filter Month
+# 2. Filter Month (Auto-detect bulan semasa supaya bukan bulan 10 lagi!)
 all_months_options = list(calendar.month_name)[1:]
+current_month_name = datetime.date.today().strftime("%B")
 default_month_idx = (
-    all_months_options.index("October")
-    if "October" in all_months_options
+    all_months_options.index(current_month_name)
+    if current_month_name in all_months_options
     else 9
 )
+
 selected_month = st.sidebar.selectbox(
     "Select Month", options=all_months_options, index=default_month_idx
 )
@@ -287,23 +537,32 @@ selected_month = st.sidebar.selectbox(
 if selected_month:
   df = df[df["Month"] == selected_month]
 
-# 3. Date Range Terkawal
+# 3. Date Range Terkawal (Auto-match bulan semasa)
 selected_year_int = (
     int(selected_year)
     if selected_year != "All"
-    else (df["Year"].max() if not df.empty else pd.Timestamp.now().year)
+    else (df["Year"].max() if not df.empty else datetime.date.today().year)
 )
 selected_month_num = list(calendar.month_name).index(selected_month)
 
 num_days = calendar.monthrange(selected_year_int, selected_month_num)[1]
 month_start_date = datetime.date(selected_year_int, selected_month_num, 1)
-month_end_date = datetime.date(selected_year_int, selected_month_num, num_days)
+# Jika bulan semasa, hadkan end date ke hari ini, jika bulan lain ambil akhir bulan
+today_d = datetime.date.today()
+if (
+    selected_year_int == today_d.year
+    and selected_month_num == today_d.month
+    and today_d.day <= num_days
+):
+  month_end_date = today_d
+else:
+  month_end_date = datetime.date(selected_year_int, selected_month_num, num_days)
 
 selected_date_range = st.sidebar.date_input(
     "Select Date Range",
     value=(month_start_date, month_end_date),
-    min_value=month_start_date,
-    max_value=month_end_date,
+    min_value=datetime.date(selected_year_int, selected_month_num, 1),
+    max_value=datetime.date(selected_year_int, selected_month_num, num_days),
 )
 
 if len(selected_date_range) == 2:
@@ -339,200 +598,26 @@ if not f_ntu:
 
 
 # ==========================================
-# FUNCTION: GENERATE COMPREHENSIVE WORD REPORT
+# PAGE 1: OVERVIEW
 # ==========================================
-def generate_comprehensive_word_report(
-    df_filtered,
-    df_cases_full,
-    df_monthly_full,
-    start_date,
-    end_date,
-    sel_month,
-    sel_year,
-    compliance_rate,
-    open_cases,
-):
-  doc = Document()
-  for section in doc.sections:
-    section.top_margin = Inches(1)
-    section.bottom_margin = Inches(1)
-    section.left_margin = Inches(1)
-    section.right_margin = Inches(1)
+if selected_page == "Overview":
+  try:
+    st.image("Header_bg.JPG", use_container_width=True)
+  except:
+    pass
 
-  # Title Header
-  p_title = doc.add_paragraph()
-  run_title = p_title.add_run(
-      "RBA ENGINEERING SDN BHD (TIN MINING ML087)\nCOMPREHENSIVE EIA"
-      " ENVIRONMENTAL MONITORING REPORT"
-  )
-  run_title.font.name = "Inter"
-  run_title.font.size = Pt(14)
-  run_title.font.bold = True
-  run_title.font.color.rgb = RGBColor(15, 23, 42)
-
-  p_sub = doc.add_paragraph()
-  run_sub = p_sub.add_run(
-      f"Reporting Period: {start_date.strftime('%d %b %Y')} to"
-      f" {end_date.strftime('%d %b %Y')} ({sel_month} {sel_year})"
-  )
-  run_sub.font.name = "Inter"
-  run_sub.font.size = Pt(10)
-  run_sub.font.color.rgb = RGBColor(100, 116, 139)
-
-  doc.add_paragraph()
-
-  # Helper untuk tambah heading dengan gaya seragam
-  def add_custom_heading(text):
-    h = doc.add_heading(level=1)
-    run = h.add_run(text)
-    run.font.name = "Inter"
-    run.font.size = Pt(12)
-    run.font.bold = True
-    run.font.color.rgb = RGBColor(2, 132, 199)
-    return h
-
-  # SECTION 1: EXECUTIVE SUMMARY
-  add_custom_heading("1. Executive Summary & Compliance Overview")
-  summary_text = (
-      f"Laporan pemantauan alam sekitar bersepadu bagi tapak perlombongan bijih"
-      f" timah RBA Engineering (ML087) ini merangkumi analisis penuh merentas"
-      f" semua modul pemantauan dari tarikh {start_date.strftime('%d %b %Y')}"
-      f" hingga {end_date.strftime('%d %b %Y')}. Secara keseluruhan, kadar"
-      f" pematuhan pelepasan akhir (Discharge Compliance) berada pada tahap"
-      f" {compliance_rate:.1f}%. Analisis mendapati prestasi kawalan kelodak"
-      f" dan keasidan air memerlukan perhatian berterusan bagi memastikan"
-      f" pematuhan ketat piawaian JAS."
-  )
-  doc.add_paragraph(summary_text)
-
-  # SECTION 2: DISCHARGE COMPLIANCE ANALYSIS
-  add_custom_heading("2. Final Discharge (FDP) Compliance Analysis")
-  if not df_filtered.empty:
-    ph_min = df_filtered[f_ph].min()
-    ntu_max = df_filtered[f_ntu].max()
-    discharge_analysis = (
-        f"Sepanjang tempoh laporan, bacaan minimum pH bagi Final Discharge"
-        f" (FDP) dicatatkan pada paras {ph_min:.2f}, manakala bacaan maksimum"
-        f" Turbiditi (NTU) mencecah {ntu_max:.1f} NTU. Tren AM dan PM"
-        f" menunjukkan variasi harian yang dipengaruhi oleh aktiviti lombong"
-        f" serta taburan hujan semasa."
-    )
-    doc.add_paragraph(discharge_analysis)
-  else:
-    doc.add_paragraph(
-        "Tiada data pelepasan dicatatkan untuk julat tarikh ini."
-    )
-
-  # SECTION 3: RIVER WATER QUALITY (US vs DS)
-  add_custom_heading(
-      "3. River Water Quality Impact (Sg. Duri Upstream vs Downstream)"
-  )
-  us_ph_avg = (
-      df_filtered[
-          [
-              c
-              for c in df_filtered.columns
-              if "us" in c.lower() and "ph" in c.lower()
-          ]
-      ]
-      .mean()
-      .mean()
-      if not df_filtered.empty
-      else 0
-  )
-  ds_ph_avg = (
-      df_filtered[
-          [
-              c
-              for c in df_filtered.columns
-              if "ds" in c.lower() and "ph" in c.lower()
-          ]
-      ]
-      .mean()
-      .mean()
-      if not df_filtered.empty
-      else 0
-  )
-  river_analysis = (
-      f"Analisis perbandingan air Sungai Duri menunjukkan purata pH hulu"
-      f" (Upstream) adalah sekitar {us_ph_avg:.2f} berbanding hilir"
-      f" (Downstream) pada paras {ds_ph_avg:.2f}. Perubahan net-impact ini"
-      f" merumuskan keberkesanan struktur perangkap kelodak (BMP) dalam"
-      f" menampan limpahan aktiviti perlombongan."
-  )
-  doc.add_paragraph(river_analysis)
-
-  # SECTION 4: CASES TRACKER & INCIDENTS
-  add_custom_heading("4. Environmental Cases & Incident Management Summary")
-  cases_analysis = (
-      f"Berdasarkan sistem penjejakan kes (Cases Tracker), terdapat sejumlah"
-      f" {open_cases} kes terbuka atau tertunggak yang memerlukan tindakan"
-      f" pembaikan segera di lapangan. Pemantauan rapi terhadap perparitan dan"
-      f" kolam kawalan sangat diutamakan."
-  )
-  doc.add_paragraph(cases_analysis)
-
-  # SECTION 5: MONTHLY SAMPLING STATIONS STATUS
-  add_custom_heading("5. Monthly Sampling & Station Status Summary")
-  monthly_summary_text = (
-      f"Pemantauan stesen persampelan bulanan (WQ1 hingga WQ8, Final Discharge,"
-      f" GW, dan ANV) diselaraskan terus melalui pangkalan data lapangan."
-      f" Stesen yang berada dalam status 'Lab Pending' sedang melalui proses"
-      f" analisis makmal berwajib."
-  )
-  doc.add_paragraph(monthly_summary_text)
-
-  # SECTION 6: RAW DATA LOG TABLE
-  add_custom_heading("6. Raw Data Log Sample (Selected Period)")
-  if not df_filtered.empty:
-    cols_to_show = [
-        c
-        for c in ["Date", "Month", f_ph, f_ntu, "NTU Limit"]
-        if c in df_filtered.columns
-    ]
-    sub_df = df_filtered[cols_to_show].head(12)
-
-    table = doc.add_table(rows=1, cols=len(cols_to_show))
-    table.style = "Table Grid"
-
-    hdr_cells = table.rows[0].cells
-    for i, col_name in enumerate(cols_to_show):
-      hdr_cells[i].text = str(col_name)
-
-    for _, row in sub_df.iterrows():
-      row_cells = table.add_row().cells
-      for i, col_name in enumerate(cols_to_show):
-        val = row[col_name]
-        if pd.isna(val):
-          row_cells[i].text = "-"
-        elif isinstance(val, pd.Timestamp):
-          row_cells[i].text = val.strftime("%Y-%m-%d")
-        else:
-          row_cells[i].text = str(val)
-
-  file_stream = io.BytesIO()
-  doc.save(file_stream)
-  file_stream.seek(0)
-  return file_stream
-
-
-# ==========================================
-# SIDEBAR: DOWNLOAD REPORT BUTTON (PASTI NAMPAK)
-# ==========================================
-with st.sidebar:
-  st.markdown("---")
   st.markdown(
-      "<p"
-      " style='font-size: 12px; font-weight: 700; color: #38bdf8;"
-      " letter-spacing: 0.8px; margin-bottom: 5px; font-family: Inter,"
-      " sans-serif;'>EXECUTIVE REPORT</p>",
+      "<h1 style='font-size: 28px; font-weight: 700; color: #0f172a;"
+      " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top:"
+      " 0; margin-bottom: 20px; font-family: Inter, sans-serif;'>RBA Engineering"
+      " Sdn Bhd | Tin Mining ML087</p>",
       unsafe_allow_html=True,
   )
 
-  # Hitung nilai pematuhan awal untuk report
-  last_sample_date = (
-      df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
-  )
   open_cases_count = 0
   if not df_cases_raw.empty:
     raw_status_col = next(
@@ -569,51 +654,6 @@ with st.sidebar:
       compliance_rate = 100.0
   else:
     compliance_rate = 0.0
-
-  if len(selected_date_range) == 2:
-    full_word_file = generate_comprehensive_word_report(
-        df,
-        df_cases_raw,
-        df_monthly_raw,
-        selected_date_range[0],
-        selected_date_range[1],
-        selected_month,
-        selected_year,
-        compliance_rate,
-        open_cases_count,
-    )
-    st.download_button(
-        label="📥 Download Full EIA Report (.docx)",
-        data=full_word_file,
-        file_name=(
-            f"RBA_ML087_Full_Report_{selected_month}_{selected_year}.docx"
-        ),
-        mime=(
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ),
-        use_container_width=True,
-    )
-
-# ==========================================
-# PAGE 1: OVERVIEW
-# ==========================================
-if selected_page == "Overview":
-  try:
-    st.image("Header_bg.JPG", use_container_width=True)
-  except:
-    pass
-
-  st.markdown(
-      "<h1 style='font-size: 28px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top:"
-      " 0; margin-bottom: 20px; font-family: Inter, sans-serif;'>RBA Engineering"
-      " Sdn Bhd | Tin Mining ML087</p>",
-      unsafe_allow_html=True,
-  )
 
   bmp_performance = 0.0
   bmp_col = next(
