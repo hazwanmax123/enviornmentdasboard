@@ -603,13 +603,13 @@ if selected_page == "Overview":
 
   st.markdown(
       "<h1 style='font-size: 28px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
+      " margin-bottom: 2px;'>Welcome</h1>",
       unsafe_allow_html=True,
   )
   st.markdown(
       "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top:"
-      " 0; margin-bottom: 20px; font-family: Inter, sans-serif;'>RBA Engineering"
-      " Sdn Bhd | Tin Mining ML087</p>",
+      " 0; margin-bottom: 20px;'>RBA Engineering Sdn Bhd | Tin Mining"
+      " ML087</p>",
       unsafe_allow_html=True,
   )
 
@@ -1592,7 +1592,7 @@ elif selected_page == "Cases Tracker":
     st.warning("No data found in Cases Tracker sheet.")
 
 # ==========================================
-# PAGE 5: MONTHLY MONITORING RECORD
+# PAGE 5: MONTHLY MONITORING RECORD (FILTERED BY MONTH)
 # ==========================================
 elif selected_page == "Monthly Monitoring Record":
   st.markdown(
@@ -1625,7 +1625,7 @@ elif selected_page == "Monthly Monitoring Record":
   st_lat, st_lon, st_type = master_coords[selected_station]
 
   station_data = pd.DataFrame()
-  raw_status_val = "Not Active"
+  raw_status_val = "Non-Active"
 
   try:
     if not df_monthly_raw.empty:
@@ -1635,8 +1635,12 @@ elif selected_page == "Monthly Monitoring Record":
       stat_status_col = next(
           (c for c in df_monthly_raw.columns if "status" in c.lower()), None
       )
+      month_col_monthly = next(
+          (c for c in df_monthly_raw.columns if "month" in c.lower()), None
+      )
 
       if stat_id_col:
+        # Tapis mengikut stesen terpilih
         matched_rows = df_monthly_raw[
             df_monthly_raw[stat_id_col]
             .astype(str)
@@ -1644,6 +1648,17 @@ elif selected_page == "Monthly Monitoring Record":
             .str.upper()
             == selected_station.upper()
         ]
+
+        # Tapis pula mengikut bulan yang dipilih di sidebar (jika kolum bulan wujud)
+        if month_col_monthly and not matched_rows.empty:
+          matched_rows = matched_rows[
+              matched_rows[month_col_monthly]
+              .astype(str)
+              .str.strip()
+              .str.title()
+              == selected_month.title()
+          ]
+
         if not matched_rows.empty:
           station_data = matched_rows
           if stat_status_col:
@@ -1661,7 +1676,7 @@ elif selected_page == "Monthly Monitoring Record":
   )
 
   for st_name, (lat, lon, s_type) in master_coords.items():
-    st_status_str = "Not Active"
+    st_status_str = "Non-Active"
     try:
       if not df_monthly_raw.empty:
         stat_id_col = next(
@@ -1670,16 +1685,29 @@ elif selected_page == "Monthly Monitoring Record":
         stat_status_col = next(
             (c for c in df_monthly_raw.columns if "status" in c.lower()), None
         )
+        month_col_monthly = next(
+            (c for c in df_monthly_raw.columns if "month" in c.lower()), None
+        )
+
         if stat_id_col:
-          m_row = df_monthly_raw[
+          m_rows = df_monthly_raw[
               df_monthly_raw[stat_id_col]
               .astype(str)
               .str.strip()
               .str.upper()
               == st_name.upper()
           ]
-          if not m_row.empty and stat_status_col:
-            st_status_str = str(m_row[stat_status_col].iloc[0]).strip()
+          if month_col_monthly and not m_rows.empty:
+            m_rows = m_rows[
+                m_rows[month_col_monthly]
+                .astype(str)
+                .str.strip()
+                .str.title()
+                == selected_month.title()
+            ]
+
+          if not m_rows.empty and stat_status_col:
+            st_status_str = str(m_rows[stat_status_col].iloc[0]).strip()
     except:
       pass
 
@@ -1689,7 +1717,7 @@ elif selected_page == "Monthly Monitoring Record":
     icon_color = "green" if st_is_active else "red"
     popup_txt = (
         f"<b>Stesen: {st_name}</b><br>Kategori: {s_type}<br>Status:"
-        f" {st_status_str}"
+        f" {st_status_str} ({selected_month})"
     )
 
     if st_name == selected_station:
@@ -1729,7 +1757,8 @@ elif selected_page == "Monthly Monitoring Record":
     st.markdown(
         f"<div style='background: #ffffff; border: 1px solid #e2e8f0; padding:"
         f" 16px; border-radius: 14px;'><p style='font-size: 11px; color:"
-        f" #64748b; font-weight: 600; margin: 0;'>SAMPLING STATUS</p><div"
+        f" #64748b; font-weight: 600; margin: 0;'>SAMPLING STATUS"
+        f" ({selected_month})</p><div"
         f" style='margin-top: 6px;'>{status_badge}</div></div>",
         unsafe_allow_html=True,
     )
@@ -1741,37 +1770,14 @@ elif selected_page == "Monthly Monitoring Record":
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
       f"📈 Keputusan Analisis Parameter Makmal — Stesen {selected_station}"
+      f" ({selected_month})"
   )
 
   if not station_data.empty:
     st.dataframe(station_data, use_container_width=True)
   else:
     st.info(
-        f"📌 Stesen **{selected_station}** belum mempunyai rekod dalam Google"
-        " Sheet Monthly Sampling."
+        f"📌 Tiada rekod bagi stesen **{selected_station}** untuk bulan"
+        f" **{selected_month}**. Status ditanda sebagai **Non-Active** (Tiada"
+        " Dummy Data)."
     )
-    dummy_results = pd.DataFrame({
-        "Parameter": [
-            "pH Level",
-            "Turbidity (NTU)",
-            "Total Suspended Solids (mg/L)",
-            "Iron, Fe (mg/L)",
-            "Arsenic, As (mg/L)",
-        ],
-        "Baseline Limit": ["6.0 - 9.0", "< 250", "< 50", "< 5.0", "< 0.05"],
-        "Latest Result": [
-            "Pending Lab",
-            "Pending Lab",
-            "Pending Lab",
-            "Pending Lab",
-            "Pending Lab",
-        ],
-        "Compliance Status": [
-            "No Data",
-            "No Data",
-            "No Data",
-            "No Data",
-            "No Data",
-        ],
-    })
-    st.table(dummy_results)
