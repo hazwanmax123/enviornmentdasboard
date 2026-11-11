@@ -1869,7 +1869,7 @@ elif selected_page == "Data Entry":
       unsafe_allow_html=True,
   )
     
-elif selected_page == "Data Entry":
+if selected_page == "Data Entry":
   st.markdown("## 📝 Environmental Master Data Entry Portal")
   # --------------------------------------------------------------------------
   # SUB-SECTION 1: RIVER WATER & FDP DATA ENTRY (TAB: Daily log 2026)
@@ -2011,7 +2011,7 @@ with st.form("sub_sec_1_water_form"):
     else:
       st.error("Ralat: Sambungan client Google Sheet gagal diinisialisasi.")
       
-elif selected_page == "Data Entry":
+if selected_page == "Data Entry":
   st.markdown("## 📝 Environmental Master Data Entry Portal")
   # --------------------------------------------------------------------------
   # SUB-SECTION 2: CASES TRACKER ENTRY (TAB: Cases tracker)
@@ -2075,7 +2075,7 @@ elif selected_page == "Data Entry":
         " pangkalan data dikekalkan."
     )
       
-elif selected_page == "Data Entry":
+if selected_page == "Data Entry":
   st.markdown("## 📝 Environmental Master Data Entry Portal")
   # --------------------------------------------------------------------------
   # SUB-SECTION 3: MONTHLY MONITORING RECORD ENTRY (TAB: Monthly Sampling)
