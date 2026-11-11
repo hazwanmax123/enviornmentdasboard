@@ -4,7 +4,7 @@ import io
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 import folium
-import gspread  # <-- Library gspread untuk tulis live ke Google Sheet
+import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 import plotly.express as px
@@ -14,11 +14,21 @@ from streamlit_folium import st_folium
 
 
 # ==========================================
+# PAGE CONFIG
+# ==========================================
+st.set_page_config(
+    page_title="Environmental Monitoring Dashboard",
+    page_icon="🌊",
+    layout="wide",
+)
+
+# ==========================================
 # GOOGLE SHEET CONFIGURATION & GSPREAD SETUP
 # ==========================================
 SPREADSHEET_NAME = "Master Data Monitoring"
 
 
+@st.cache_resource
 def init_gspread_client():
   scope = [
       "https://spreadsheets.google.com/feeds",
@@ -1857,141 +1867,129 @@ elif selected_page == "Data Entry":
   # SUB-SECTION 1: RIVER WATER & FDP DATA ENTRY (TAB: Daily log 2026)
   # --------------------------------------------------------------------------
   st.markdown("<br>", unsafe_allow_html=True)
-  st.subheader("1️⃣ Sub-Section 1: River Water Quality & FDP Entry (Daily Log)")
-  st.caption(
-      "Nilai Average (Purata) dikira automatik dan dihantar terus ke tab"
-      " 'Daily log 2026'."
+st.subheader("1️⃣ Sub-Section 1: River Water Quality & FDP Entry (Daily Log)")
+st.caption(
+    "Nilai Average (Purata) dikira automatik dan dihantar terus ke tab"
+    " 'Daily log 2026'."
+)
+
+with st.form("sub_sec_1_water_form"):
+  col_m1, col_m2, col_m3 = st.columns(3)
+  with col_m1:
+    entry_date_w = st.date_input(
+        "Tarikh Rekod", value=datetime.date.today(), key="w_date"
+    )
+    weather_in = st.selectbox(
+        "Cuaca (Weather)", ["Sunny", "Rainy", "Cloudy", "Storm"], key="w_weather"
+    )
+    us_ph_am_in = st.number_input(
+        "Upstream pH (AM)", value=7.0, format="%.2f", key="w_us_ph_am"
+    )
+    us_ph_pm_in = st.number_input(
+        "Upstream pH (PM)", value=7.0, format="%.2f", key="w_us_ph_pm"
+    )
+
+  with col_m2:
+    us_ntu_am_in = st.number_input(
+        "Upstream Turbidity NTU (AM)", value=0.0, format="%.2f", key="w_us_ntu_am"
+    )
+    us_ntu_pm_in = st.number_input(
+        "Upstream Turbidity NTU (PM)", value=0.0, format="%.2f", key="w_us_ntu_pm"
+    )
+    ds_ph_am_in = st.number_input(
+        "Downstream pH (AM)", value=7.0, format="%.2f", key="w_ds_ph_am"
+    )
+    ds_ph_pm_in = st.number_input(
+        "Downstream pH (PM)", value=7.0, format="%.2f", key="w_ds_ph_pm"
+    )
+
+  with col_m3:
+    ds_ntu_am_in = st.number_input(
+        "Downstream Turbidity NTU (AM)",
+        value=0.0,
+        format="%.2f",
+        key="w_ds_ntu_am",
+    )
+    ds_ntu_pm_in = st.number_input(
+        "Downstream Turbidity NTU (PM)",
+        value=0.0,
+        format="%.2f",
+        key="w_ds_ntu_pm",
+    )
+    fdp_ph_am_in = st.number_input(
+        "FDP pH (AM)", value=7.0, format="%.2f", key="w_fdp_ph_am"
+    )
+    fdp_ph_pm_in = st.number_input(
+        "FDP pH (PM)", value=7.0, format="%.2f", key="w_fdp_ph_pm"
+    )
+
+  col_m4, col_m5 = st.columns(2)
+  with col_m4:
+    fdp_ntu_am_in = st.number_input(
+        "FDP Turbidity NTU (AM)", value=0.0, format="%.2f", key="w_fdp_ntu_am"
+    )
+  with col_m5:
+    fdp_ntu_pm_in = st.number_input(
+        "FDP Turbidity NTU (PM)", value=0.0, format="%.2f", key="w_fdp_ntu_pm"
+    )
+
+  bmp_perf_in = st.number_input(
+      "BMP Performance (%)", value=100.0, format="%.2f", key="w_bmp_perf"
   )
 
-  with st.form("sub_sec_1_water_form"):
-    col_m1, col_m2, col_m3 = st.columns(3)
-    with col_m1:
-      entry_date_w = st.date_input(
-          "Date", datetime.date.today(), key="sec1_date"
-      )
-    with col_m2:
-      sample_month_w = st.selectbox(
-          "Month",
-          list(calendar.month_name)[1:],
-          index=datetime.date.today().month - 1,
-          key="sec1_month",
-      )
-    with col_m3:
-      weather_in = st.selectbox(
-          "Weather", ["Sunny", "Light Rain", "Heavy Rain", "Storm"]
-      )
+  submit_sec1 = st.form_submit_button(
+      "💾 Simpan Data Harian ke Google Sheet"
+  )
 
-    st.markdown("#### 💧 Sg. Duri Upstream (US)")
-    c_us1, c_us2 = st.columns(2)
-    with c_us1:
-      us_ph_am_in = st.number_input(
-          "US pH (AM)", min_value=0.0, max_value=14.0, value=7.00, step=0.01
-      )
-      us_ph_pm_in = st.number_input(
-          "US pH (PM)", min_value=0.0, max_value=14.0, value=7.00, step=0.01
-      )
-    with c_us2:
-      us_ntu_am_in = st.number_input(
-          "US NTU AM", min_value=0.0, value=0.0, step=0.1
-      )
-      us_ntu_pm_in = st.number_input(
-          "US NTU PM", min_value=0.0, value=0.0, step=0.1
-      )
+  if submit_sec1:
+    if client:
+      try:
+        sheet_tab = client.open(SPREADSHEET_NAME).worksheet("Daily log 2026")
 
-    us_ph_avg_calc = round((us_ph_am_in + us_ph_pm_in) / 2.0, 2)
-    us_ntu_avg_calc = round((us_ntu_am_in + us_ntu_pm_in) / 2.0, 2)
+        # Pengiraan purata automatik
+        us_ph_avg = round((us_ph_am_in + us_ph_pm_in) / 2.0, 2)
+        ds_ph_avg = round((ds_ph_am_in + ds_ph_pm_in) / 2.0, 2)
+        fdp_ph_avg = round((fdp_ph_am_in + fdp_ph_pm_in) / 2.0, 2)
+        us_ntu_avg = round((us_ntu_am_in + us_ntu_pm_in) / 2.0, 2)
+        ds_ntu_avg = round((ds_ntu_am_in + ds_ntu_pm_in) / 2.0, 2)
+        fdp_ntu_avg = round((fdp_ntu_am_in + fdp_ntu_pm_in) / 2.0, 2)
 
-    c_usa1, c_usa2 = st.columns(2)
-    with c_usa1:
-      st.info(f"📊 **US pH Average:** `{us_ph_avg_calc}`")
-    with c_usa2:
-      st.info(f"📊 **US NTU Average:** `{us_ntu_avg_calc} NTU`")
+        row_data = [
+            str(entry_date_w),
+            int(entry_date_w.year),
+            str(weather_in),
+            us_ph_am_in,
+            us_ph_pm_in,
+            us_ntu_am_in,
+            us_ntu_pm_in,
+            ds_ph_am_in,
+            ds_ph_pm_in,
+            ds_ntu_am_in,
+            ds_ntu_pm_in,
+            fdp_ph_am_in,
+            fdp_ph_pm_in,
+            fdp_ntu_am_in,
+            fdp_ntu_pm_in,
+            us_ph_avg,
+            ds_ph_avg,
+            fdp_ph_avg,
+            us_ntu_avg,
+            ds_ntu_avg,
+            fdp_ntu_avg,
+            bmp_perf_in,
+        ]
 
-    st.markdown("---")
-    st.markdown("#### 💧 Sg. Duri Downstream (DS)")
-    c_ds1, c_ds2 = st.columns(2)
-    with c_ds1:
-      ds_ph_am_in = st.number_input(
-          "DS pH (AM)", min_value=0.0, max_value=14.0, value=7.00, step=0.01
-      )
-      ds_ph_pm_in = st.number_input(
-          "DS pH (PM)", min_value=0.0, max_value=14.0, value=7.00, step=0.01
-      )
-    with c_ds2:
-      ds_ntu_am_in = st.number_input(
-          "DS NTU AM", min_value=0.0, value=0.0, step=0.1
-      )
-      ds_ntu_pm_in = st.number_input(
-          "DS NTU PM", min_value=0.0, value=0.0, step=0.1
-      )
+        sheet_tab.append_row(row_data)
+        st.success(
+            f"Berjaya! Data harian {entry_date_w.strftime('%d %b %Y')} telah"
+            " dihantar live ke tab 'Daily log 2026'."
+        )
+        st.rerun()
 
-    ds_ph_avg_calc = round((ds_ph_am_in + ds_ph_pm_in) / 2.0, 2)
-    ds_ntu_avg_calc = round((ds_ntu_am_in + ds_ntu_pm_in) / 2.0, 2)
-
-    c_dsa1, c_dsa2 = st.columns(2)
-    with c_dsa1:
-      st.info(f"📊 **DS pH Average:** `{ds_ph_avg_calc}`")
-    with c_dsa2:
-      st.info(f"📊 **DS NTU Average:** `{ds_ntu_avg_calc} NTU`")
-
-    st.markdown("---")
-    st.markdown("#### 🛡️ Final Discharge Point (FDP) & Had Limit")
-    c_fdp1, c_fdp2, c_fdp3 = st.columns(3)
-    with c_fdp1:
-      fdp_ph_am_in = st.number_input(
-          "FDP pH (AM)", min_value=0.0, max_value=14.0, value=7.00, step=0.01
-      )
-      fdp_ph_pm_in = st.number_input(
-          "FDP pH (PM)", min_value=0.0, max_value=14.0, value=7.00, step=0.01
-      )
-    with c_fdp2:
-      fdp_ntu_am_in = st.number_input(
-          "FDP NTU AM", min_value=0.0, value=10.0, step=0.1
-      )
-      fdp_ntu_pm_in = st.number_input(
-          "FDP NTU PM", min_value=0.0, value=10.0, step=0.1
-      )
-    with c_fdp3:
-      ntu_limit_in = st.number_input("NTU Limit", min_value=0.0, value=50.0, step=1.0)
-      bmp_perf_in = st.number_input(
-          "BMP Performance (%)", min_value=0.0, max_value=100.0, value=85.0, step=0.5
-      )
-
-    fdp_ph_avg_calc = round((fdp_ph_am_in + fdp_ph_pm_in) / 2.0, 2)
-    fdp_ntu_avg_calc = round((fdp_ntu_am_in + fdp_ntu_pm_in) / 2.0, 2)
-
-    submit_sec1 = st.form_submit_button("💾 Simpan Data Harian ke Google Sheet")
-
-    if submit_sec1:
-      if client:
-        try:
-          sheet_tab = client.open(SPREADSHEET_NAME).worksheet("Daily log 2026")
-          # Susunan baris selari ikut kolum sheet
-          row_data = [
-              str(entry_date_w),
-              entry_date_w.year,
-              weather_in,
-              us_ph_am_in,
-              us_ph_pm_in,
-              us_ntu_am_in,
-              us_ntu_pm_in,
-              ds_ph_am_in,
-              ds_ph_pm_in,
-              ds_ntu_am_in,
-              ds_ntu_pm_in,
-              fdp_ph_am_in,
-              fdp_ph_pm_in,
-              fdp_ntu_am_in,
-              fdp_ntu_pm_in,
-              bmp_perf_in,
-          ]
-          sheet_tab.append_row(row_data)
-          st.success(
-              f"Berjaya! Data harian {entry_date_w.strftime('%d %b %Y')} telah"
-              " dihantar live ke tab 'Daily log 2026'."
-          )
-        except Exception as e:
-          st.error(f"Gagal hantar ke Google Sheet: {e}")
+      except Exception as e:
+        st.error(f"Gagal hantar ke Google Sheet: {e}")
+    else:
+      st.error("Ralat: Sambungan client Google Sheet gagal diinisialisasi.")
       
 
   # --------------------------------------------------------------------------
