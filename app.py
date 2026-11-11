@@ -2077,6 +2077,10 @@ with st.form("sub_sec_1_water_form"):
   # --------------------------------------------------------------------------
 st.markdown("### 3️⃣ Sub-Section 3: Monthly Sampling & Lab Results Entry")
 
+# 1. Pastikan senarai stesen wujud (kalau kod asal kau dah ada stations_all di atas, boleh kekalkan)
+if "stations_all" not in locals() and "stations_all" not in globals():
+  stations_all = ["WQ1", "WQ2", "WQ3", "FDP"]
+
 col_m_s1, col_m_s2, col_m_s3 = st.columns(3)
 
 with col_m_s1:
@@ -2103,7 +2107,7 @@ with col_m_s3:
 st.markdown("---")
 st.markdown("#### 🔬 Keputusan Analisis Parameter Makmal")
 
-# Nilai ni akan terus bertukar LIVE serta-merta bila dropdown status berubah!
+# Nilai ni akan bertukar secara LIVE serta-merta bila dropdown status diubah
 is_disabled = st_status_entry != "Active"
 
 if is_disabled:
@@ -2160,7 +2164,6 @@ with col_l2:
       key="m_remarks",
   )
 
-# Guna st.button biasa ganti st.form_submit_button supaya ia bertindak balas live
 submit_monthly = st.button("💾 Simpan Rekod Persampelan Bulanan")
 
 if submit_monthly:
