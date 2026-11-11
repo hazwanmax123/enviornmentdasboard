@@ -1950,7 +1950,7 @@ elif selected_page == "Data Entry":
     submit_sec1 = st.form_submit_button("💾 Simpan Data Harian ke Google Sheet")
 
     if submit_sec1:
-      if gc:
+      if client:
         try:
           sheet_tab = gc.open(SPREADSHEET_NAME).worksheet("Daily log 2026")
           # Susunan baris selari ikut kolum sheet
@@ -2020,7 +2020,7 @@ elif selected_page == "Data Entry":
       )
 
       if submit_sec2:
-        if gc:
+        if client:
           try:
             sheet_cases = gc.open(SPREADSHEET_NAME).worksheet("Cases tracker")
             case_row = [
@@ -2130,7 +2130,7 @@ elif selected_page == "Data Entry":
     submit_sec3 = st.form_submit_button("💾 Simpan Rekod Persampelan Bulanan")
 
     if submit_sec3:
-      if gc:
+      if client:
         try:
           sheet_monthly = gc.open(SPREADSHEET_NAME).worksheet(
               "Monthly Sampling"
