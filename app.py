@@ -1952,7 +1952,7 @@ elif selected_page == "Data Entry":
     if submit_sec1:
       if client:
         try:
-          sheet_tab = gc.open(SPREADSHEET_NAME).worksheet("Daily log 2026")
+          sheet_tab = client.open(SPREADSHEET_NAME).worksheet("Daily log 2026")
           # Susunan baris selari ikut kolum sheet
           row_data = [
               str(entry_date_w),
@@ -2022,7 +2022,7 @@ elif selected_page == "Data Entry":
       if submit_sec2:
         if client:
           try:
-            sheet_cases = gc.open(SPREADSHEET_NAME).worksheet("Cases tracker")
+            sheet_cases = client.open(SPREADSHEET_NAME).worksheet("Cases tracker")
             case_row = [
                 str(case_date_raised),
                 case_issue,
@@ -2132,7 +2132,7 @@ elif selected_page == "Data Entry":
     if submit_sec3:
       if client:
         try:
-          sheet_monthly = gc.open(SPREADSHEET_NAME).worksheet(
+          sheet_monthly = client.open(SPREADSHEET_NAME).worksheet(
               "Monthly Sampling"
           )
           monthly_row = [
