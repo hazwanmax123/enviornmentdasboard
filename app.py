@@ -1670,7 +1670,7 @@ elif selected_page == "Cases Tracker":
 elif selected_page == "Monthly Monitoring Record":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px;'>🗺️ RBA Mining EIA Master Topography Map</h1>",
+      " margin-bottom: 2px;'>🗺️ RBA Mining Monthly Sampling</h1>",
       unsafe_allow_html=True,
   )
 
