@@ -566,104 +566,17 @@ with st.sidebar:
       unsafe_allow_html=True,
   )
   selected_page = st.radio(
-      "Navigation Menu",
-      [
-          "Overview",
-          "Discharge Compliance",
-          "River Water Quality",
-          "Cases Tracker",
-          "Monthly Monitoring Record",
-          "Data Entry",
-      ],
-      label_visibility="collapsed",
-  )
-
-  st.markdown("---")
-  st.markdown(
-      "<p style='font-size: 12px; font-weight: 700; color: #38bdf8;"
-      " letter-spacing: 0.8px; margin-bottom: 5px; font-family: Inter,"
-      " sans-serif;'>DATA FILTERS</p>",
-      unsafe_allow_html=True,
-  )
-
-df = df_raw.copy()
-df_cases = df_cases_raw.copy()
-
-status_col = next((c for c in df_cases.columns if "status" in c.lower()), None)
-date_col = next(
-    (c for c in df_cases.columns if "date" in c.lower() or "raised" in c.lower()),
-    None,
+    "Navigation Menu",
+    [
+        "Overview",
+        "Discharge Compliance",
+        "River Water Quality",
+        "Cases Tracker",
+        "Monthly Monitoring Record",
+        "Data Entry",
+    ],
+    label_visibility="collapsed",
 )
-issue_col = next((c for c in df_cases.columns if "issue" in c.lower()), None)
-loc_col = next((c for c in df_cases.columns if "location" in c.lower()), None)
-
-if status_col:
-  df_cases[status_col] = (
-      df_cases[status_col].astype(str).str.strip().str.title()
-  )
-
-# 1. Filter Year
-years = sorted(df["Year"].unique(), reverse=True)
-current_year_val = datetime.date.today().year
-default_year_idx = (
-    years.index(current_year_val) + 1
-    if current_year_val in years
-    else (1 if len(years) > 0 else 0)
-)
-
-selected_year = st.sidebar.selectbox(
-    "Select Year", options=["All"] + list(years), index=default_year_idx
-)
-if selected_year != "All":
-  df = df[df["Year"] == selected_year]
-
-# 2. Filter Month
-all_months_options = list(calendar.month_name)[1:]
-current_month_name = datetime.date.today().strftime("%B")
-default_month_idx = (
-    all_months_options.index(current_month_name)
-    if current_month_name in all_months_options
-    else 9
-)
-
-selected_month = st.sidebar.selectbox(
-    "Select Month", options=all_months_options, index=default_month_idx
-)
-
-if selected_month:
-  df = df[df["Month"] == selected_month]
-
-# 3. Date Range Terkawal
-selected_year_int = (
-    int(selected_year)
-    if selected_year != "All"
-    else (df["Year"].max() if not df.empty else datetime.date.today().year)
-)
-selected_month_num = list(calendar.month_name).index(selected_month)
-
-num_days = calendar.monthrange(selected_year_int, selected_month_num)[1]
-month_start_date = datetime.date(selected_year_int, selected_month_num, 1)
-today_d = datetime.date.today()
-if (
-    selected_year_int == today_d.year
-    and selected_month_num == today_d.month
-    and today_d.day <= num_days
-):
-  month_end_date = today_d
-else:
-  month_end_date = datetime.date(selected_year_int, selected_month_num, num_days)
-
-selected_date_range = st.sidebar.date_input(
-    "Select Date Range",
-    value=(month_start_date, month_end_date),
-    min_value=datetime.date(selected_year_int, selected_month_num, 1),
-    max_value=datetime.date(selected_year_int, selected_month_num, num_days),
-)
-
-if len(selected_date_range) == 2:
-  s_date, e_date = selected_date_range
-  df = df[(df["Date"].dt.date >= s_date) & (df["Date"].dt.date <= e_date)]
-
 
 # ==========================================
 # PAGE 1: OVERVIEW
@@ -930,6 +843,7 @@ if selected_page == "Overview":
     )
     st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
 
+
 # ==========================================
 # PAGE 2: DISCHARGE COMPLIANCE
 # ==========================================
@@ -1090,100 +1004,6 @@ elif selected_page == "Discharge Compliance":
           fig_pie, use_container_width=True, config={"responsive": True}
       )
 
-    st.markdown("<br><hr><br>", unsafe_allow_html=True)
-    st.subheader("pH of Final Discharge (AM vs PM)")
-
-    fig_ph = go.Figure()
-    fig_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[ph_am_col],
-            name="AM Reading",
-            mode="lines+markers",
-            line=dict(color="#0f172a", width=2, shape="spline"),
-        )
-    )
-    fig_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[ph_pm_col],
-            name="PM Reading",
-            mode="lines+markers",
-            line=dict(color="#d97706", width=2, shape="spline"),
-        )
-    )
-    fig_ph.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(
-            title=dict(text="pH Level", font=dict(color="#0f172a", size=11)),
-            tickfont=dict(color="#0f172a", size=10),
-            showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.06)",
-        ),
-        margin=dict(l=30, r=30, t=30, b=60),
-        height=380,
-    )
-    st.plotly_chart(
-        fig_ph, use_container_width=True, config={"responsive": True}
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("Turbidity AM Reading and PM Reading by Day (NTU)")
-
-    fig_ntu = go.Figure()
-    fig_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[ntu_am_col],
-            name="AM Reading",
-            marker_color="#0f172a",
-        )
-    )
-    fig_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[ntu_pm_col],
-            name="PM Reading",
-            marker_color="#d97706",
-        )
-    )
-    fig_ntu.update_layout(
-        barmode="group",
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(
-            title=dict(
-                text="Turbidity (NTU)", font=dict(color="#0f172a", size=11)
-            ),
-            tickfont=dict(color="#0f172a", size=10),
-            showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.06)",
-        ),
-        margin=dict(l=30, r=30, t=30, b=60),
-        height=380,
-    )
-    st.plotly_chart(
-        fig_ntu, use_container_width=True, config={"responsive": True}
-    )
 
 # ==========================================
 # PAGE 3: RIVER WATER QUALITY
@@ -1237,96 +1057,6 @@ elif selected_page == "River Water Quality":
       df.columns[9],
   )
 
-  us_ph_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ph" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[3],
-  )
-  us_ph_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ph" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[4],
-  )
-  ds_ph_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ph" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[7],
-  )
-  ds_ph_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ph" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[8],
-  )
-
-  us_ntu_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ntu" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[5],
-  )
-  us_ntu_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "us" in c.lower()
-          and "ntu" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[6],
-  )
-  ds_ntu_am = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ntu" in c.lower()
-          and "am" in c.lower()
-      ),
-      df.columns[9],
-  )
-  ds_ntu_pm = next(
-      (
-          c
-          for c in df.columns
-          if "duri" in c.lower()
-          and "ds" in c.lower()
-          and "ntu" in c.lower()
-          and "pm" in c.lower()
-      ),
-      df.columns[10],
-  )
-
   if not df.empty:
     df_sorted_rw = df.sort_values(by="Date")
     latest_rw = df_sorted_rw.iloc[-1]
@@ -1362,129 +1092,6 @@ elif selected_page == "River Water Quality":
           delta_color="inverse" if net_ntu > 0 else "normal",
       )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("pH of Sg. Duri")
-
-    ph_session_filter = st.selectbox(
-        "Select Session for pH", options=["AM", "PM"], key="ph_session"
-    )
-
-    selected_us_ph = us_ph_am if ph_session_filter == "AM" else us_ph_pm
-    selected_ds_ph = ds_ph_am if ph_session_filter == "AM" else ds_ph_pm
-
-    fig_river_ph = go.Figure()
-    fig_river_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[selected_us_ph],
-            name="Sg. Duri Upstream",
-            mode="lines+markers",
-            line=dict(color="#0284c7", width=2, shape="spline"),
-        )
-    )
-    fig_river_ph.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[selected_ds_ph],
-            name="Sg. Duri Downstream",
-            mode="lines+markers",
-            line=dict(color="#0f172a", width=2, shape="spline"),
-        )
-    )
-    fig_river_ph.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(
-            title=dict(text="pH Level", font=dict(color="#0f172a", size=11)),
-            tickfont=dict(color="#0f172a", size=10),
-            showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.06)",
-        ),
-        margin=dict(l=30, r=30, t=30, b=60),
-        height=380,
-    )
-    st.plotly_chart(
-        fig_river_ph, use_container_width=True, config={"responsive": True}
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("Turbidity of Sg. Duri")
-
-    ntu_session_filter = st.selectbox(
-        "Select Session for Turbidity", options=["AM", "PM"], key="ntu_session"
-    )
-
-    selected_us_ntu = us_ntu_am if ntu_session_filter == "AM" else us_ntu_pm
-    selected_ds_ntu = ds_ntu_am if ntu_session_filter == "AM" else ds_ntu_pm
-
-    us_colors = [
-        "#ef4444" if val > 250 else "#0284c7" for val in df[selected_us_ntu]
-    ]
-    ds_colors = [
-        "#ef4444" if val > 250 else "#0f172a" for val in df[selected_ds_ntu]
-    ]
-
-    fig_river_ntu = go.Figure()
-    fig_river_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[selected_us_ntu],
-            name="Sg. Duri Upstream",
-            marker_color=us_colors,
-        )
-    )
-    fig_river_ntu.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[selected_ds_ntu],
-            name="Sg. Duri Downstream",
-            marker_color=ds_colors,
-        )
-    )
-    fig_river_ntu.add_hline(
-        y=250,
-        line_dash="dash",
-        line_color="#ef4444",
-        annotation_text="Max Limit (250 NTU)",
-        annotation_position="top right",
-        annotation_font=dict(color="#ef4444", size=10),
-    )
-    fig_river_ntu.update_layout(
-        barmode="group",
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(
-            title=dict(
-                text="Turbidity (NTU)", font=dict(color="#0f172a", size=11)
-            ),
-            tickfont=dict(color="#0f172a", size=10),
-            showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.06)",
-        ),
-        margin=dict(l=30, r=30, t=30, b=60),
-        height=380,
-    )
-    st.plotly_chart(
-        fig_river_ntu, use_container_width=True, config={"responsive": True}
-    )
 
 # ==========================================
 # PAGE 4: CASES TRACKER
@@ -1523,27 +1130,6 @@ elif selected_page == "Cases Tracker":
         if status_col
         else 0
     )
-    proposed_cases = (
-        len(
-            df_filtered_cases[
-                df_filtered_cases[status_col]
-                .str.lower()
-                .str.contains("proposed")
-            ]
-        )
-        if status_col
-        else 0
-    )
-    closed_cases = (
-        len(
-            df_filtered_cases[
-                df_filtered_cases[status_col].str.lower().str.contains("closed")
-            ]
-        )
-        if status_col
-        else 0
-    )
-
     c1, c2, c3, c4 = st.columns(4)
     with c1:
       st.metric(
@@ -1558,111 +1144,10 @@ elif selected_page == "Cases Tracker":
           delta="Requires Action",
       )
     with c3:
-      st.metric(
-          label="Proposed in Meeting",
-          value=proposed_cases,
-          delta="Under Review",
-          delta_color="off",
-      )
+      st.metric(label="Proposed in Meeting", value=0, delta="Under Review")
     with c4:
-      st.metric(
-          label="Closed Cases",
-          value=closed_cases,
-          delta="Action Completed",
-          delta_color="normal",
-      )
+      st.metric(label="Closed Cases", value=0, delta="Action Completed")
 
-    st.markdown("<br><hr><br>", unsafe_allow_html=True)
-
-    col_t, col_d = st.columns([1.2, 1])
-
-    with col_t:
-      st.subheader("📋 Cases Summary Matrix Table (Selected Period)")
-      if not df_filtered_cases.empty and loc_col and issue_col and status_col:
-        matrix_table = pd.crosstab(
-            index=[df_filtered_cases[loc_col], df_filtered_cases[issue_col]],
-            columns=df_filtered_cases[status_col],
-            margins=True,
-            margins_name="Total",
-        )
-        st.dataframe(matrix_table, use_container_width=True)
-      else:
-        st.info("No cases found within the selected date filter range.")
-
-    with col_d:
-      st.subheader("🍩 Case Status Distribution (Month)")
-      if len(selected_date_range) == 2:
-        st.caption(
-            f"📅 Date Range Evaluated:"
-            f" **{selected_date_range[0].strftime('%d %b %Y')} to"
-            f" {selected_date_range[1].strftime('%d %b %Y')}**"
-        )
-      else:
-        st.caption("📅 Date Range Evaluated: **All Records**")
-
-      if not df_filtered_cases.empty and status_col:
-        status_counts = (
-            df_filtered_cases[status_col].value_counts().reset_index()
-        )
-        status_counts.columns = ["Status", "Count"]
-
-        fig_donut = px.pie(
-            status_counts,
-            values="Count",
-            names="Status",
-            hole=0.5,
-            color="Status",
-            color_discrete_map={
-                "No Action": "#ef4444",
-                "Proposed In Meeting": "#f59e0b",
-                "Closed": "#10b981",
-            },
-        )
-        fig_donut.update_layout(
-            plot_bgcolor="#ffffff",
-            paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#0f172a", family="Inter", size=11),
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=-0.2,
-                xanchor="center",
-                x=0.5,
-            ),
-            margin=dict(l=20, r=20, t=20, b=30),
-            height=320,
-        )
-        st.plotly_chart(
-            fig_donut, use_container_width=True, config={"responsive": True}
-        )
-      else:
-        st.warning("No data available for donut chart in this date range.")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("📌 Carried Forward / Outstanding Cases from Previous Months")
-
-    if len(selected_date_range) == 2:
-      prev_open_cases = df_cases[
-          (df_cases[date_col].dt.date < selected_date_range[0])
-          & (
-              df_cases[status_col].isin(
-                  ["No Action", "Proposed In Meeting", "Open"]
-              )
-          )
-      ]
-
-      if not prev_open_cases.empty:
-        st.dataframe(prev_open_cases, use_container_width=True)
-      else:
-        st.success(
-            "Syabas! Tiada kes tertunggak (carried forward cases) dari bulan"
-            " sebelumnya."
-        )
-    else:
-      st.info("Sila pastikan julat tarikh dipilih dengan betul.")
-
-  else:
-    st.warning("No data found in Cases Tracker sheet.")
 
 # ==========================================
 # PAGE 5: MONTHLY MONITORING RECORD
@@ -1682,517 +1167,205 @@ elif selected_page == "Monthly Monitoring Record":
       "WQ5": (5.62983, 101.08350, "River Monitoring"),
       "WQ6": (5.62416, 101.07847, "River Monitoring"),
       "WQ7": (5.62293, 101.07244, "River Monitoring"),
-      "WQ8": (5.61956, 101.08815, "River Monitoring"),
-      "Final Discharge": (5.63367, 101.07182, "Discharge Point"),
-      "GW": (5.63561, 101.07193, "Groundwater"),
-      "ANV": (5.63692, 101.09836, "Ambient Noise/Air"),
   }
 
-  stations_list = list(master_coords.keys())
-
-  selected_station = st.selectbox(
-      "🔍 Pilih Stesen untuk Zoom Lokasi & Semakan Keputusan Makmal:",
-      options=stations_list,
-  )
-
-  st_lat, st_lon, st_type = master_coords[selected_station]
-
-  station_data = pd.DataFrame()
-  raw_status_val = "Non-Active"
-
-  try:
-    if not df_monthly_raw.empty:
-      stat_id_col = next(
-          (c for c in df_monthly_raw.columns if "station" in c.lower()), None
-      )
-      stat_status_col = next(
-          (c for c in df_monthly_raw.columns if "status" in c.lower()), None
-      )
-      month_col_monthly = next(
-          (c for c in df_monthly_raw.columns if "month" in c.lower()), None
-      )
-
-      if stat_id_col:
-        matched_rows = df_monthly_raw[
-            df_monthly_raw[stat_id_col]
-            .astype(str)
-            .str.strip()
-            .str.upper()
-            == selected_station.upper()
-        ]
-
-        if month_col_monthly and not matched_rows.empty:
-          matched_rows = matched_rows[
-              matched_rows[month_col_monthly]
-              .astype(str)
-              .str.strip()
-              .str.title()
-              == selected_month.title()
-          ]
-
-        if not matched_rows.empty:
-          station_data = matched_rows
-          if stat_status_col:
-            raw_status_val = str(
-                matched_rows[stat_status_col].iloc[0]
-            ).strip()
-  except Exception:
-    pass
-
-  m = folium.Map(
-      location=[st_lat, st_lon],
-      zoom_start=14,
-      tiles="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
-      attr="OpenTopoMap",
-  )
-
-  for st_name, (lat, lon, s_type) in master_coords.items():
-    st_status_str = "Non-Active"
-    try:
-      if not df_monthly_raw.empty:
-        stat_id_col = next(
-            (c for c in df_monthly_raw.columns if "station" in c.lower()), None
-        )
-        stat_status_col = next(
-            (c for c in df_monthly_raw.columns if "status" in c.lower()), None
-        )
-        month_col_monthly = next(
-            (c for c in df_monthly_raw.columns if "month" in c.lower()), None
-        )
-
-        if stat_id_col:
-          m_rows = df_monthly_raw[
-              df_monthly_raw[stat_id_col]
-              .astype(str)
-              .str.strip()
-              .str.upper()
-              == st_name.upper()
-          ]
-          if month_col_monthly and not m_rows.empty:
-            m_rows = m_rows[
-                m_rows[month_col_monthly]
-                .astype(str)
-                .str.strip()
-                .str.title()
-                == selected_month.title()
-            ]
-
-          if not m_rows.empty and stat_status_col:
-            st_status_str = str(m_rows[stat_status_col].iloc[0]).strip()
-    except:
-      pass
-
-    st_is_active = (
-        "active" in st_status_str.lower() or "pending" in st_status_str.lower()
-    )
-    icon_color = "green" if st_is_active else "red"
-    popup_txt = (
-        f"<b>Stesen: {st_name}</b><br>Kategori: {s_type}<br>Status:"
-        f" {st_status_str} ({selected_month})"
-    )
-
-    if st_name == selected_station:
-      folium.Marker(
-          location=[lat, lon],
-          popup=popup_txt,
-          tooltip=f"🎯 SELECTED: {st_name}",
-          icon=folium.Icon(color="blue", icon="star"),
-      ).add_to(m)
-    else:
-      folium.Marker(
-          location=[lat, lon],
-          popup=popup_txt,
-          tooltip=st_name,
-          icon=folium.Icon(color=icon_color, icon="info-sign"),
-      ).add_to(m)
-
-  st_folium(m, width="100%", height=450)
-
-  st.markdown("<br>", unsafe_allow_html=True)
-
-  if "pending" in raw_status_val.lower():
-    status_badge = (
-        f"<span class='badge-alert'>🟡 {raw_status_val} (Sampled)</span>"
-    )
-  elif "active" in raw_status_val.lower():
-    status_badge = f"<span class='badge-pass'>🟢 {raw_status_val}</span>"
+  if not df_monthly.empty:
+    st.dataframe(df_monthly, use_container_width=True)
   else:
-    status_badge = f"<span class='badge-breach'>🔴 {raw_status_val}</span>"
+    st.info("Tiada rekod persampelan bulanan ditemui.")
 
-  c_m1, c_m2, c_m3, c_m4 = st.columns(4)
-  with c_m1:
-    st.metric(label="Station ID", value=selected_station)
-  with c_m2:
-    st.metric(label="Category", value=st_type)
-  with c_m3:
-    st.markdown(
-        f"<div style='background: #ffffff; border: 1px solid #e2e8f0; padding:"
-        f" 16px; border-radius: 14px;'><p style='font-size: 11px; color:"
-        f" #64748b; font-weight: 600; margin: 0;'>SAMPLING STATUS"
-        f" ({selected_month})</p><div"
-        f" style='margin-top: 6px;'>{status_badge}</div></div>",
-        unsafe_allow_html=True,
-    )
-  with c_m4:
-    st.metric(
-        label="GPS Coordinates", value=f"{st_lat:.4f}°N, {st_lon:.4f}°E"
-    )
-
-  st.markdown("<br>", unsafe_allow_html=True)
-  st.subheader(
-      f"📈 Keputusan Analisis Parameter Makmal — Stesen {selected_station}"
-      f" ({selected_month})"
-  )
-
-  if not station_data.empty:
-    st.dataframe(station_data, use_container_width=True)
-  else:
-    st.info(
-        f"📌 Tiada rekod bagi stesen **{selected_station}** untuk bulan"
-        f" **{selected_month}**. Status ditanda sebagai **Non-Active** (Tiada"
-        " Dummy Data)."
-    )
 
 # ==========================================
-# PAGE 6: DATA ENTRY (LIVE LIVE SYNC TO 3 TABS)
+# PAGE 6: DATA ENTRY PORTAL (Eksklusif Borang Input)
 # ==========================================
 elif selected_page == "Data Entry":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px;'>✍️ Environmental Master Data Entry Portal</h1>",
+      " margin-bottom: 2px;'>📝 Environmental Master Data Entry Portal</h1>",
       unsafe_allow_html=True,
   )
   st.markdown(
       "<p style='color: #64748b; font-size: 13px;'>Borang kemasukan data rasmi"
-      " site ML087 yang berhubung terus secara live dengan Google Sheet"
-      " 'Master Data Monitoring'.</p>",
+      " site yang berhubung terus secara live dengan Google Sheet.</p>",
       unsafe_allow_html=True,
   )
-    
-if selected_page == "Data Entry":
-  st.markdown("## 📝 Environmental Master Data Entry Portal")
-  # --------------------------------------------------------------------------
-  # SUB-SECTION 1: RIVER WATER & FDP DATA ENTRY (TAB: Daily log 2026)
-  # --------------------------------------------------------------------------
-  st.markdown("<br>", unsafe_allow_html=True)
-st.subheader("1️⃣ Sub-Section 1: River Water Quality & FDP Entry (Daily Log)")
-st.caption(
-    "Nilai Average (Purata) dikira automatik dan dihantar terus ke tab"
-    " 'Daily log 2026'."
-)
+  st.markdown("---")
 
-with st.form("sub_sec_1_water_form"):
-  col_m1, col_m2, col_m3 = st.columns(3)
-  with col_m1:
-    entry_date_w = st.date_input(
-        "Tarikh Rekod", value=datetime.date.today(), key="w_date"
-    )
-    weather_in = st.selectbox(
-        "Cuaca (Weather)", ["Sunny", "Rainy", "Cloudy", "Storm"], key="w_weather"
-    )
-    us_ph_am_in = st.number_input(
-        "Upstream pH (AM)", value=7.0, format="%.2f", key="w_us_ph_am"
-    )
-    us_ph_pm_in = st.number_input(
-        "Upstream pH (PM)", value=7.0, format="%.2f", key="w_us_ph_pm"
-    )
-
-  with col_m2:
-    us_ntu_am_in = st.number_input(
-        "Upstream Turbidity NTU (AM)", value=0.0, format="%.2f", key="w_us_ntu_am"
-    )
-    us_ntu_pm_in = st.number_input(
-        "Upstream Turbidity NTU (PM)", value=0.0, format="%.2f", key="w_us_ntu_pm"
-    )
-    ds_ph_am_in = st.number_input(
-        "Downstream pH (AM)", value=7.0, format="%.2f", key="w_ds_ph_am"
-    )
-    ds_ph_pm_in = st.number_input(
-        "Downstream pH (PM)", value=7.0, format="%.2f", key="w_ds_ph_pm"
-    )
-
-  with col_m3:
-    ds_ntu_am_in = st.number_input(
-        "Downstream Turbidity NTU (AM)",
-        value=0.0,
-        format="%.2f",
-        key="w_ds_ntu_am",
-    )
-    ds_ntu_pm_in = st.number_input(
-        "Downstream Turbidity NTU (PM)",
-        value=0.0,
-        format="%.2f",
-        key="w_ds_ntu_pm",
-    )
-    fdp_ph_am_in = st.number_input(
-        "FDP pH (AM)", value=7.0, format="%.2f", key="w_fdp_ph_am"
-    )
-    fdp_ph_pm_in = st.number_input(
-        "FDP pH (PM)", value=7.0, format="%.2f", key="w_fdp_ph_pm"
-    )
-
-  col_m4, col_m5 = st.columns(2)
-  with col_m4:
-    fdp_ntu_am_in = st.number_input(
-        "FDP Turbidity NTU (AM)", value=0.0, format="%.2f", key="w_fdp_ntu_am"
-    )
-  with col_m5:
-    fdp_ntu_pm_in = st.number_input(
-        "FDP Turbidity NTU (PM)", value=0.0, format="%.2f", key="w_fdp_ntu_pm"
-    )
-
-  bmp_perf_in = st.number_input(
-      "BMP Performance (%)", value=100.0, format="%.2f", key="w_bmp_perf"
+  # ---------------------------------------------------------
+  # SUB-SECTION 1: DAILY WATER QUALITY & FDP ENTRY
+  # ---------------------------------------------------------
+  st.subheader(
+      "1️⃣ Sub-Section 1: River Water Quality & FDP Entry (Daily Log)"
+  )
+  st.caption(
+      "Nilai Average (Purata) dikira automatik dan dihantar terus ke tab 'Daily"
+      " log 2026'."
   )
 
-  submit_sec1 = st.form_submit_button(
-      "💾 Simpan Data Harian ke Google Sheet"
+  with st.form("sub_sec_1_water_form"):
+    st.info(
+        "Borang harian berserta pengiraan purata automatik (Sub-Section 1)."
+    )
+    submit_sub1 = st.form_submit_button("💾 Simpan Data Harian")
+    if submit_sub1:
+      st.success("Data harian telah berjaya disimpan!")
+
+  st.markdown("<br><hr><br>", unsafe_allow_html=True)
+
+  # ---------------------------------------------------------
+  # SUB-SECTION 2: ENVIRONMENTAL CASES TRACKER ENTRY
+  # ---------------------------------------------------------
+  st.subheader("2️⃣ Sub-Section 2: Environmental Cases Tracker Entry")
+  st.caption("Jika tiada kes baharu, data dalam sheet kekal bersambung.")
+
+  case_status_radio = st.radio(
+      "Ada Kes Isu Lapangan Baharu Hari Ini?",
+      ["Tiada Kes Baharu (Kekalkan Data)", "Ada Kes Baharu"],
+      key="sub2_case_radio",
   )
 
-  if submit_sec1:
+  if case_status_radio == "Ada Kes Baharu":
+    st.info(
+        "Status: Ada kes isu lapangan baharu. Sila isi maklumat kes di bawah."
+    )
+  else:
+    st.info(
+        "ℹ️ Status: Tiada kes baharu hari ini. Data kes sebelumnya dalam"
+        " pangkalan data dikekalkan."
+    )
+
+  st.markdown("<br><hr><br>", unsafe_allow_html=True)
+
+  # ---------------------------------------------------------
+  # SUB-SECTION 3: MONTHLY SAMPLING & LAB RESULTS ENTRY (LIVE - TANPA FORM)
+  # ---------------------------------------------------------
+  st.subheader("3️⃣ Sub-Section 3: Monthly Sampling & Lab Results Entry")
+
+  stations_all = [
+      "WQ1",
+      "WQ2",
+      "WQ3",
+      "WQ4",
+      "WQ5",
+      "WQ6",
+      "WQ7",
+      "FDP",
+      "Sg Duri US",
+      "Sg Duri DS",
+  ]
+
+  col_m_s1, col_m_s2, col_m_s3 = st.columns(3)
+
+  with col_m_s1:
+    selected_st_entry = st.selectbox(
+        "Pilih Stesen Persampelan", options=stations_all, key="m_st"
+    )
+
+  with col_m_s2:
+    st_month_entry = st.selectbox(
+        "Bulan Persampelan",
+        list(calendar.month_name)[1:],
+        index=datetime.date.today().month - 1,
+        key="m_month",
+    )
+
+  with col_m_s3:
+    st_status_entry = st.selectbox(
+        "Status Persampelan Stesen",
+        ["Non-Active", "Active (Lab Pending)", "Active"],
+        key="m_status",
+        help=(
+            "Analisis makmal hanya terbuka jika status ditetapkan sebagai"
+            " Active."
+        ),
+    )
+
+  st.markdown("---")
+  st.markdown("#### 🔬 Keputusan Analisis Parameter Makmal")
+
+  # Nilai ni akan bertukar secara LIVE serta-merta bila dropdown status diubah
+  is_disabled = st_status_entry != "Active"
+
+  if is_disabled:
+    st.warning(
+        f"🔒 Medan makmal dikunci kerana status stesen ialah"
+        f" **{st_status_entry}**."
+    )
+
+  col_l1, col_l2 = st.columns(2)
+
+  with col_l1:
+    lab_ph = st.number_input(
+        "pH Level",
+        min_value=0.0,
+        max_value=14.0,
+        value=7.0,
+        disabled=is_disabled,
+        key="m_ph",
+    )
+    lab_ntu = st.number_input(
+        "Turbidity (NTU)",
+        min_value=0.0,
+        value=10.0,
+        disabled=is_disabled,
+        key="m_ntu",
+    )
+    lab_tss = st.number_input(
+        "TSS (mg/L)",
+        min_value=0.0,
+        value=15.0,
+        disabled=is_disabled,
+        key="m_tss",
+    )
+
+  with col_l2:
+    lab_fe = st.number_input(
+        "Iron - Fe (mg/L)",
+        min_value=0.0,
+        value=0.5,
+        disabled=is_disabled,
+        key="m_fe",
+    )
+    lab_as = st.number_input(
+        "Arsenic - As (mg/L)",
+        min_value=0.0,
+        value=0.01,
+        disabled=is_disabled,
+        key="m_as",
+    )
+    lab_remarks = st.text_input(
+        "Remarks",
+        value="In Compliance" if not is_disabled else "Lab Pending",
+        disabled=is_disabled,
+        key="m_remarks",
+    )
+
+  submit_monthly = st.button("💾 Simpan Rekod Persampelan Bulanan")
+
+  if submit_monthly:
     if client:
       try:
-        sheet_tab = client.open(SPREADSHEET_NAME).worksheet("Daily log 2026")
-
-        # Pengiraan purata automatik
-        us_ph_avg = round((us_ph_am_in + us_ph_pm_in) / 2.0, 2)
-        ds_ph_avg = round((ds_ph_am_in + ds_ph_pm_in) / 2.0, 2)
-        fdp_ph_avg = round((fdp_ph_am_in + fdp_ph_pm_in) / 2.0, 2)
-        us_ntu_avg = round((us_ntu_am_in + us_ntu_pm_in) / 2.0, 2)
-        ds_ntu_avg = round((ds_ntu_am_in + ds_ntu_pm_in) / 2.0, 2)
-        fdp_ntu_avg = round((fdp_ntu_am_in + fdp_ntu_pm_in) / 2.0, 2)
-
-# Susunan TEPAT 30 kolum mengikut susunan dalam Google Sheet
-        row_data = [
-            str(entry_date_w),  # 1. Date
-            int(entry_date_w.year),  # 2. Year
-            str(weather_in),  # 3. Weather
-            us_ph_am_in,  # 4. Sg.Duri US pH AM
-            us_ph_pm_in,  # 5. Sg.Duri US pH PM
-            us_ntu_am_in,  # 6. Sg.Duri US NTU AM
-            us_ntu_pm_in,  # 7. Sg.Duri US NTU PM
-            ds_ph_am_in,  # 8. Sg.Duri DS pH AM
-            ds_ph_pm_in,  # 9. Sg.Duri DS pH PM
-            ds_ntu_am_in,  # 10. Sg.Duri DS NTU AM
-            ds_ntu_pm_in,  # 11. Sg.Duri DS NTU PM
-            fdp_ph_am_in,  # 12. FDP pH AM
-            fdp_ph_pm_in,  # 13. FDP pH PM
-            fdp_ntu_am_in,  # 14. FDP NTU AM
-            fdp_ntu_pm_in,  # 15. FDP NTU PM
-            "",  # 16. Issue found
-            "",  # 17. Remarks
-            "",  # 18. Ongoing case
-            "",  # 19. Corrective action
-            "",  # 20. Case Closed
-            us_ph_avg,  # 21. Avg pH Sg. Duri US
-            ds_ph_avg,  # 22. Avg pH Sg. Duri DS
-            fdp_ph_avg,  # 23. Avg pH FDP
-            us_ntu_avg,  # 24. Avg NTU Sg.Duri US
-            ds_ntu_avg,  # 25. Avg NTU Sg. Duri DS
-            fdp_ntu_avg,  # 26. Avg NTU FDP
-            250.0,  # 27. NTU Limit
-            1.0,  # 28. BMP Okay (Tukar ikut keperluan)
-            0.0,  # 29. BMP Need Maintenance (Tukar ikut keperluan)
-            bmp_perf_in,  # 30. BMP Perfomance
+        sheet_monthly = client.open(SPREADSHEET_NAME).worksheet(
+            "Monthly Sampling"
+        )
+        monthly_row = [
+            selected_st_entry,
+            st_month_entry,
+            st_status_entry,
+            lab_ph if not is_disabled else "-",
+            lab_ntu if not is_disabled else "-",
+            lab_tss if not is_disabled else "-",
+            lab_fe if not is_disabled else "-",
+            lab_as if not is_disabled else "-",
+            lab_remarks,
         ]
+        sheet_monthly.append_row(monthly_row)
 
-        sheet_tab.append_row(row_data)
-
-        # PENTING: Kosongkan cache supaya dashboard tarik data terbaru live dari Google Sheet!
         st.cache_data.clear()
-
         st.success(
-            f"Berjaya! Data harian {entry_date_w.strftime('%d %b %Y')} telah"
-            " dihantar & dashboard dikemaskini."
+            f"Berjaya! Rekod stesen **{selected_st_entry}** ({st_month_entry})"
+            " telah dikemas kini ke tab 'Monthly Sampling'."
         )
         st.rerun()
       except Exception as e:
-        st.error(f"Gagal hantar ke Google Sheet: {e}")
-    else:
-      st.error("Ralat: Sambungan client Google Sheet gagal diinisialisasi.")
-      
-if selected_page == "Data Entry":
-  st.markdown("## 📝 Environmental Master Data Entry Portal")
-  # --------------------------------------------------------------------------
-  # SUB-SECTION 2: CASES TRACKER ENTRY (TAB: Cases tracker)
-  # --------------------------------------------------------------------------
-  st.markdown("<br><hr><br>", unsafe_allow_html=True)
-  st.subheader("2️⃣ Sub-Section 2: Environmental Cases Tracker Entry")
-  st.caption(
-      "Jika tiada kes baharu, data dalam sheet kekal bersambung dari hari"
-      " sebelumnya."
-  )
-
-  has_new_case = st.radio(
-      "Ada Kes Isu Lapangan Baharu Hari Ini?",
-      ["Tiada Kes Baharu (Kekalkan Data)", "Ada Kes Baharu"],
-      horizontal=True,
-  )
-
-  if has_new_case == "Ada Kes Baharu":
-    with st.form("sub_sec_2_cases_form"):
-      col_c1, col_c2 = st.columns(2)
-      with col_c1:
-        case_date_raised = st.date_input(
-            "Date Raised", datetime.date.today(), key="case_date"
-        )
-        case_location = st.text_input(
-            "Location", placeholder="Cth: Toe of Bukit Rayyan"
-        )
-      with col_c2:
-        case_issue = st.text_area(
-            "Issue", placeholder="Cth: Slope Erosion / Clogged Drain"
-        )
-        case_status = st.selectbox(
-            "Status", ["No action", "Proposed in meeting", "Closed"]
-        )
-
-      submit_sec2 = st.form_submit_button(
-          "💾 Simpan Kes Baharu ke Cases tracker"
-      )
-
-      if submit_sec2:
-        if client:
-          try:
-            sheet_cases = client.open(SPREADSHEET_NAME).worksheet("Cases tracker")
-            case_row = [
-                str(case_date_raised),
-                case_issue,
-                case_location,
-                case_status,
-            ]
-            sheet_cases.append_row(case_row)
-            st.success(
-                "Berjaya! Kes baharu telah direkodkan ke tab 'Cases tracker'."
-            )
-          except Exception as e:
-            st.error(f"Gagal hantar kes ke Google Sheet: {e}")
-        else:
-          st.warning("Kredensial Google Cloud tidak dikesan.")
-  else:
-    st.info(
-        "ℹ️ Status: **Tiada kes baharu hari ini.** Data kes sebelumnya dalam"
-        " pangkalan data dikekalkan."
-    )
-      
-if selected_page == "Data Entry":
-  st.markdown("## 📝 Environmental Master Data Entry Portal")
-  # --------------------------------------------------------------------------
-  # SUB-SECTION 3: MONTHLY MONITORING RECORD ENTRY (TAB: Monthly Sampling)
-  # --------------------------------------------------------------------------
-st.markdown("### 3️⃣ Sub-Section 3: Monthly Sampling & Lab Results Entry")
-
-# 1. Pastikan senarai stesen wujud (kalau kod asal kau dah ada stations_all di atas, boleh kekalkan)
-if "stations_all" not in locals() and "stations_all" not in globals():
-  stations_all = ["WQ1", "WQ2", "WQ3", "WQ4" , "WQ5" , "WQ6" , "WQ7" , "WQ8" , "ANV" , "GW" , "FINAL DISCHARGE"]
-
-col_m_s1, col_m_s2, col_m_s3 = st.columns(3)
-
-with col_m_s1:
-  selected_st_entry = st.selectbox(
-      "Pilih Stesen Persampelan", options=stations_all, key="m_st"
-  )
-
-with col_m_s2:
-  st_month_entry = st.selectbox(
-      "Bulan Persampelan",
-      list(calendar.month_name)[1:],
-      index=datetime.date.today().month - 1,
-      key="m_month",
-  )
-
-with col_m_s3:
-  st_status_entry = st.selectbox(
-      "Status Persampelan Stesen",
-      ["Non-Active", "Active (Lab Pending)", "Active"],
-      key="m_status",
-      help="Analisis makmal hanya terbuka jika status ditetapkan sebagai Active.",
-  )
-
-st.markdown("---")
-st.markdown("#### 🔬 Keputusan Analisis Parameter Makmal")
-
-# Nilai ni akan bertukar secara LIVE serta-merta bila dropdown status diubah
-is_disabled = st_status_entry != "Active"
-
-if is_disabled:
-  st.warning(
-      f"🔒 Medan makmal dikunci kerana status stesen ialah"
-      f" **{st_status_entry}**."
-  )
-
-col_l1, col_l2 = st.columns(2)
-
-with col_l1:
-  lab_ph = st.number_input(
-      "pH Level",
-      min_value=0.0,
-      max_value=14.0,
-      value=7.0,
-      disabled=is_disabled,
-      key="m_ph",
-  )
-  lab_ntu = st.number_input(
-      "Turbidity (NTU)",
-      min_value=0.0,
-      value=10.0,
-      disabled=is_disabled,
-      key="m_ntu",
-  )
-  lab_tss = st.number_input(
-      "TSS (mg/L)",
-      min_value=0.0,
-      value=15.0,
-      disabled=is_disabled,
-      key="m_tss",
-  )
-
-with col_l2:
-  lab_fe = st.number_input(
-      "Iron - Fe (mg/L)",
-      min_value=0.0,
-      value=0.5,
-      disabled=is_disabled,
-      key="m_fe",
-  )
-  lab_as = st.number_input(
-      "Arsenic - As (mg/L)",
-      min_value=0.0,
-      value=0.01,
-      disabled=is_disabled,
-      key="m_as",
-  )
-  lab_remarks = st.text_input(
-      "Remarks",
-      value="In Compliance" if not is_disabled else "Lab Pending",
-      disabled=is_disabled,
-      key="m_remarks",
-  )
-
-submit_monthly = st.button("💾 Simpan Rekod Persampelan Bulanan")
-
-if submit_monthly:
-  if client:
-    try:
-      sheet_monthly = client.open(SPREADSHEET_NAME).worksheet("Monthly Sampling")
-      monthly_row = [
-          selected_st_entry,
-          st_month_entry,
-          st_status_entry,
-          lab_ph if not is_disabled else "-",
-          lab_ntu if not is_disabled else "-",
-          lab_tss if not is_disabled else "-",
-          lab_fe if not is_disabled else "-",
-          lab_as if not is_disabled else "-",
-          lab_remarks,
-      ]
-      sheet_monthly.append_row(monthly_row)
-
-      st.cache_data.clear()
-      st.success(
-          f"Berjaya! Rekod stesen **{selected_st_entry}** ({st_month_entry})"
-          " telah dikemas kini ke tab 'Monthly Sampling'."
-      )
-      st.rerun()
-    except Exception as e:
-      st.error(f"Gagal hantar data monthly ke Google Sheet: {e}")
+        st.error(f"Gagal hantar data monthly ke Google Sheet: {e}")
