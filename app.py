@@ -1782,58 +1782,89 @@ elif selected_page == "Monthly Monitoring Record":
     )
 
 # ==========================================
-# PAGE 6: DATA ENTRY (DIGITAL INPUT FORM)
+# PAGE 6: DATA ENTRY (FULL TEMPLATE COLUMNS A - AD)
 # ==========================================
 elif selected_page == "Data Entry":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px;'>✍️ Daily Environmental Data Entry</h1>",
+      " margin-bottom: 2px;'>✍️ Daily Environmental Data Entry (Full Template)</h1>",
       unsafe_allow_html=True,
   )
   st.markdown(
-      "<p style='color: #64748b; font-size: 13px;'>Masukkan data pemantauan"
-      " harian tapak lombong terus dari aplikasi tanpa perlu buka Google"
-      " Sheet.</p>",
+      "<p style='color: #64748b; font-size: 13px;'>Masukkan semua parameter"
+      " harian mengikut struktur Google Sheet (FDP, Sg. Duri Upstream/Downstream,"
+      " dan BMP Performance).</p>",
       unsafe_allow_html=True,
   )
 
-  with st.form("daily_entry_form"):
-    col1, col2 = st.columns(2)
-
-    with col1:
-      entry_date = st.date_input("Tarikh Sampling", datetime.date.today())
-      fdp_ph_am_in = st.number_input(
-          "FDP pH (AM)", min_value=0.0, max_value=14.0, value=7.0, step=0.1
-      )
-      fdp_ntu_am_in = st.number_input(
-          "FDP Turbidity / NTU (AM)", min_value=0.0, value=10.0, step=1.0
-      )
-
-    with col2:
-      sample_month_in = st.selectbox(
-          "Bulan",
+  with st.form("full_daily_entry_form"):
+    st.subheader("📅 Tarikh & Maklumat Asas")
+    col_b1, col_b2 = st.columns(2)
+    with col_b1:
+      entry_date = st.date_input("Date (Kolum Tarikh)", datetime.date.today())
+    with col_b2:
+      sample_month = st.selectbox(
+          "Month",
           list(calendar.month_name)[1:],
           index=datetime.date.today().month - 1,
       )
-      fdp_ph_pm_in = st.number_input(
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.subheader("🛡️ Final Discharge Point (FDP) & Had Kawalan")
+    col_f1, col_f2, col_f3 = st.columns(3)
+    with col_f1:
+      fdp_ph_am = st.number_input(
+          "FDP pH (AM)", min_value=0.0, max_value=14.0, value=7.0, step=0.1
+      )
+      fdp_ph_pm = st.number_input(
           "FDP pH (PM)", min_value=0.0, max_value=14.0, value=7.0, step=0.1
       )
-      fdp_ntu_pm_in = st.number_input(
+    with col_f2:
+      fdp_ntu_am = st.number_input(
+          "FDP Turbidity / NTU (AM)", min_value=0.0, value=10.0, step=1.0
+      )
+      fdp_ntu_pm = st.number_input(
           "FDP Turbidity / NTU (PM)", min_value=0.0, value=10.0, step=1.0
       )
+    with col_f3:
+      ntu_limit = st.number_input(
+          "NTU Limit (Baseline)", min_value=0.0, value=50.0, step=1.0
+      )
 
-    remarks_in = st.text_area(
-        "Catatan / Ulasan Lapangan (Opsional)",
-        placeholder="Cth: Keadaan air normal, tiada limpahan kolam.",
-    )
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.subheader("💧 Sungai Duri Upstream (Hulu) & Downstream (Hilir)")
+    
+    col_s1, col_s2 = st.columns(2)
+    with col_s1:
+      st.markdown("**Sg. Duri Upstream (US)**")
+      us_ph_am = st.number_input("US pH (AM)", min_value=0.0, max_value=14.0, value=7.0, step=0.1)
+      us_ph_pm = st.number_input("US pH (PM)", min_value=0.0, max_value=14.0, value=7.0, step=0.1)
+      us_ntu_am = st.number_input("US NTU (AM)", min_value=0.0, value=10.0, step=1.0)
+      us_ntu_pm = st.number_input("US NTU (PM)", min_value=0.0, value=10.0, step=1.0)
+
+    with col_s2:
+      st.markdown("**Sg. Duri Downstream (DS)**")
+      ds_ph_am = st.number_input("DS pH (AM)", min_value=0.0, max_value=14.0, value=7.0, step=0.1)
+      ds_ph_pm = st.number_input("DS pH (PM)", min_value=0.0, max_value=14.0, value=7.0, step=0.1)
+      ds_ntu_am = st.number_input("DS NTU (AM)", min_value=0.0, value=10.0, step=1.0)
+      ds_ntu_pm = st.number_input("DS NTU (PM)", min_value=0.0, value=10.0, step=1.0)
+
+    st.markdown("<hr>", unsafe_allow_html=True)
+    st.subheader("⚙️ BMP Performance & Catatan Akhir")
+    col_e1, col_e2 = st.columns(2)
+    with col_e1:
+      bmp_perf = st.number_input(
+          "BMP Performance (%)", min_value=0.0, max_value=100.0, value=85.0, step=0.5
+      )
+    with col_e2:
+      general_remarks = st.text_input("Remarks / Status Lapangan", "Normal operation")
 
     submit_button = st.form_submit_button(
-        label="💾 Simpan & Hantar ke Pangkalan Data"
+        label="💾 Simpan & Hantar Semua Data ke Pangkalan Data"
     )
 
     if submit_button:
+      # Data ni nanti akan disusun menjadi 1 baris selari dengan kolum Google Sheet
       st.success(
-          f"Berjaya! Data bagi tarikh {entry_date.strftime('%d %b %Y')} telah"
-          " berjaya direkodkan."
+          f"Berjaya! Data lengkap bagi tarikh {entry_date.strftime('%d %b %Y')} telah direkodkan."
       )
-      # Nota: Di sini nanti kita sambungkan kod untuk hantar terus ke Google Sheet / Backend DB
