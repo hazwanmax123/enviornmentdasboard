@@ -1960,7 +1960,7 @@ with st.form("sub_sec_1_water_form"):
         ds_ntu_avg = round((ds_ntu_am_in + ds_ntu_pm_in) / 2.0, 2)
         fdp_ntu_avg = round((fdp_ntu_am_in + fdp_ntu_pm_in) / 2.0, 2)
 
-        # Susunan TEPAT 30 kolum mengikut susunan dalam Google Sheet
+# Susunan TEPAT 30 kolum mengikut susunan dalam Google Sheet
         row_data = [
             str(entry_date_w),  # 1. Date
             int(entry_date_w.year),  # 2. Year
@@ -1989,15 +1989,21 @@ with st.form("sub_sec_1_water_form"):
             ds_ntu_avg,  # 25. Avg NTU Sg. Duri DS
             fdp_ntu_avg,  # 26. Avg NTU FDP
             250.0,  # 27. NTU Limit
-            2.0,  # 28. BMP Okay
-            2.0,  # 29. BMP Need Maintenance
+            1.0,  # 28. BMP Okay (Tukar ikut keperluan)
+            0.0,  # 29. BMP Need Maintenance (Tukar ikut keperluan)
             bmp_perf_in,  # 30. BMP Perfomance
         ]
 
         sheet_tab.append_row(row_data)
-        st.success("Berjaya! Data harian telah dihantar ke tab 'Daily log 2026'.")
-        st.rerun()
 
+        # PENTING: Kosongkan cache supaya dashboard tarik data terbaru live dari Google Sheet!
+        st.cache_data.clear()
+
+        st.success(
+            f"Berjaya! Data harian {entry_date_w.strftime('%d %b %Y')} telah"
+            " dihantar & dashboard dikemaskini."
+        )
+        st.rerun()
       except Exception as e:
         st.error(f"Gagal hantar ke Google Sheet: {e}")
     else:
