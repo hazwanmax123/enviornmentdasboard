@@ -30,29 +30,14 @@ SPREADSHEET_NAME = "Master Data Monitoring"
 
 @st.cache_resource
 def init_gspread_client():
-  scope = [
-      "https://spreadsheets.google.com/feeds",
-      "https://www.googleapis.com/auth/drive",
-  ]
   try:
-    if "gcp_service_account" in st.secrets:
-      # Tukar ke dict biasa dari st.secrets
-      creds_dict = dict(st.secrets["gcp_service_account"])
-      creds = ServiceAccountCredentials.from_json_keyfile_dict(
-          creds_dict, scope
-      )
-    else:
-      creds = ServiceAccountCredentials.from_json_keyfile_name(
-          "credentials.json", scope
-      )
-    return gspread.authorize(creds)
+    # Guna kaedah direct dict dari st.secrets (Sangat stabil & moden)
+    creds_dict = dict(st.secrets["gcp_service_account"])
+    return gspread.service_account_from_dict(creds_dict)
   except Exception as e:
-    # PENTING: Paparkan ralat sebenar kat skrin supaya kita tahu kenapa gagal!
-    st.error(f"⚠️ Ralat Google Auth Sebenar: {e}")
+    st.error(f"⚠️ Ralat Autentikasi Google: {e}")
     return None
 
-
-client = init_gspread_client()
 
 client = init_gspread_client()
 # ==========================================
