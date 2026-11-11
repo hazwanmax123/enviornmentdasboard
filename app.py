@@ -1979,10 +1979,7 @@ elif selected_page == "Data Entry":
           )
         except Exception as e:
           st.error(f"Gagal hantar ke Google Sheet: {e}")
-      else:
-        st.warning(
-            "Fail 'credentials.json' tidak dijumpai. Sila masukkan fail JSON ke"
-            " dalam folder projek."
+      
         )
 
   # --------------------------------------------------------------------------
