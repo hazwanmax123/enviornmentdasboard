@@ -11,6 +11,14 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_folium import st_folium
+
+
+# ==========================================
+# GOOGLE SHEET CONFIGURATION & GSPREAD SETUP
+# ==========================================
+SPREADSHEET_NAME = "Master Data Monitoring"
+
+
 def init_gspread_client():
   scope = [
       "https://spreadsheets.google.com/feeds",
@@ -24,13 +32,13 @@ def init_gspread_client():
       creds = ServiceAccountCredentials.from_json_keyfile_name(
           "credentials.json", scope
       )
-      return gspread.authorize(creds)
+    return gspread.authorize(creds)
   except Exception as e:
     return None
 
 
 client = init_gspread_client()
-# ----------------------------------
+
 # ==========================================
 # PAGE CONFIG
 # ==========================================
@@ -38,7 +46,12 @@ st.set_page_config(
     page_title="Environmental Monitoring Dashboard",
     page_icon="🌊",
     layout="wide",
-    initial_sidebar_state="expanded",
+)
+
+# ------------------------------------------
+# (Sila pastikan baki kod asal aplikasi kau 
+# yang lain berada di bawah ini seperti biasa)
+# ------------------------------------------
 )
 
 # ==========================================
