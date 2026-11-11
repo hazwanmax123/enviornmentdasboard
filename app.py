@@ -1968,36 +1968,42 @@ with st.form("sub_sec_1_water_form"):
         ds_ntu_avg = round((ds_ntu_am_in + ds_ntu_pm_in) / 2.0, 2)
         fdp_ntu_avg = round((fdp_ntu_am_in + fdp_ntu_pm_in) / 2.0, 2)
 
+        # Susunan TEPAT 30 kolum mengikut susunan dalam Google Sheet
         row_data = [
-            str(entry_date_w),
-            int(entry_date_w.year),
-            str(weather_in),
-            us_ph_am_in,
-            us_ph_pm_in,
-            us_ntu_am_in,
-            us_ntu_pm_in,
-            ds_ph_am_in,
-            ds_ph_pm_in,
-            ds_ntu_am_in,
-            ds_ntu_pm_in,
-            fdp_ph_am_in,
-            fdp_ph_pm_in,
-            fdp_ntu_am_in,
-            fdp_ntu_pm_in,
-            us_ph_avg,
-            ds_ph_avg,
-            fdp_ph_avg,
-            us_ntu_avg,
-            ds_ntu_avg,
-            fdp_ntu_avg,
-            bmp_perf_in,
+            str(entry_date_w),  # 1. Date
+            int(entry_date_w.year),  # 2. Year
+            str(weather_in),  # 3. Weather
+            us_ph_am_in,  # 4. Sg.Duri US pH AM
+            us_ph_pm_in,  # 5. Sg.Duri US pH PM
+            us_ntu_am_in,  # 6. Sg.Duri US NTU AM
+            us_ntu_pm_in,  # 7. Sg.Duri US NTU PM
+            ds_ph_am_in,  # 8. Sg.Duri DS pH AM
+            ds_ph_pm_in,  # 9. Sg.Duri DS pH PM
+            ds_ntu_am_in,  # 10. Sg.Duri DS NTU AM
+            ds_ntu_pm_in,  # 11. Sg.Duri DS NTU PM
+            fdp_ph_am_in,  # 12. FDP pH AM
+            fdp_ph_pm_in,  # 13. FDP pH PM
+            fdp_ntu_am_in,  # 14. FDP NTU AM
+            fdp_ntu_pm_in,  # 15. FDP NTU PM
+            "",  # 16. Issue found
+            "",  # 17. Remarks
+            "",  # 18. Ongoing case
+            "",  # 19. Corrective action
+            "",  # 20. Case Closed
+            us_ph_avg,  # 21. Avg pH Sg. Duri US
+            ds_ph_avg,  # 22. Avg pH Sg. Duri DS
+            fdp_ph_avg,  # 23. Avg pH FDP
+            us_ntu_avg,  # 24. Avg NTU Sg.Duri US
+            ds_ntu_avg,  # 25. Avg NTU Sg. Duri DS
+            fdp_ntu_avg,  # 26. Avg NTU FDP
+            250.0,  # 27. NTU Limit
+            2.0,  # 28. BMP Okay
+            2.0,  # 29. BMP Need Maintenance
+            bmp_perf_in,  # 30. BMP Perfomance
         ]
 
         sheet_tab.append_row(row_data)
-        st.success(
-            f"Berjaya! Data harian {entry_date_w.strftime('%d %b %Y')} telah"
-            " dihantar live ke tab 'Daily log 2026'."
-        )
+        st.success("Berjaya! Data harian telah dihantar ke tab 'Daily log 2026'.")
         st.rerun()
 
       except Exception as e:
