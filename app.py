@@ -48,6 +48,20 @@ def init_gspread_client():
 
 
 client = init_gspread_client()
+# ==========================================
+# UI TITLE & HEADER
+# ==========================================
+st.markdown(
+    "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
+    " margin-bottom: 2px;'>🔥 Environmental Master Data Entry Portal</h1>",
+    unsafe_allow_html=True,
+)
+st.markdown(
+    "<p style='color: #64748b; font-size: 13px;'>Borang kemasukan data rasmi"
+    " site ML087 yang berhubung terus secara live dengan Google Sheet"
+    " 'Master Data Monitoring'.</p>",
+    unsafe_allow_html=True,
+)
 
 # ==========================================
 # PAGE CONFIG
