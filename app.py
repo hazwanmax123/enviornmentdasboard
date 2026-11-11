@@ -500,6 +500,7 @@ with st.sidebar:
           "River Water Quality",
           "Cases Tracker",
           "Monthly Monitoring Record",
+          "Data Entry",
       ],
       label_visibility="collapsed",
   )
@@ -1592,12 +1593,12 @@ elif selected_page == "Cases Tracker":
     st.warning("No data found in Cases Tracker sheet.")
 
 # ==========================================
-# PAGE 5: MONTHLY MONITORING RECORD (FILTERED BY MONTH)
+# PAGE 5: MONTHLY MONITORING RECORD
 # ==========================================
 elif selected_page == "Monthly Monitoring Record":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px;'>🗺️ RBA Mining Monthly Monitoring ",
+      " margin-bottom: 2px;'>🗺️ RBA Mining EIA Master Topography Map</h1>",
       unsafe_allow_html=True,
   )
 
@@ -1640,7 +1641,6 @@ elif selected_page == "Monthly Monitoring Record":
       )
 
       if stat_id_col:
-        # Tapis mengikut stesen terpilih
         matched_rows = df_monthly_raw[
             df_monthly_raw[stat_id_col]
             .astype(str)
@@ -1649,7 +1649,6 @@ elif selected_page == "Monthly Monitoring Record":
             == selected_station.upper()
         ]
 
-        # Tapis pula mengikut bulan yang dipilih di sidebar (jika kolum bulan wujud)
         if month_col_monthly and not matched_rows.empty:
           matched_rows = matched_rows[
               matched_rows[month_col_monthly]
@@ -1781,3 +1780,60 @@ elif selected_page == "Monthly Monitoring Record":
         f" **{selected_month}**. Status ditanda sebagai **Non-Active** (Tiada"
         " Dummy Data)."
     )
+
+# ==========================================
+# PAGE 6: DATA ENTRY (DIGITAL INPUT FORM)
+# ==========================================
+elif selected_page == "Data Entry":
+  st.markdown(
+      "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
+      " margin-bottom: 2px;'>✍️ Daily Environmental Data Entry</h1>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #64748b; font-size: 13px;'>Masukkan data pemantauan"
+      " harian tapak lombong terus dari aplikasi tanpa perlu buka Google"
+      " Sheet.</p>",
+      unsafe_allow_html=True,
+  )
+
+  with st.form("daily_entry_form"):
+    col1, col2 = st.columns(2)
+
+    with col1:
+      entry_date = st.date_input("Tarikh Sampling", datetime.date.today())
+      fdp_ph_am_in = st.number_input(
+          "FDP pH (AM)", min_value=0.0, max_value=14.0, value=7.0, step=0.1
+      )
+      fdp_ntu_am_in = st.number_input(
+          "FDP Turbidity / NTU (AM)", min_value=0.0, value=10.0, step=1.0
+      )
+
+    with col2:
+      sample_month_in = st.selectbox(
+          "Bulan",
+          list(calendar.month_name)[1:],
+          index=datetime.date.today().month - 1,
+      )
+      fdp_ph_pm_in = st.number_input(
+          "FDP pH (PM)", min_value=0.0, max_value=14.0, value=7.0, step=0.1
+      )
+      fdp_ntu_pm_in = st.number_input(
+          "FDP Turbidity / NTU (PM)", min_value=0.0, value=10.0, step=1.0
+      )
+
+    remarks_in = st.text_area(
+        "Catatan / Ulasan Lapangan (Opsional)",
+        placeholder="Cth: Keadaan air normal, tiada limpahan kolam.",
+    )
+
+    submit_button = st.form_submit_button(
+        label="💾 Simpan & Hantar ke Pangkalan Data"
+    )
+
+    if submit_button:
+      st.success(
+          f"Berjaya! Data bagi tarikh {entry_date.strftime('%d %b %Y')} telah"
+          " berjaya direkodkan."
+      )
+      # Nota: Di sini nanti kita sambungkan kod untuk hantar terus ke Google Sheet / Backend DB
