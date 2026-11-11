@@ -11,7 +11,26 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_folium import st_folium
+def init_gspread_client():
+  scope = [
+      "https://spreadsheets.google.com/feeds",
+      "https://www.googleapis.com/auth/drive",
+  ]
+  try:
+    if "gcp_service_account" in st.secrets:
+      creds_dict = dict(st.secrets["gcp_service_account"])
+      creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    else:
+      creds = ServiceAccountCredentials.from_json_keyfile_name(
+          "credentials.json", scope
+      )
+      return gspread.authorize(creds)
+  except Exception as e:
+    return None
 
+
+client = init_gspread_client()
+# ----------------------------------
 # ==========================================
 # PAGE CONFIG
 # ==========================================
