@@ -3,5 +3,7 @@ pandas
 plotly
 folium
 streamlit-folium
-openpyxl
 python-docx
+gspread
+oauth2client
+requests
