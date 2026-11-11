@@ -1980,7 +1980,6 @@ elif selected_page == "Data Entry":
         except Exception as e:
           st.error(f"Gagal hantar ke Google Sheet: {e}")
       
-        )
 
   # --------------------------------------------------------------------------
   # SUB-SECTION 2: CASES TRACKER ENTRY (TAB: Cases tracker)
