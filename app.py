@@ -2075,121 +2075,116 @@ with st.form("sub_sec_1_water_form"):
   # --------------------------------------------------------------------------
   # SUB-SECTION 3: MONTHLY MONITORING RECORD ENTRY (TAB: Monthly Sampling)
   # --------------------------------------------------------------------------
-  st.markdown("<br><hr><br>", unsafe_allow_html=True)
-  st.subheader("3️⃣ Sub-Section 3: Monthly Sampling & Lab Results Entry")
-  st.caption(
-      "Medan isian makmal dikunci sekiranya status stesen bukan 'Active'."
+st.markdown("### 3️⃣ Sub-Section 3: Monthly Sampling & Lab Results Entry")
+
+col_m_s1, col_m_s2, col_m_s3 = st.columns(3)
+
+with col_m_s1:
+  selected_st_entry = st.selectbox(
+      "Pilih Stesen Persampelan", options=stations_all, key="m_st"
   )
 
-  stations_all = [
-      "WQ1",
-      "WQ2",
-      "WQ3",
-      "WQ4",
-      "WQ5",
-      "WQ6",
-      "WQ7",
-      "WQ8",
-      "Final Discharge",
-      "GW",
-      "ANV",
-  ]
+with col_m_s2:
+  st_month_entry = st.selectbox(
+      "Bulan Persampelan",
+      list(calendar.month_name)[1:],
+      index=datetime.date.today().month - 1,
+      key="m_month",
+  )
 
-with st.form("sub_sec_3_monthly_form"):
-  # Kena ada jarak (indent) di sebelah kiri untuk semua kod dalam form ni!
-  col_m_s1, col_m_s2, col_m_s3 = st.columns(3)
+with col_m_s3:
+  st_status_entry = st.selectbox(
+      "Status Persampelan Stesen",
+      ["Non-Active", "Active (Lab Pending)", "Active"],
+      key="m_status",
+      help="Analisis makmal hanya terbuka jika status ditetapkan sebagai Active.",
+  )
 
-  with col_m_s1:
-    selected_st_entry = st.selectbox(
-        "Pilih Stesen Persampelan", options=stations_all
-    )
+st.markdown("---")
+st.markdown("#### 🔬 Keputusan Analisis Parameter Makmal")
 
-  with col_m_s2:
-    st_month_entry = st.selectbox(
-        "Bulan Persampelan",
-        list(calendar.month_name)[1:],
-        index=datetime.date.today().month - 1,
-    )
+# Nilai ni akan terus bertukar LIVE serta-merta bila dropdown status berubah!
+is_disabled = st_status_entry != "Active"
 
-  with col_m_s3:
-    st_status_entry = st.selectbox(
-        "Status Persampelan Stesen",
-        ["Non-Active", "Active (Lab Pending)", "Active"],
-        help=(
-            "Analisis makmal hanya terbuka jika status ditetapkan sebagai"
-            " Active."
-        ),
-    )
+if is_disabled:
+  st.warning(
+      f"🔒 Medan makmal dikunci kerana status stesen ialah"
+      f" **{st_status_entry}**."
+  )
 
-  st.markdown("---")
-  st.markdown("#### 🔬 Keputusan Analisis Parameter Makmal")
+col_l1, col_l2 = st.columns(2)
 
-  is_disabled = st_status_entry != "Active"
+with col_l1:
+  lab_ph = st.number_input(
+      "pH Level",
+      min_value=0.0,
+      max_value=14.0,
+      value=7.0,
+      disabled=is_disabled,
+      key="m_ph",
+  )
+  lab_ntu = st.number_input(
+      "Turbidity (NTU)",
+      min_value=0.0,
+      value=10.0,
+      disabled=is_disabled,
+      key="m_ntu",
+  )
+  lab_tss = st.number_input(
+      "TSS (mg/L)",
+      min_value=0.0,
+      value=15.0,
+      disabled=is_disabled,
+      key="m_tss",
+  )
 
-  if is_disabled:
-    st.warning(
-        f"🔒 Medan makmal dikunci kerana status stesen ialah"
-        f" **{st_status_entry}**."
-    )
+with col_l2:
+  lab_fe = st.number_input(
+      "Iron - Fe (mg/L)",
+      min_value=0.0,
+      value=0.5,
+      disabled=is_disabled,
+      key="m_fe",
+  )
+  lab_as = st.number_input(
+      "Arsenic - As (mg/L)",
+      min_value=0.0,
+      value=0.01,
+      disabled=is_disabled,
+      key="m_as",
+  )
+  lab_remarks = st.text_input(
+      "Remarks",
+      value="In Compliance" if not is_disabled else "Lab Pending",
+      disabled=is_disabled,
+      key="m_remarks",
+  )
 
-  col_l1, col_l2 = st.columns(2)
+# Guna st.button biasa ganti st.form_submit_button supaya ia bertindak balas live
+submit_monthly = st.button("💾 Simpan Rekod Persampelan Bulanan")
 
-  with col_l1:
-    lab_ph = st.number_input(
-        "pH Level",
-        min_value=0.0,
-        max_value=14.0,
-        value=7.0,
-        disabled=is_disabled,
-    )
-    lab_ntu = st.number_input(
-        "Turbidity (NTU)", min_value=0.0, value=10.0, disabled=is_disabled
-    )
-    lab_tss = st.number_input(
-        "TSS (mg/L)", min_value=0.0, value=15.0, disabled=is_disabled
-    )
+if submit_monthly:
+  if client:
+    try:
+      sheet_monthly = client.open(SPREADSHEET_NAME).worksheet("Monthly Sampling")
+      monthly_row = [
+          selected_st_entry,
+          st_month_entry,
+          st_status_entry,
+          lab_ph if not is_disabled else "-",
+          lab_ntu if not is_disabled else "-",
+          lab_tss if not is_disabled else "-",
+          lab_fe if not is_disabled else "-",
+          lab_as if not is_disabled else "-",
+          lab_remarks,
+      ]
+      sheet_monthly.append_row(monthly_row)
 
-  with col_l2:
-    lab_fe = st.number_input(
-        "Iron - Fe (mg/L)", min_value=0.0, value=0.5, disabled=is_disabled
-    )
-    lab_as = st.number_input(
-        "Arsenic - As (mg/L)", min_value=0.0, value=0.01, disabled=is_disabled
-    )
-    lab_remarks = st.text_input(
-        "Remarks",
-        value="In Compliance" if not is_disabled else "Lab Pending",
-        disabled=is_disabled,
-    )
-
-  submit_sec3 = st.form_submit_button("💾 Simpan Rekod Persampelan Bulanan")
-
-  if submit_sec3:
-    if client:
-      try:
-        sheet_monthly = client.open(SPREADSHEET_NAME).worksheet(
-            "Monthly Sampling"
-        )
-        monthly_row = [
-            selected_st_entry,
-            st_month_entry,
-            st_status_entry,
-            lab_ph if not is_disabled else "-",
-            lab_ntu if not is_disabled else "-",
-            lab_tss if not is_disabled else "-",
-            lab_fe if not is_disabled else "-",
-            lab_as if not is_disabled else "-",
-            lab_remarks,
-        ]
-        sheet_monthly.append_row(monthly_row)
-
-        # Force clear cache supaya data baru terus terpapar kat dashboard
-        st.cache_data.clear()
-
-        st.success(
-            f"Berjaya! Rekod stesen **{selected_st_entry}** ({st_month_entry})"
-            " telah dikemas kini ke tab 'Monthly Sampling'."
-        )
-        st.rerun()
-      except Exception as e:
-        st.error(f"Gagal hantar data monthly ke Google Sheet: {e}")
+      st.cache_data.clear()
+      st.success(
+          f"Berjaya! Rekod stesen **{selected_st_entry}** ({st_month_entry})"
+          " telah dikemas kini ke tab 'Monthly Sampling'."
+      )
+      st.rerun()
+    except Exception as e:
+      st.error(f"Gagal hantar data monthly ke Google Sheet: {e}")
