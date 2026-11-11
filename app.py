@@ -2079,7 +2079,7 @@ st.markdown("### 3️⃣ Sub-Section 3: Monthly Sampling & Lab Results Entry")
 
 # 1. Pastikan senarai stesen wujud (kalau kod asal kau dah ada stations_all di atas, boleh kekalkan)
 if "stations_all" not in locals() and "stations_all" not in globals():
-  stations_all = ["WQ1", "WQ2", "WQ3", "FDP"]
+  stations_all = ["WQ1", "WQ2", "WQ3", "WQ4" , "WQ5" , "WQ6" , "WQ7" , "WQ8" , "ANV" , "GW" "FINAL DISCHARGE"]
 
 col_m_s1, col_m_s2, col_m_s3 = st.columns(3)
 
