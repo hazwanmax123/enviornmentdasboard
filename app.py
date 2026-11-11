@@ -36,16 +36,23 @@ def init_gspread_client():
   ]
   try:
     if "gcp_service_account" in st.secrets:
+      # Tukar ke dict biasa dari st.secrets
       creds_dict = dict(st.secrets["gcp_service_account"])
-      creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+      creds = ServiceAccountCredentials.from_json_keyfile_dict(
+          creds_dict, scope
+      )
     else:
       creds = ServiceAccountCredentials.from_json_keyfile_name(
           "credentials.json", scope
       )
     return gspread.authorize(creds)
   except Exception as e:
+    # PENTING: Paparkan ralat sebenar kat skrin supaya kita tahu kenapa gagal!
+    st.error(f"⚠️ Ralat Google Auth Sebenar: {e}")
     return None
 
+
+client = init_gspread_client()
 
 client = init_gspread_client()
 # ==========================================
