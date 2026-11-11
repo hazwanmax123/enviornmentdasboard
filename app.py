@@ -2157,5 +2157,4 @@ elif selected_page == "Data Entry":
           )
         except Exception as e:
           st.error(f"Gagal hantar data monthly ke Google Sheet: {e}")
-      else:
-        st.warning("Kredensial Google Cloud tidak dikesan.")
+     
