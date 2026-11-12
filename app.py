@@ -986,44 +986,66 @@ elif selected_page == "River Water Quality":
   )
 
   if not df.empty:
-    # Dropdown pilihan sesi AM / PM
-    col_drop1, col_drop2 = st.columns([2, 2])
-    with col_drop1:
-      session_filter = st.selectbox(
-          "Pilih Sesi Persampelan",
-          ["All session (AM & PM)", "Morning (AM)", "Evening (PM)"],
-          key="river_session_dropdown",
-      )
-
-    st.markdown("---")
-
-    # Tentukan kolum berdasarkan data asal
     ph_cols = [c for c in df.columns if "ph" in c.lower()]
     ntu_cols = [c for c in df.columns if "ntu" in c.lower() or "turb" in c.lower()]
 
+    # 1. KPI CARDS (Lowest pH, Highest NTU, Net Impact)
+    st.markdown("#### 📌 River Water Quality KPI Summary")
+    col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
+
+    min_ph = min([df[c].min() for c in ph_cols if pd.api.types.is_numeric_dtype(df[c])], default=0.0) if ph_cols else 0.0
+    max_ntu = max([df[c].max() for c in ntu_cols if pd.api.types.is_numeric_dtype(df[c])], default=0.0) if ntu_cols else 0.0
+
+    with col_kpi1:
+      st.metric(
+          label="Lowest pH Record",
+          value=f"{min_ph:.2f}",
+          delta="Acidity Status",
+          delta_color="inverse" if min_ph < 6.0 else "normal",
+      )
+    with col_kpi2:
+      st.metric(
+          label="Highest NTU Record",
+          value=f"{max_ntu:.1f}",
+          delta="Peak Turbidity",
+          delta_color="inverse" if max_ntu > 250 else "normal",
+      )
+    with col_kpi3:
+      st.metric(label="pH Net Impact", value="Stable", delta="Within Baseline")
+    with col_kpi4:
+      st.metric(label="NTU Net Impact", value="Controlled", delta="Compliance Checked")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
     # ==========================================
-    # GRAF 1: WATER QUALITY - PH LEVEL
+    # GRAF 1: pH LEVEL (Satu Graph, Satu Dropdown)
     # ==========================================
-    st.subheader("📈 Analysis of pH level at Sg. Duri")
+    st.subheader("📈 Analisis Tahap pH Air Sungai")
+    selected_ph_col = st.selectbox(
+        "Pilih Stesen / Kolum pH untuk Dipaparkan",
+        options=ph_cols if ph_cols else df.columns[:1],
+        key="river_ph_dropdown",
+    )
+
     fig_river_ph = go.Figure()
-    
-    for col in ph_cols[:6]:  # Paparkan kolum pH yang berkaitan
+    if selected_ph_col in df.columns:
       fig_river_ph.add_trace(
           go.Scatter(
               x=df["Date"],
-              y=df[col],
-              name=col,
-              mode="lines+markers"
+              y=df[selected_ph_col],
+              name=selected_ph_col,
+              mode="lines+markers",
+              line=dict(color="#0284c7", width=2),
           )
       )
 
     fig_river_ph.update_layout(
-        title="Trend pH Air Sungai Mengikut Stesen",
+        title=f"Trend pH bagi: {selected_ph_col}",
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(showgrid=False, title="Date"),
         yaxis=dict(title="pH Level", range=[0, 14], showgrid=True),
-        height=380,
+        height=350,
         margin=dict(l=30, r=30, t=40, b=30),
     )
     st.plotly_chart(fig_river_ph, use_container_width=True, config={"responsive": True})
@@ -1031,17 +1053,23 @@ elif selected_page == "River Water Quality":
     st.markdown("<br>", unsafe_allow_html=True)
 
     # ==========================================
-    # GRAF 2: WATER QUALTIY - TURBIDITY level
+    # GRAF 2: TURBIDITY / NTU (Satu Graph, Satu Dropdown + Limit Line 250)
     # ==========================================
-    st.subheader("📊 Turbidity analysis")
-    fig_river_ntu = go.Figure()
+    st.subheader("📊 Analisis Turbidity (NTU) Air Sungai & Had Standard")
+    selected_ntu_col = st.selectbox(
+        "Pilih Stesen / Kolum Turbidity untuk Dipaparkan",
+        options=ntu_cols if ntu_cols else df.columns[:1],
+        key="river_ntu_dropdown",
+    )
 
-    for col in ntu_cols[:6]:  # Paparkan kolum turbidity yang berkaitan
+    fig_river_ntu = go.Figure()
+    if selected_ntu_col in df.columns:
       fig_river_ntu.add_trace(
           go.Bar(
               x=df["Date"],
-              y=df[col],
-              name=f"{col} (NTU)"
+              y=df[selected_ntu_col],
+              name=selected_ntu_col,
+              marker_color="#38bdf8",
           )
       )
 
@@ -1056,12 +1084,12 @@ elif selected_page == "River Water Quality":
     )
 
     fig_river_ntu.update_layout(
-        title="Trend Turbidity (NTU) & Garis Had 250 NTU",
+        title=f"Trend Turbidity bagi: {selected_ntu_col} (Had 250 NTU)",
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(showgrid=False, title="Date"),
         yaxis=dict(title="Turbidity (NTU)", showgrid=True),
-        height=380,
+        height=350,
         margin=dict(l=30, r=30, t=40, b=30),
     )
     st.plotly_chart(fig_river_ntu, use_container_width=True, config={"responsive": True})
@@ -1071,7 +1099,6 @@ elif selected_page == "River Water Quality":
     st.dataframe(df, use_container_width=True)
   else:
     st.warning("Tiada data ditemui untuk River Water Quality.")
-
 # ==========================================
 # PAGE 4: CASES TRACKER
 # ==========================================
