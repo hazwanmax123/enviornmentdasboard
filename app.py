@@ -701,7 +701,6 @@ with col4:
   st.metric(label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%")
   if not df.empty:
     latest_row = df.sort_values(by="Date").iloc[-1]
-  )
 
     us_ph_avg_col = next(
         (
