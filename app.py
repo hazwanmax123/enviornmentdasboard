@@ -159,10 +159,18 @@ def load_data():
   for col in df.columns:
     if any(
         k in col.lower()
-        for k in ["ph", "ntu", "limit", "case", "perf", "okay", "maintenance"]
+        for k in ["ph", "ntu", "limit", "case", "okay", "maintenance"]
     ):
       df[col] = pd.to_numeric(
           df[col].astype(str).str.replace("%", "").str.strip(), errors="coerce"
+      )
+    elif "perf" in col.lower():
+      # Buang simbol % dan tukar kepada nombor biasa
+      cleaned_val = df[col].astype(str).str.replace("%", "").str.strip()
+      numeric_val = pd.to_numeric(cleaned_val, errors="coerce")
+      # Jika nilai disimpan dalam bentuk perpuluhan (cth: 0.75), darab 100. Jika dah 75, kekalkan 75.
+      df[col] = numeric_val.apply(
+          lambda x: x * 100 if (not pd.isna(x) and x <= 1.0) else x
       )
   return df
 
@@ -654,7 +662,7 @@ if selected_page == "Overview":
   else:
     compliance_rate = 0.0
 
-  bmp_performance = 0.0
+ bmp_performance = 0.0
   bmp_col = next(
       (
           col
