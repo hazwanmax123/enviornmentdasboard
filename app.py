@@ -881,97 +881,18 @@ if selected_page == "Overview":
 elif selected_page == "Discharge Compliance":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px;'>🛡️ Discharge Compliance</h1>",
+      " margin-bottom: 2px;'>🛡️ Discharge Compliance & Analytics</h1>",
       unsafe_allow_html=True,
   )
 
-  ph_am_col = next(
-      (
-          c
-          for c in df.columns
-          if "ph" in c.lower()
-          and ("fdp" in c.lower() or "discharge" in c.lower())
-          and ("am" in c.lower() or "pagang" in c.lower())
-      ),
-      df.columns[1],
-  )
-  ph_pm_col = next(
-      (
-          c
-          for c in df.columns
-          if "ph" in c.lower()
-          and ("fdp" in c.lower() or "discharge" in c.lower())
-          and ("pm" in c.lower() or "petang" in c.lower())
-      ),
-      df.columns[2],
-  )
-  ntu_am_col = next(
-      (
-          c
-          for c in df.columns
-          if ("ntu" in c.lower() or "turb" in c.lower())
-          and ("fdp" in c.lower() or "discharge" in c.lower())
-          and ("am" in c.lower() or "pagang" in c.lower())
-      ),
-      df.columns[11],
-  )
-  ntu_pm_col = next(
-      (
-          c
-          for c in df.columns
-          if ("ntu" in c.lower() or "turb" in c.lower())
-          and ("fdp" in c.lower() or "discharge" in c.lower())
-          and ("pm" in c.lower() or "petang" in c.lower())
-      ),
-      df.columns[12],
-  )
-
-  if not df.empty:
-    df_ph_stacked = pd.melt(
-        df,
-        id_vars=["Date"],
-        value_vars=[ph_am_col, ph_pm_col],
-        value_name="pH",
-    ).dropna(subset=["pH"])
-    min_ph_val = df_ph_stacked["pH"].min() if not df_ph_stacked.empty else 0.0
-    min_ph_date = (
-        df_ph_stacked.loc[df_ph_stacked["pH"].idxmin(), "Date"].strftime(
-            "%d %b %Y"
-        )
-        if not df_ph_stacked.empty
-        else "N/A"
-    )
-
-    if min_ph_val < 6.0:
-      ph_delta_label = "⚠️ Warning Alert (Acidic)"
-      ph_delta_color = "inverse"
-    else:
-      ph_delta_label = "Optimal Range"
-      ph_delta_color = "normal"
-
-    df_ntu_stacked = pd.melt(
-        df,
-        id_vars=["Date"],
-        value_vars=[ntu_am_col, ntu_pm_col],
-        value_name="NTU",
-    ).dropna(subset=["NTU"])
-    max_ntu_val = df_ntu_stacked["NTU"].max() if not df_ntu_stacked.empty else 0.0
-    max_ntu_date = (
-        df_ntu_stacked.loc[df_ntu_stacked["NTU"].idxmax(), "Date"].strftime(
-            "%d %b %Y"
-        )
-        if not df_ntu_stacked.empty
-        else "N/A"
-    )
-
-    start_date_str = df["Date"].min().strftime("%d %b %Y")
-    end_date_str = df["Date"].max().strftime("%d %b %Y")
-
+  if not df.empty and f_ph in df.columns and f_ntu in df.columns:
     limit_val = (
         df["NTU Limit"].dropna().iloc[-1]
         if "NTU Limit" in df.columns and not df["NTU Limit"].dropna().empty
         else 50.0
     )
+    
+    # Kira status pematuhan
     compliant_mask = (
         (df[f_ph] >= 6.0) & (df[f_ph] <= 9.0) & (df[f_ntu] <= limit_val)
     )
@@ -981,22 +902,22 @@ elif selected_page == "Discharge Compliance":
     col_left, col_right = st.columns([1, 1])
 
     with col_left:
-      st.markdown(
-          f"#### 📌 Parameter Extremes ({start_date_str} – {end_date_str})"
-      )
-      st.markdown("<br>", unsafe_allow_html=True)
+      st.markdown("#### 📌 Parameter Summary (FDP)")
       st.metric(
-          label=f"Lowest pH Recorded (FDP) • {min_ph_date}",
-          value=f"{min_ph_val:.2f}",
-          delta=ph_delta_label,
-          delta_color=ph_delta_color,
+          label="Total Sampling Days",
+          value=len(df),
+          delta="Active Monitoring",
       )
-      st.markdown("<br>", unsafe_allow_html=True)
       st.metric(
-          label=f"Max Turbidity Recorded (FDP) • {max_ntu_date}",
-          value=f"{max_ntu_val:.1f} NTU",
-          delta="Peak Turbidity",
-          delta_color="inverse" if max_ntu_val > 250 else "normal",
+          label="Compliant Records",
+          value=f"{compliant_count} ({compliant_count/len(df)*100:.1f}%)" if len(df) > 0 else "0",
+          delta="Within Standard Limit",
+      )
+      st.metric(
+          label="Breach / Non-Compliant Records",
+          value=f"{breach_count}",
+          delta="Requires Corrective Action",
+          delta_color="inverse" if breach_count > 0 else "normal",
       )
 
     with col_right:
@@ -1026,14 +947,48 @@ elif selected_page == "Discharge Compliance":
               y=-0.1,
               xanchor="center",
               x=0.5,
-              font=dict(size=10, color="#0f172a"),
           ),
           margin=dict(l=20, r=20, t=10, b=30),
           height=260,
       )
-      st.plotly_chart(
-          fig_pie, use_container_width=True, config={"responsive": True}
-      )
+      st.plotly_chart(fig_pie, use_container_width=True, config={"responsive": True})
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("📈 Trend Pelepasan Harian (FDP pH & Turbidity)")
+    
+    fig_disc = go.Figure()
+    fig_disc.add_trace(
+        go.Bar(
+            x=df["Date"],
+            y=df[f_ntu],
+            name="Turbidity (NTU)",
+            marker_color="#0284c7",
+            yaxis="y1",
+        )
+    )
+    fig_disc.add_trace(
+        go.Scatter(
+            x=df["Date"],
+            y=df[f_ph],
+            name="pH Level",
+            mode="lines+markers",
+            line=dict(color="#0f172a", width=2),
+            yaxis="y2",
+        )
+    )
+    fig_disc.update_layout(
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(showgrid=False, title="Date"),
+        yaxis=dict(title="Turbidity (NTU)", side="left", showgrid=True),
+        yaxis2=dict(title="pH Level", overlaying="y", side="right", showgrid=False, range=[0, 14]),
+        legend=dict(orientation="h", y=1.12, x=0.5, xanchor="center"),
+        height=400,
+        margin=dict(l=30, r=30, t=30, b=30),
+    )
+    st.plotly_chart(fig_disc, use_container_width=True, config={"responsive": True})
+  else:
+    st.warning("Tiada data ditemui untuk paparan Discharge Compliance.")
 
 
 # ==========================================
