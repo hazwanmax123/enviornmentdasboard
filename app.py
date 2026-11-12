@@ -681,11 +681,6 @@ bmp_performance = 0.0
     if isinstance(raw_val, str):
       raw_val = raw_val.replace("%", "").strip()
     bmp_performance = float(raw_val) if raw_val != "" else 0.0
-    # Bersihkan simbol % jika ada, dan tukar jadi nombor
-    if isinstance(raw_val, str):
-      raw_val = raw_val.replace("%", "").strip()
-    bmp_performance = float(raw_val) if raw_val != "" else 0.0
-    )
 
   col1, col2, col3, col4 = st.columns(4)
   with col1:
@@ -704,7 +699,6 @@ bmp_performance = 0.0
     st.metric(label="Last Sample Date", value=last_sample_date)
   with col4:
     st.metric(label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%")
-
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
       "📋 Station Status by Parameter (Latest Sample - Using Avg Columns)"
