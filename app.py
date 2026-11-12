@@ -885,17 +885,19 @@ elif selected_page == "Discharge Compliance":
       unsafe_allow_html=True,
   )
 
-  if not df.empty and f_ph in df.columns and f_ntu in df.columns:
+  # Cari kolum AM & PM secara automatik dari df asal kau
+  ph_am_col = next((c for c in df.columns if "ph" in c.lower() and ("am" in c.lower() or "pagang" in c.lower())), df.columns[1] if len(df.columns) > 1 else "")
+  ph_pm_col = next((c for c in df.columns if "ph" in c.lower() and ("pm" in c.lower() or "petang" in c.lower())), df.columns[2] if len(df.columns) > 2 else "")
+  ntu_am_col = next((c for c in df.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("am" in c.lower() or "pagang" in c.lower())), df.columns[11] if len(df.columns) > 11 else "")
+  ntu_pm_col = next((c for c in df.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("pm" in c.lower() or "petang" in c.lower())), df.columns[12] if len(df.columns) > 12 else "")
+
+  if not df.empty:
     limit_val = (
         df["NTU Limit"].dropna().iloc[-1]
         if "NTU Limit" in df.columns and not df["NTU Limit"].dropna().empty
         else 50.0
     )
-    
-    # Kira status pematuhan
-    compliant_mask = (
-        (df[f_ph] >= 6.0) & (df[f_ph] <= 9.0) & (df[f_ntu] <= limit_val)
-    )
+    compliant_mask = (df[f_ph] >= 6.0) & (df[f_ph] <= 9.0) & (df[f_ntu] <= limit_val)
     compliant_count = df[compliant_mask].shape[0]
     breach_count = df.shape[0] - compliant_count
 
@@ -903,20 +905,16 @@ elif selected_page == "Discharge Compliance":
 
     with col_left:
       st.markdown("#### 📌 Parameter Summary (FDP)")
-      st.metric(
-          label="Total Sampling Days",
-          value=len(df),
-          delta="Active Monitoring",
-      )
+      st.metric(label="Total Sampling Days", value=len(df), delta="Active Monitoring")
       st.metric(
           label="Compliant Records",
           value=f"{compliant_count} ({compliant_count/len(df)*100:.1f}%)" if len(df) > 0 else "0",
           delta="Within Standard Limit",
       )
       st.metric(
-          label="Breach / Non-Compliant Records",
+          label="Breach Records",
           value=f"{breach_count}",
-          delta="Requires Corrective Action",
+          delta="Action Required",
           delta_color="inverse" if breach_count > 0 else "normal",
       )
 
@@ -931,65 +929,55 @@ elif selected_page == "Discharge Compliance":
           values="Count",
           names="Status",
           color="Status",
-          color_discrete_map={
-              "Compliant": "#10b981",
-              "Breach / Non-Compliant": "#ef4444",
-          },
+          color_discrete_map={"Compliant": "#10b981", "Breach / Non-Compliant": "#ef4444"},
           hole=0.4,
       )
       fig_pie.update_layout(
           plot_bgcolor="#ffffff",
           paper_bgcolor="rgba(0,0,0,0)",
           font=dict(color="#0f172a", family="Inter", size=11),
-          legend=dict(
-              orientation="h",
-              yanchor="bottom",
-              y=-0.1,
-              xanchor="center",
-              x=0.5,
-          ),
+          legend=dict(orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5),
           margin=dict(l=20, r=20, t=10, b=30),
           height=260,
       )
       st.plotly_chart(fig_pie, use_container_width=True, config={"responsive": True})
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("📈 Trend Pelepasan Harian (FDP pH & Turbidity)")
-    
-    fig_disc = go.Figure()
-    fig_disc.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[f_ntu],
-            name="Turbidity (NTU)",
-            marker_color="#0284c7",
-            yaxis="y1",
-        )
-    )
-    fig_disc.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[f_ph],
-            name="pH Level",
-            mode="lines+markers",
-            line=dict(color="#0f172a", width=2),
-            yaxis="y2",
-        )
-    )
-    fig_disc.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(showgrid=False, title="Date"),
-        yaxis=dict(title="Turbidity (NTU)", side="left", showgrid=True),
-        yaxis2=dict(title="pH Level", overlaying="y", side="right", showgrid=False, range=[0, 14]),
-        legend=dict(orientation="h", y=1.12, x=0.5, xanchor="center"),
-        height=400,
-        margin=dict(l=30, r=30, t=30, b=30),
-    )
-    st.plotly_chart(fig_disc, use_container_width=True, config={"responsive": True})
-  else:
-    st.warning("Tiada data ditemui untuk paparan Discharge Compliance.")
+    st.subheader("📈 Analisis Terperinci Sesi AM vs PM (pH & Turbidity)")
 
+    # 1. Graf pH (AM vs PM)
+    if ph_am_col in df.columns and ph_pm_col in df.columns:
+      fig_ph_session = go.Figure()
+      fig_ph_session.add_trace(go.Scatter(x=df["Date"], y=df[ph_am_col], name="pH Pagi (AM)", mode="lines+markers", line=dict(color="#0284c7")))
+      fig_ph_session.add_trace(go.Scatter(x=df["Date"], y=df[ph_pm_col], name="pH Petang (PM)", mode="lines+markers", line=dict(color="#0f172a")))
+      fig_ph_session.update_layout(
+          title="Perbandingan Tahap pH Sesi Pagi (AM) vs Petang (PM)",
+          plot_bgcolor="#ffffff",
+          paper_bgcolor="rgba(0,0,0,0)",
+          xaxis=dict(showgrid=False, title="Date"),
+          yaxis=dict(title="pH Level", range=[0, 14], showgrid=True),
+          height=350,
+          margin=dict(l=30, r=30, t=40, b=30),
+      )
+      st.plotly_chart(fig_ph_session, use_container_width=True, config={"responsive": True})
+
+    # 2. Graf Turbidity / NTU (AM vs PM)
+    if ntu_am_col in df.columns and ntu_pm_col in df.columns:
+      fig_ntu_session = go.Figure()
+      fig_ntu_session.add_trace(go.Bar(x=df["Date"], y=df[ntu_am_col], name="Turbidity Pagi (AM NTU)", marker_color="#38bdf8"))
+      fig_ntu_session.add_trace(go.Bar(x=df["Date"], y=df[ntu_pm_col], name="Turbidity Petang (PM NTU)", marker_color="#0284c7"))
+      fig_ntu_session.update_layout(
+          title="Perbandingan Turbidity Sesi Pagi (AM) vs Petang (PM)",
+          plot_bgcolor="#ffffff",
+          paper_bgcolor="rgba(0,0,0,0)",
+          xaxis=dict(showgrid=False, title="Date"),
+          yaxis=dict(title="Turbidity (NTU)", showgrid=True),
+          height=350,
+          margin=dict(l=30, r=30, t=40, b=30),
+      )
+      st.plotly_chart(fig_ntu_session, use_container_width=True, config={"responsive": True})
+  else:
+    st.warning("Tiada data ditemui untuk Discharge Compliance.")
 
 # ==========================================
 # PAGE 3: RIVER WATER QUALITY
