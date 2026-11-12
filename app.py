@@ -985,24 +985,58 @@ elif selected_page == "River Water Quality":
       unsafe_allow_html=True,
   )
 
-  if not df.empty:
-    # 1. PENAPIS TARIKH KAT SIDEBAR (NAVIGATION TEPI KAU)
+  if not df.empty and "Date" in df.columns:
+    # ---------------------------------------------------------
+    # SIDEBAR: PENAPIS TAHUN (ATAS), BULAN (TENGAH), DATE (BAWAH)
+    # ---------------------------------------------------------
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 📅 Tarikh Analisis Sungai")
-    
-    if "Date" in df.columns:
-      min_d = df["Date"].min().date() if pd.notnull(df["Date"].min()) else datetime.date.today() - datetime.timedelta(days=30)
-      max_d = df["Date"].max().date() if pd.notnull(df["Date"].max()) else datetime.date.today()
-      
-      selected_date_range = st.sidebar.date_input(
-          "Pilih Julat Tarikh",
-          value=[min_d, max_d],
-          key="river_sidebar_date_picker"
-      )
-    else:
-      selected_date_range = []
+    st.sidebar.markdown("### 📅 Penapis Tarikh & Masa")
 
-    # 2. DROPDOWN SESI AM / PM DI ATAS PAGE
+    # Ambil senarai Tahun yang wujud dalam data
+    df["Year"] = df["Date"].dt.year
+    df["Month"] = df["Date"].dt.month_name()
+
+    available_years = sorted(df["Year"].dropna().unique().astype(int).tolist(), reverse=True)
+    
+    # 1. DROPDOWN TAHUN (Atas Sekali)
+    selected_year = st.sidebar.selectbox(
+        "Pilih Tahun",
+        options=["Kesemua Tahun"] + available_years,
+        key="river_year_dropdown"
+    )
+
+    # Tapis data ikut tahun dulu untuk senaraikan bulan yang sah
+    df_temp = df.copy()
+    if selected_year != "Kesemua Tahun":
+      df_temp = df_temp[df_temp["Year"] == selected_year]
+
+    # 2. DROPDOWN BULAN (Bawah Tahun)
+    available_months = df_temp["Date"].dt.strftime("%B").unique().tolist()
+    
+    selected_month = st.sidebar.selectbox(
+        "Pilih Bulan",
+        options=["Kesemua Bulan"] + available_months,
+        key="river_month_dropdown"
+    )
+
+    # Tapis lagi ikut bulan
+    if selected_month != "Kesemua Bulan":
+      df_temp = df_temp[df_temp["Date"].dt.strftime("%B") == selected_month]
+
+    # 3. DATE RANGE PICKER (Bawah Sekali)
+    st.sidebar.markdown("---")
+    min_d = df_temp["Date"].min().date() if not df_temp.empty and pd.notnull(df_temp["Date"].min()) else datetime.date.today() - datetime.timedelta(days=30)
+    max_d = df_temp["Date"].max().date() if not df_temp.empty and pd.notnull(df_temp["Date"].max()) else datetime.date.today()
+
+    selected_date_range = st.sidebar.date_input(
+        "Pilih Julat Tarikh Khusus",
+        value=[min_d, max_d],
+        key="river_sidebar_date_picker"
+    )
+
+    # ---------------------------------------------------------
+    # DROPDOWN SESI AM / PM DI ATAS PAGE UTAMA
+    # ---------------------------------------------------------
     selected_session = st.selectbox(
         "Pilih Sesi Persampelan (AM / PM)",
         ["Sesi Pagi (AM)", "Sesi Petang (PM)"],
@@ -1011,8 +1045,8 @@ elif selected_page == "River Water Quality":
 
     st.markdown("---")
 
-    # Tapis dataframe mengikut tarikh sidebar
-    df_filtered = df.copy()
+    # Tapis dataframe akhir mengikut Tahun, Bulan, dan Julat Tarikh
+    df_filtered = df_temp.copy()
     if len(selected_date_range) == 2:
       start_date, end_date = selected_date_range
       df_filtered = df_filtered[(df_filtered["Date"].dt.date >= start_date) & (df_filtered["Date"].dt.date <= end_date)]
@@ -1112,7 +1146,7 @@ elif selected_page == "River Water Quality":
       st.markdown("#### 📋 Jadual Rekod Mentah Kualiti Air Sungai")
       st.dataframe(df_filtered, use_container_width=True)
     else:
-      st.warning("Tiada data dalam julat tarikh yang dipilih.")
+      st.warning("Tiada data dalam pilihan Tahun/Bulan/Tarikh tersebut.")
   else:
     st.warning("Tiada data ditemui untuk River Water Quality.")
 # ==========================================
