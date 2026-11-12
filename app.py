@@ -1178,6 +1178,9 @@ elif selected_page == "Monthly Monitoring Record":
 # ==========================================
 # PAGE 6: DATA ENTRY PORTAL (Eksklusif Borang Input)
 # ==========================================
+# ==========================================
+# PAGE 6: DATA ENTRY PORTAL (Eksklusif Borang Input)
+# ==========================================
 elif selected_page == "Data Entry":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
@@ -1283,7 +1286,6 @@ elif selected_page == "Data Entry":
   st.markdown("---")
   st.markdown("#### 🔬 Keputusan Analisis Parameter Makmal")
 
-  # Nilai ni akan bertukar secara LIVE serta-merta bila dropdown status diubah
   is_disabled = st_status_entry != "Active"
 
   if is_disabled:
