@@ -9,6 +9,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_folium import st_folium
+from streamlit_gsheets import GSheetsConnection
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 # ==========================================
 # PAGE CONFIG
@@ -500,6 +502,7 @@ with st.sidebar:
           "River Water Quality",
           "Cases Tracker",
           "Monthly Monitoring Record",
+          "📝 Data Entry",  # <--- Tambah baris ini di sini
       ],
       label_visibility="collapsed",
   )
