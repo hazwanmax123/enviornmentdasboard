@@ -46,7 +46,6 @@ st.markdown(
         font-family: 'Inter', sans-serif;
     }
 
-    /* BUTTON STYLE DALAM SIDEBAR (BIRU KORPORAT & JELAS) */
     [data-testid="stSidebar"] .stButton button {
         background-color: #0284c7 !important;
         color: #ffffff !important;
@@ -199,6 +198,34 @@ try:
 except Exception as e:
   st.error(f"Error loading data: {e}")
   st.stop()
+
+# ==========================================
+# GLOBAL VARIABLE DEFINITIONS (FDP)
+# ==========================================
+f_ph = next(
+    (
+        c
+        for c in df_raw.columns
+        if "ph" in c.lower()
+        and ("fdp" in c.lower() or "discharge" in c.lower())
+    ),
+    None,
+)
+if not f_ph:
+  f_ph = [c for c in df_raw.columns if "ph" in c.lower()][-1]
+
+f_ntu = next(
+    (
+        c
+        for c in df_raw.columns
+        if ("ntu" in c.lower() or "turb" in c.lower())
+        and ("fdp" in c.lower() or "discharge" in c.lower())
+    ),
+    None,
+)
+if not f_ntu:
+  f_ntu = [c for c in df_raw.columns if "ntu" in c.lower()][-1]
+
 
 # ==========================================
 # FUNCTION: GENERATE COMPREHENSIVE WORD REPORT
@@ -386,8 +413,7 @@ with st.sidebar:
   )
   st.markdown("---")
 
-  # 1. BUTANG DOWNLOAD REPORT DILETAK ATAS SEKALI (DI BAWAH LOGO)
-  # Hitung nilai pematuhan awal untuk report
+  # BUTANG DOWNLOAD REPORT DI ATAS SEKALI
   last_sample_date = (
       df_raw["Date"].max().strftime("%d %b %Y") if not df_raw.empty else "N/A"
   )
@@ -408,17 +434,14 @@ with st.sidebar:
           temp_status.isin(["no_action", "proposed in meeting", "open"])
       ].shape[0]
 
-  # Variabel sementara untuk butang download di sidebar
   temp_df_eval = df_raw.copy()
-  f_ph_temp = [c for c in temp_df_eval.columns if "ph" in c.lower()][-1]
-  f_ntu_temp = [c for c in temp_df_eval.columns if "ntu" in c.lower()][-1]
   if not temp_df_eval.empty:
-    v_recs = temp_df_eval.dropna(subset=[f_ph_temp, f_ntu_temp])
+    v_recs = temp_df_eval.dropna(subset=[f_ph, f_ntu])
     c_count = (
         v_recs[
-            (v_recs[f_ph_temp] >= 6.0)
-            & (v_recs[f_ph_temp] <= 9.0)
-            & (v_recs[f_ntu_temp] <= 50.0)
+            (v_recs[f_ph] >= 6.0)
+            & (v_recs[f_ph] <= 9.0)
+            & (v_recs[f_ntu] <= 50.0)
         ].shape[0]
         if not v_recs.empty
         else 0
@@ -476,7 +499,7 @@ with st.sidebar:
           "Discharge Compliance",
           "River Water Quality",
           "Cases Tracker",
-          "Monthly Monitoring Map",
+          "Monthly Monitoring Record",
       ],
       label_visibility="collapsed",
   )
@@ -506,7 +529,7 @@ if status_col:
       df_cases[status_col].astype(str).str.strip().str.title()
   )
 
-# 1. Filter Year (Auto-detect tahun semasa / terkini dalam data)
+# 1. Filter Year (Auto-detect tahun semasa)
 years = sorted(df["Year"].unique(), reverse=True)
 current_year_val = datetime.date.today().year
 default_year_idx = (
@@ -521,7 +544,7 @@ selected_year = st.sidebar.selectbox(
 if selected_year != "All":
   df = df[df["Year"] == selected_year]
 
-# 2. Filter Month (Auto-detect bulan semasa supaya bukan bulan 10 lagi!)
+# 2. Filter Month (Auto-detect bulan semasa)
 all_months_options = list(calendar.month_name)[1:]
 current_month_name = datetime.date.today().strftime("%B")
 default_month_idx = (
@@ -547,7 +570,6 @@ selected_month_num = list(calendar.month_name).index(selected_month)
 
 num_days = calendar.monthrange(selected_year_int, selected_month_num)[1]
 month_start_date = datetime.date(selected_year_int, selected_month_num, 1)
-# Jika bulan semasa, hadkan end date ke hari ini, jika bulan lain ambil akhir bulan
 today_d = datetime.date.today()
 if (
     selected_year_int == today_d.year
@@ -569,33 +591,6 @@ if len(selected_date_range) == 2:
   s_date, e_date = selected_date_range
   df = df[(df["Date"].dt.date >= s_date) & (df["Date"].dt.date <= e_date)]
 
-# ==========================================
-# GLOBAL VARIABLE DEFINITIONS (FDP)
-# ==========================================
-f_ph = next(
-    (
-        c
-        for c in df.columns
-        if "ph" in c.lower()
-        and ("fdp" in c.lower() or "discharge" in c.lower())
-    ),
-    None,
-)
-if not f_ph:
-  f_ph = [c for c in df.columns if "ph" in c.lower()][-1]
-
-f_ntu = next(
-    (
-        c
-        for c in df.columns
-        if ("ntu" in c.lower() or "turb" in c.lower())
-        and ("fdp" in c.lower() or "discharge" in c.lower())
-    ),
-    None,
-)
-if not f_ntu:
-  f_ntu = [c for c in df.columns if "ntu" in c.lower()][-1]
-
 
 # ==========================================
 # PAGE 1: OVERVIEW
@@ -608,13 +603,13 @@ if selected_page == "Overview":
 
   st.markdown(
       "<h1 style='font-size: 28px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>Welcome</h1>",
+      " margin-bottom: 2px;'>Welcome</h1>",
       unsafe_allow_html=True,
   )
   st.markdown(
       "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top:"
-      " 0; margin-bottom: 20px; font-family: Inter, sans-serif;'>RBA Engineering"
-      " Sdn Bhd | Tin Mining ML087</p>",
+      " 0; margin-bottom: 20px;'>RBA Engineering Sdn Bhd | Tin Mining"
+      " ML087</p>",
       unsafe_allow_html=True,
   )
 
@@ -868,14 +863,7 @@ if selected_page == "Overview":
 elif selected_page == "Discharge Compliance":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>🛡️ Discharge"
-      " Compliance</h1>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>In-depth breakdown of Final"
-      " Discharge (FDP) AM and PM readings for pH and Turbidity.</p>",
+      " margin-bottom: 2px;'>🛡️ Discharge Compliance</h1>",
       unsafe_allow_html=True,
   )
 
@@ -1130,18 +1118,8 @@ elif selected_page == "Discharge Compliance":
 elif selected_page == "River Water Quality":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>💧 River Water"
-      " Quality (Upstream vs Downstream)</h1>",
-      unsafe_allow_html=True,
-  )
-  latest_date_str = (
-      df["Date"].max().strftime("%d %b %Y") if not df.empty else "N/A"
-  )
-  st.markdown(
-      f"<p style='color: #64748b; font-size: 13px; margin-top: 0;"
-      f" margin-bottom: 25px; font-family: Inter, sans-serif;'>Comparison and"
-      f" net impact analysis based on latest dataset date: "
-      f"<b>{latest_date_str}</b>.</p>",
+      " margin-bottom: 2px;'>💧 River Water Quality (Upstream vs"
+      " Downstream)</h1>",
       unsafe_allow_html=True,
   )
 
@@ -1441,14 +1419,7 @@ elif selected_page == "River Water Quality":
 elif selected_page == "Cases Tracker":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>⚠️ Environmental"
-      " Cases Tracker</h1>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>Comprehensive overview of site"
-      " incidents, locations, and closure status.</p>",
+      " margin-bottom: 2px;'>⚠️ Environmental Cases Tracker</h1>",
       unsafe_allow_html=True,
   )
 
@@ -1596,12 +1567,6 @@ elif selected_page == "Cases Tracker":
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("📌 Carried Forward / Outstanding Cases from Previous Months")
-    st.markdown(
-        "<p style='color: #64748b; font-size: 13px;'>Senarai kes dari"
-        " bulan-bulan sebelum tarikh mula yang dipilih dan masih belum"
-        " ditutup.</p>",
-        unsafe_allow_html=True,
-    )
 
     if len(selected_date_range) == 2:
       prev_open_cases = df_cases[
@@ -1627,19 +1592,12 @@ elif selected_page == "Cases Tracker":
     st.warning("No data found in Cases Tracker sheet.")
 
 # ==========================================
-# PAGE 5: MONTHLY MONITORING (DYNAMIC MAP)
+# PAGE 5: MONTHLY MONITORING RECORD (FILTERED BY MONTH)
 # ==========================================
-elif selected_page == "Monthly Monitoring Map":
+elif selected_page == "Monthly Monitoring Record":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px; font-family: Inter, sans-serif;'>🗺️ RBA Mining EIA"
-      " Master Topography Map</h1>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #64748b; font-size: 13px; margin-top: 0; margin-bottom:"
-      " 25px; font-family: Inter, sans-serif;'>Data terkini terus dari Google"
-      " Sheet Monthly Sampling.</p>",
+      " margin-bottom: 2px;'>🗺️ RBA Mining EIA Master Topography Map</h1>",
       unsafe_allow_html=True,
   )
 
@@ -1667,7 +1625,7 @@ elif selected_page == "Monthly Monitoring Map":
   st_lat, st_lon, st_type = master_coords[selected_station]
 
   station_data = pd.DataFrame()
-  raw_status_val = "Not Active"
+  raw_status_val = "Non-Active"
 
   try:
     if not df_monthly_raw.empty:
@@ -1677,8 +1635,12 @@ elif selected_page == "Monthly Monitoring Map":
       stat_status_col = next(
           (c for c in df_monthly_raw.columns if "status" in c.lower()), None
       )
+      month_col_monthly = next(
+          (c for c in df_monthly_raw.columns if "month" in c.lower()), None
+      )
 
       if stat_id_col:
+        # Tapis mengikut stesen terpilih
         matched_rows = df_monthly_raw[
             df_monthly_raw[stat_id_col]
             .astype(str)
@@ -1686,6 +1648,17 @@ elif selected_page == "Monthly Monitoring Map":
             .str.upper()
             == selected_station.upper()
         ]
+
+        # Tapis pula mengikut bulan yang dipilih di sidebar (jika kolum bulan wujud)
+        if month_col_monthly and not matched_rows.empty:
+          matched_rows = matched_rows[
+              matched_rows[month_col_monthly]
+              .astype(str)
+              .str.strip()
+              .str.title()
+              == selected_month.title()
+          ]
+
         if not matched_rows.empty:
           station_data = matched_rows
           if stat_status_col:
@@ -1703,7 +1676,7 @@ elif selected_page == "Monthly Monitoring Map":
   )
 
   for st_name, (lat, lon, s_type) in master_coords.items():
-    st_status_str = "Not Active"
+    st_status_str = "Non-Active"
     try:
       if not df_monthly_raw.empty:
         stat_id_col = next(
@@ -1712,16 +1685,29 @@ elif selected_page == "Monthly Monitoring Map":
         stat_status_col = next(
             (c for c in df_monthly_raw.columns if "status" in c.lower()), None
         )
+        month_col_monthly = next(
+            (c for c in df_monthly_raw.columns if "month" in c.lower()), None
+        )
+
         if stat_id_col:
-          m_row = df_monthly_raw[
+          m_rows = df_monthly_raw[
               df_monthly_raw[stat_id_col]
               .astype(str)
               .str.strip()
               .str.upper()
               == st_name.upper()
           ]
-          if not m_row.empty and stat_status_col:
-            st_status_str = str(m_row[stat_status_col].iloc[0]).strip()
+          if month_col_monthly and not m_rows.empty:
+            m_rows = m_rows[
+                m_rows[month_col_monthly]
+                .astype(str)
+                .str.strip()
+                .str.title()
+                == selected_month.title()
+            ]
+
+          if not m_rows.empty and stat_status_col:
+            st_status_str = str(m_rows[stat_status_col].iloc[0]).strip()
     except:
       pass
 
@@ -1731,7 +1717,7 @@ elif selected_page == "Monthly Monitoring Map":
     icon_color = "green" if st_is_active else "red"
     popup_txt = (
         f"<b>Stesen: {st_name}</b><br>Kategori: {s_type}<br>Status:"
-        f" {st_status_str}"
+        f" {st_status_str} ({selected_month})"
     )
 
     if st_name == selected_station:
@@ -1771,7 +1757,8 @@ elif selected_page == "Monthly Monitoring Map":
     st.markdown(
         f"<div style='background: #ffffff; border: 1px solid #e2e8f0; padding:"
         f" 16px; border-radius: 14px;'><p style='font-size: 11px; color:"
-        f" #64748b; font-weight: 600; margin: 0;'>SAMPLING STATUS</p><div"
+        f" #64748b; font-weight: 600; margin: 0;'>SAMPLING STATUS"
+        f" ({selected_month})</p><div"
         f" style='margin-top: 6px;'>{status_badge}</div></div>",
         unsafe_allow_html=True,
     )
@@ -1783,37 +1770,14 @@ elif selected_page == "Monthly Monitoring Map":
   st.markdown("<br>", unsafe_allow_html=True)
   st.subheader(
       f"📈 Keputusan Analisis Parameter Makmal — Stesen {selected_station}"
+      f" ({selected_month})"
   )
 
   if not station_data.empty:
     st.dataframe(station_data, use_container_width=True)
   else:
     st.info(
-        f"📌 Stesen **{selected_station}** belum mempunyai rekod dalam Google"
-        " Sheet Monthly Sampling."
+        f"📌 Tiada rekod bagi stesen **{selected_station}** untuk bulan"
+        f" **{selected_month}**. Status ditanda sebagai **Non-Active** (Tiada"
+        " Dummy Data)."
     )
-    dummy_results = pd.DataFrame({
-        "Parameter": [
-            "pH Level",
-            "Turbidity (NTU)",
-            "Total Suspended Solids (mg/L)",
-            "Iron, Fe (mg/L)",
-            "Arsenic, As (mg/L)",
-        ],
-        "Baseline Limit": ["6.0 - 9.0", "< 250", "< 50", "< 5.0", "< 0.05"],
-        "Latest Result": [
-            "Pending Lab",
-            "Pending Lab",
-            "Pending Lab",
-            "Pending Lab",
-            "Pending Lab",
-        ],
-        "Compliance Status": [
-            "No Data",
-            "No Data",
-            "No Data",
-            "No Data",
-            "No Data",
-        ],
-    })
-    st.table(dummy_results)
