@@ -1795,8 +1795,9 @@ elif selected_page == "📝 Data Entry":
   )
   st.markdown(
       "<p style='color: #64748b; font-size: 13px; margin-bottom: 20px;'>Data"
-      " yang dihantar akan terus direkodkan ke Google Sheets dan dikemas"
-      " kini pada papan pemuka secara automatik.</p>",
+      " yang dihantar akan dikira secara automatik (Average & BMP"
+      " Performance), direkodkan ke Google Sheets, dan terus dikemas kini pada"
+      " papan pemuka.</p>",
       unsafe_allow_html=True,
   )
 
@@ -1806,93 +1807,301 @@ elif selected_page == "📝 Data Entry":
       "🗺️ Monthly Sampling",
   ])
 
-  # --- TAB 1: DAILY LOG 2026 ---
+  # ==========================================
+  # TAB 1: DAILY LOG 2026
+  # ==========================================
   with tab1:
     with st.form("daily_log_form", clear_on_submit=True):
-      st.subheader("Tambah Rekod Harian ke 'Daily log 2026'")
-      entry_date = st.date_input("Tarikh Sampel", value=datetime.date.today())
+      st.subheader("Rekod Pemantauan Harian (Daily log 2026)")
 
-      col1, col2 = st.columns(2)
-      with col1:
-        fdp_ph = st.number_input(
-            "FDP pH", min_value=0.0, max_value=14.0, value=7.0, step=0.01
-        )
-      with col2:
-        fdp_ntu = st.number_input("FDP NTU", min_value=0.0, value=15.0, step=0.1)
+      c_top1, c_top2 = st.columns(2)
+      entry_date = c_top1.date_input(
+          "Tarikh (Date)", value=datetime.date.today()
+      )
+      weather = c_top2.selectbox(
+          "Cuaca (Weather)", ["Sunny", "Light Rain", "Heavy Rain", "Cloudy"]
+      )
+
+      st.markdown("---")
+      st.markdown("**1. Sg. Duri Upstream (US)**")
+      u1, u2, u3, u4 = st.columns(4)
+      us_ph_am = u1.number_input(
+          "US pH AM", min_value=0.0, max_value=14.0, value=3.05, step=0.01
+      )
+      us_ph_pm = u2.number_input(
+          "US pH PM", min_value=0.0, max_value=14.0, value=3.05, step=0.01
+      )
+      us_ntu_am = u3.number_input(
+          "US NTU AM", min_value=0.0, value=50.0, step=0.1
+      )
+      us_ntu_pm = u4.number_input(
+          "US NTU PM", min_value=0.0, value=50.0, step=0.1
+      )
+
+      st.markdown("**2. Sg. Duri Downstream (DS)**")
+      d1, d2, d3, d4 = st.columns(4)
+      ds_ph_am = d1.number_input(
+          "DS pH AM", min_value=0.0, max_value=14.0, value=3.05, step=0.01
+      )
+      ds_ph_pm = d2.number_input(
+          "DS pH PM", min_value=0.0, max_value=14.0, value=3.05, step=0.01
+      )
+      ds_ntu_am = d3.number_input(
+          "DS NTU AM", min_value=0.0, value=50.0, step=0.1
+      )
+      ds_ntu_pm = d4.number_input(
+          "DS NTU PM", min_value=0.0, value=50.0, step=0.1
+      )
+
+      st.markdown("**3. Final Discharge Point (FDP)**")
+      f1, f2, f3, f4 = st.columns(4)
+      fdp_ph_am = f1.number_input(
+          "FDP pH AM", min_value=0.0, max_value=14.0, value=7.00, step=0.01
+      )
+      fdp_ph_pm = f2.number_input(
+          "FDP pH PM", min_value=0.0, max_value=14.0, value=7.00, step=0.01
+      )
+      fdp_ntu_am = f3.number_input(
+          "FDP NTU AM", min_value=0.0, value=8.0, step=0.1
+      )
+      fdp_ntu_pm = f4.number_input(
+          "FDP NTU PM", min_value=0.0, value=8.0, step=0.1
+      )
+
+      st.markdown("---")
+      st.markdown("**4. Rekod Isu Harian & Status BMP**")
+      i1, i2, i3, i4 = st.columns(4)
+      issue_found = i1.number_input("Issue found", min_value=0, value=0, step=1)
+      ongoing_case = i2.number_input(
+          "Ongoing case", min_value=0, value=2, step=1
+      )
+      corrective_action = i3.number_input(
+          "Corrective action", min_value=0, value=0, step=1
+      )
+      case_closed = i4.number_input("Case Closed", min_value=0, value=0, step=1)
+
+      remarks = st.text_input(
+          "Remarks (Kosongkan jika tiada)",
+          placeholder="Contoh: Slope failure (CH300)",
+      )
+
+      b1, b2, b3 = st.columns(3)
+      bmp_okay = b1.number_input("BMP Okay", min_value=0, value=3, step=1)
+      bmp_maint = b2.number_input(
+          "BMP Need Maintenance", min_value=0, value=1, step=1
+      )
+      ntu_limit = b3.number_input("NTU Limit", min_value=0.0, value=250.0, step=1.0)
 
       submitted_daily = st.form_submit_button(
-          "💾 Simpan ke Daily Log", use_container_width=True
+          "💾 Kira Automatik & Simpan ke Daily log 2026", use_container_width=True
       )
 
       if submitted_daily:
         try:
           existing_df = conn.read(worksheet="Daily log 2026", ttl=0)
 
+          # Pengiraan Automatik oleh Sistem
+          avg_us_ph = round((us_ph_am + us_ph_pm) / 2, 3)
+          avg_ds_ph = round((ds_ph_am + ds_ph_pm) / 2, 3)
+          avg_fdp_ph = round((fdp_ph_am + fdp_ph_pm) / 2, 3)
+
+          avg_us_ntu = round((us_ntu_am + us_ntu_pm) / 2, 3)
+          avg_ds_ntu = round((ds_ntu_am + ds_ntu_pm) / 2, 3)
+          avg_fdp_ntu = round((fdp_ntu_am + fdp_ntu_pm) / 2, 3)
+
+          total_bmp = bmp_okay + bmp_maint
+          bmp_perf_val = (
+              round((bmp_okay / total_bmp) * 100) if total_bmp > 0 else 0
+          )
+          bmp_perf_str = f"{bmp_perf_val}%"
+
+          # Padankan 100% dengan ejaan header kolum A1:AD1 dalam Google Sheet
           new_row = pd.DataFrame([{
               "Date": entry_date.strftime("%Y-%m-%d"),
-              "FDP pH": fdp_ph,
-              "FDP NTU": fdp_ntu,
+              "Year": entry_date.year,
+              "Weather": weather,
+              "Sg.Duri US pH AM": us_ph_am,
+              "Sg.Duri US pH PM": us_ph_pm,
+              "Sg.Duri US NTU AM": us_ntu_am,
+              "Sg.Duri US NTU PM": us_ntu_pm,
+              "Sg.Duri DS pH AM": ds_ph_am,
+              "Sg.Duri DS pH PM": ds_ph_pm,
+              "Sg.Duri DS NTU AM": ds_ntu_am,
+              "Sg.Duri DS NTU PM": ds_ntu_pm,
+              "FDP pH AM": fdp_ph_am,
+              "FDP pH PM": fdp_ph_pm,
+              "FDP NTU AM": fdp_ntu_am,
+              "FDP NTU PM": fdp_ntu_pm,
+              "Issue found": issue_found,
+              "Remarks": remarks,
+              "Ongoing case": ongoing_case,
+              "Corrective action": corrective_action,
+              "Case Closed": case_closed,
+              "Avg pH Sg. Duri US": avg_us_ph,
+              "Avg pH Sg. Duri DS": avg_ds_ph,
+              "Avg pH FDP": avg_fdp_ph,
+              "Avg NTU Sg.Duri US": avg_us_ntu,
+              "Avg NTU Sg. Duri DS": avg_ds_ntu,
+              "Avg NTU FDP": avg_fdp_ntu,
+              "NTU Limit": ntu_limit,
+              "BMP Okay": bmp_okay,
+              "BMP Need Maintenance": bmp_maint,
+              "BMP Perfomance": bmp_perf_str,
           }])
 
           updated_df = pd.concat([existing_df, new_row], ignore_index=True)
           conn.update(worksheet="Daily log 2026", data=updated_df)
 
           st.cache_data.clear()
-          st.success("✅ Data berjaya disimpan ke 'Daily log 2026'!")
+          st.success(
+              f"✅ Data berjaya disimpan! (Avg pH FDP: {avg_fdp_ph} | Avg NTU"
+              f" FDP: {avg_fdp_ntu} | BMP Performance: {bmp_perf_str})"
+          )
           st.rerun()
         except Exception as e:
-          st.error(f"Gagal menyimpan: {e}")
+          st.error(f"Gagal menyimpan ke Daily log 2026: {e}")
 
-  # --- TAB 2: CASES TRACKER ---
+  # ==========================================
+  # TAB 2: CASES TRACKER
+  # ==========================================
   with tab2:
     with st.form("cases_tracker_form", clear_on_submit=True):
-      st.subheader("Daftar Kes Baharu ke 'Cases tracker'")
-      case_date = st.date_input(
-          "Tarikh Kes Dikesan", value=datetime.date.today(), key="c_date"
+      st.subheader("Daftar Kes / Isu Baharu (Cases tracker)")
+      st.caption(
+          "Nota: Status 'No action' dan 'Proposed in meeting' akan dikira"
+          " secara automatik sebagai Open Cases di Dashboard."
       )
-      case_loc = st.text_input("Lokasi Isu")
-      case_issue = st.text_area("Huraian Masalah / Isu")
+
+      case_date = st.date_input(
+          "Date Raised", value=datetime.date.today(), key="c_date"
+      )
+      case_issue = st.text_input(
+          "Issue", placeholder="Contoh: Slope Erosion / Clogged Drain"
+      )
+      case_loc = st.text_input(
+          "Location", placeholder="Contoh: Bukit Adam (CH300)"
+      )
       case_status = st.selectbox(
-          "Status Kes", ["No Action", "Proposed In Meeting", "Closed"]
+          "Status", ["No action", "Proposed in meeting", "Closed"]
       )
 
       submitted_case = st.form_submit_button(
-          "💾 Simpan ke Cases Tracker", use_container_width=True
+          "💾 Simpan ke Cases tracker", use_container_width=True
       )
 
       if submitted_case:
-        try:
-          existing_cases = conn.read(worksheet="Cases tracker", ttl=0)
+        if not case_issue.strip() or not case_loc.strip():
+          st.warning("⚠️ Sila isi ruangan Issue dan Location terlebih dahulu.")
+        else:
+          try:
+            existing_cases = conn.read(worksheet="Cases tracker", ttl=0)
 
-          new_case = pd.DataFrame([{
-              "Date": case_date.strftime("%Y-%m-%d"),
-              "Location": case_loc,
-              "Issue": case_issue,
-              "Status": case_status,
-          }])
+            # Format tarikh sepadan dengan jadual (M/D/YYYY atau YYYY-MM-DD)
+            formatted_date = f"{case_date.month}/{case_date.day}/{case_date.year}"
 
-          updated_cases = pd.concat(
-              [existing_cases, new_case], ignore_index=True
-          )
-          conn.update(worksheet="Cases tracker", data=updated_cases)
+            new_case = pd.DataFrame([{
+                "Date Raised": formatted_date,
+                "Issue": case_issue.strip(),
+                "Location": case_loc.strip(),
+                "Status": case_status,
+                "Total": 1,
+            }])
 
-          st.cache_data.clear()
-          st.success("✅ Kes baharu berjaya direkodkan ke 'Cases tracker'!")
-          st.rerun()
-        except Exception as e:
-          st.error(f"Gagal merekod kes: {e}")
+            updated_cases = pd.concat(
+                [existing_cases, new_case], ignore_index=True
+            )
+            conn.update(worksheet="Cases tracker", data=updated_cases)
 
-  # --- TAB 3: MONTHLY SAMPLING ---
+            st.cache_data.clear()
+            st.success(
+                "✅ Kes baharu berjaya direkodkan ke 'Cases tracker' dan"
+                " dikemas kini di Dashboard!"
+            )
+            st.rerun()
+          except Exception as e:
+            st.error(f"Gagal merekod kes: {e}")
+
+  # ==========================================
+  # TAB 3: MONTHLY SAMPLING
+  # ==========================================
   with tab3:
+    st.subheader("Rekod Persampelan Bulanan (Monthly Sampling)")
+
+    # Letak dropdown Status di luar st.form supaya UI bertukar terus bila dipilih
+    m_c1, m_c2, m_c3 = st.columns(3)
+    m_year = m_c1.number_input(
+        "Year", min_value=2024, max_value=2035, value=datetime.date.today().year, step=1
+    )
+    all_months = list(calendar.month_name)[1:]
+    curr_m_idx = all_months.index(datetime.date.today().strftime("%B"))
+    m_month = m_c2.selectbox("Month", all_months, index=curr_m_idx)
+
+    stations_options = [
+        "WQ1",
+        "WQ2",
+        "WQ3",
+        "WQ4",
+        "WQ5",
+        "WQ6",
+        "WQ7",
+        "WQ8",
+        "Final Discharge",
+        "GW",
+        "ANV",
+    ]
+    m_station = m_c3.selectbox("Station Id", stations_options)
+
+    m_status = st.selectbox(
+        "Status Persampelan",
+        ["Not Active", "Lab Pending", "Active"],
+        help=(
+            "Pilih 'Active' untuk mengisi keputusan parameter makmal. Bagi"
+            " 'Not Active' atau 'Lab Pending', terus tekan Simpan."
+        ),
+    )
+
     with st.form("monthly_sampling_form", clear_on_submit=True):
-      st.subheader("Kemaskini Rekod 'Monthly Sampling'")
-      m_station = st.selectbox(
-          "Pilih Stesen", ["WQ1", "WQ2", "Final Discharge", "GW", "ANV"]
-      )
-      m_month = st.selectbox(
-          "Pilih Bulan", list(calendar.month_name)[1:], index=9
-      )
-      m_status = st.selectbox("Status Makmal", ["Active", "Pending", "Closed"])
+      param_data = {}
+      if m_status == "Active":
+        st.markdown("---")
+        st.markdown(
+            f"**🧪 Masukkan Keputusan Parameter Makmal bagi Stesen {m_station}**"
+        )
+        p1, p2, p3 = st.columns(3)
+        param_data["pH"] = p1.number_input(
+            "pH", min_value=0.0, max_value=14.0, value=7.00, step=0.01
+        )
+        param_data["Turbidity (NTU)"] = p2.number_input(
+            "Turbidity (NTU)", min_value=0.0, value=10.0, step=0.1
+        )
+        param_data["TSS (mg/L)"] = p3.number_input(
+            "TSS (mg/L)", min_value=0.0, value=25.0, step=0.1
+        )
+
+        p4, p5, p6 = st.columns(3)
+        param_data["DO (mg/L)"] = p4.number_input(
+            "DO (mg/L)", min_value=0.0, value=6.5, step=0.1
+        )
+        param_data["BOD (mg/L)"] = p5.number_input(
+            "BOD (mg/L)", min_value=0.0, value=3.0, step=0.1
+        )
+        param_data["COD (mg/L)"] = p6.number_input(
+            "COD (mg/L)", min_value=0.0, value=15.0, step=0.1
+        )
+
+        p7, p8 = st.columns(2)
+        param_data["Ammoniacal Nitrogen (mg/L)"] = p7.number_input(
+            "Ammoniacal Nitrogen (mg/L)", min_value=0.0, value=0.1, step=0.01
+        )
+        param_data["Oil & Grease (mg/L)"] = p8.number_input(
+            "Oil & Grease (mg/L)", min_value=0.0, value=1.0, step=0.1
+        )
+      else:
+        st.info(
+            f"ℹ️ Status dipilih ialah **{m_status}**. Tiada input parameter"
+            " diperlukan—tekan butang simpan di bawah untuk merekodkan status"
+            " stesen."
+        )
 
       submitted_monthly = st.form_submit_button(
           "💾 Simpan ke Monthly Sampling", use_container_width=True
@@ -1902,11 +2111,39 @@ elif selected_page == "📝 Data Entry":
         try:
           existing_monthly = conn.read(worksheet="Monthly Sampling", ttl=0)
 
-          new_monthly = pd.DataFrame([{
-              "Station": m_station,
+          row_dict = {
+              "Year": int(m_year),
               "Month": m_month,
+              "Station Id": m_station,
               "Status": m_status,
-          }])
+          }
+          # Masukkan nilai parameter hanya jika status adalah Active
+          if m_status == "Active":
+            row_dict.update(param_data)
+
+          new_monthly = pd.DataFrame([row_dict])
+
+          # Jika sudah wujud rekod untuk Tahun, Bulan & Stesen yang sama, kemaskini baris tersebut; jika belum, tambah baris baharu
+          if not existing_monthly.empty and all(
+              col in existing_monthly.columns
+              for col in ["Year", "Month", "Station Id"]
+          ):
+            mask = (
+                (existing_monthly["Year"].astype(str) == str(int(m_year)))
+                & (
+                    existing_monthly["Month"].astype(str).str.strip().str.title()
+                    == m_month.title()
+                )
+                & (
+                    existing_monthly["Station Id"]
+                    .astype(str)
+                    .str.strip()
+                    .str.upper()
+                    == m_station.upper()
+                )
+            )
+            if mask.any():
+              existing_monthly = existing_monthly[~mask]
 
           updated_monthly = pd.concat(
               [existing_monthly, new_monthly], ignore_index=True
@@ -1914,7 +2151,10 @@ elif selected_page == "📝 Data Entry":
           conn.update(worksheet="Monthly Sampling", data=updated_monthly)
 
           st.cache_data.clear()
-          st.success("✅ Rekod berjaya dikemas kini ke 'Monthly Sampling'!")
+          st.success(
+              f"✅ Rekod stesen **{m_station}** ({m_month} {m_year}) berjaya"
+              f" disimpan dengan status **{m_status}**!"
+          )
           st.rerun()
         except Exception as e:
-          st.error(f"Gagal mengemas kini: {e}")
+          st.error(f"Gagal mengemas kini Monthly Sampling: {e}")
