@@ -671,7 +671,7 @@ bmp_col = next(
       ),
       None,
   )
-  if bmp_col and not df.empty:
+if bmp_col and not df.empty:
     df_sorted_bmp = df.sort_values(by="Date")
     raw_val = (
         df_sorted_bmp[bmp_col].dropna().iloc[-1]
