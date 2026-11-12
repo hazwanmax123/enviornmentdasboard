@@ -949,7 +949,7 @@ elif selected_page == "Discharge Compliance":
     fig_ph.add_trace(go.Scatter(x=df["Date"], y=df[ph_am], name="pH AM", mode="lines+markers", line=dict(color="#0284c7")))
     fig_ph.add_trace(go.Scatter(x=df["Date"], y=df[ph_pm], name="pH PM", mode="lines+markers", line=dict(color="#0f172a")))
     fig_ph.update_layout(
-        title="Perbandingan Tahap pH (AM vs PM)",
+        title="Analysis of pH level (AM vs PM)",
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(showgrid=False, title="Date"),
@@ -963,7 +963,7 @@ elif selected_page == "Discharge Compliance":
     fig_ntu.add_trace(go.Bar(x=df["Date"], y=df[ntu_am], name="Turbidity AM (NTU)", marker_color="#38bdf8"))
     fig_ntu.add_trace(go.Bar(x=df["Date"], y=df[ntu_pm], name="Turbidity PM (NTU)", marker_color="#0284c7"))
     fig_ntu.update_layout(
-        title="Perbandingan Turbidity (AM vs PM)",
+        title="Turbidity level (AM vs PM)",
         plot_bgcolor="#ffffff",
         paper_bgcolor="rgba(0,0,0,0)",
         xaxis=dict(showgrid=False, title="Date"),
@@ -981,87 +981,96 @@ elif selected_page == "Discharge Compliance":
 elif selected_page == "River Water Quality":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px;'>💧 River Water Quality (Upstream vs"
-      " Downstream)</h1>",
+      " margin-bottom: 2px;'>💧 River Water Quality (Upstream vs Downstream)</h1>",
       unsafe_allow_html=True,
   )
 
-  us_ph_avg_col = next(
-      (
-          c
-          for c in df.columns
-          if "avg" in c.lower()
-          and "ph" in c.lower()
-          and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
-      ),
-      df.columns[3],
-  )
-  ds_ph_avg_col = next(
-      (
-          c
-          for c in df.columns
-          if "avg" in c.lower()
-          and "ph" in c.lower()
-          and ("ds" in c.lower() or "downstream" in c.lower())
-      ),
-      df.columns[7],
-  )
-  us_ntu_avg_col = next(
-      (
-          c
-          for c in df.columns
-          if "avg" in c.lower()
-          and ("ntu" in c.lower() or "turb" in c.lower())
-          and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
-      ),
-      df.columns[5],
-  )
-  ds_ntu_avg_col = next(
-      (
-          c
-          for c in df.columns
-          if "avg" in c.lower()
-          and ("ntu" in c.lower() or "turb" in c.lower())
-          and ("ds" in c.lower() or "downstream" in c.lower())
-      ),
-      df.columns[9],
-  )
-
   if not df.empty:
-    df_sorted_rw = df.sort_values(by="Date")
-    latest_rw = df_sorted_rw.iloc[-1]
-    us_ph_latest = latest_rw.get(us_ph_avg_col, 0)
-    ds_ph_latest = latest_rw.get(ds_ph_avg_col, 0)
-    us_ntu_latest = latest_rw.get(us_ntu_avg_col, 0)
-    ds_ntu_latest = latest_rw.get(ds_ntu_avg_col, 0)
-
-    net_ph = ds_ph_latest - us_ph_latest
-    net_ntu = ds_ntu_latest - us_ntu_latest
-
-    rw_c1, rw_c2 = st.columns(2)
-    with rw_c1:
-      st.metric(
-          label="pH Level (Upstream vs Downstream Latest Avg)",
-          value=f"US: {us_ph_latest}  |  DS: {ds_ph_latest}",
-      )
-      st.metric(
-          label="Net Impact (pH)",
-          value=f"{net_ph:+.2f}",
-          delta="Acidic Shift" if net_ph < 0 else "Alkaline Shift",
-          delta_color="inverse" if net_ph < 0 else "normal",
-      )
-    with rw_c2:
-      st.metric(
-          label="Turbidity (Upstream vs Downstream Latest Avg)",
-          value=f"US: {us_ntu_latest} NTU  |  DS: {ds_ntu_latest} NTU",
-      )
-      st.metric(
-          label="Net Impact (Turbidity)",
-          value=f"{net_ntu:+.1f} NTU",
-          delta="Silt Addition" if net_ntu > 0 else "Clearer",
-          delta_color="inverse" if net_ntu > 0 else "normal",
+    # Dropdown pilihan sesi AM / PM
+    col_drop1, col_drop2 = st.columns([2, 2])
+    with col_drop1:
+      session_filter = st.selectbox(
+          "Pilih Sesi Persampelan",
+          ["All session (AM & PM)", "Morning (AM)", "Evening (PM)"],
+          key="river_session_dropdown",
       )
 
+    st.markdown("---")
+
+    # Tentukan kolum berdasarkan data asal
+    ph_cols = [c for c in df.columns if "ph" in c.lower()]
+    ntu_cols = [c for c in df.columns if "ntu" in c.lower() or "turb" in c.lower()]
+
+    # ==========================================
+    # GRAF 1: WATER QUALITY - PH LEVEL
+    # ==========================================
+    st.subheader("📈 Analysis of pH level at Sg. Duri")
+    fig_river_ph = go.Figure()
+    
+    for col in ph_cols[:6]:  # Paparkan kolum pH yang berkaitan
+      fig_river_ph.add_trace(
+          go.Scatter(
+              x=df["Date"],
+              y=df[col],
+              name=col,
+              mode="lines+markers"
+          )
+      )
+
+    fig_river_ph.update_layout(
+        title="Trend pH Air Sungai Mengikut Stesen",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(showgrid=False, title="Date"),
+        yaxis=dict(title="pH Level", range=[0, 14], showgrid=True),
+        height=380,
+        margin=dict(l=30, r=30, t=40, b=30),
+    )
+    st.plotly_chart(fig_river_ph, use_container_width=True, config={"responsive": True})
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ==========================================
+    # GRAF 2: WATER QUALTIY - TURBIDITY level
+    # ==========================================
+    st.subheader("📊 Turbidity analysis")
+    fig_river_ntu = go.Figure()
+
+    for col in ntu_cols[:6]:  # Paparkan kolum turbidity yang berkaitan
+      fig_river_ntu.add_trace(
+          go.Bar(
+              x=df["Date"],
+              y=df[col],
+              name=f"{col} (NTU)"
+          )
+      )
+
+    # Garis rujukan Limit 250 NTU
+    fig_river_ntu.add_hline(
+        y=250,
+        line_dash="dash",
+        line_color="#ef4444",
+        annotation_text="Standard Limit (250 NTU)",
+        annotation_position="top right",
+        annotation_font_color="#ef4444",
+    )
+
+    fig_river_ntu.update_layout(
+        title="Trend Turbidity (NTU) & Garis Had 250 NTU",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(showgrid=False, title="Date"),
+        yaxis=dict(title="Turbidity (NTU)", showgrid=True),
+        height=380,
+        margin=dict(l=30, r=30, t=40, b=30),
+    )
+    st.plotly_chart(fig_river_ntu, use_container_width=True, config={"responsive": True})
+
+    st.markdown("---")
+    st.markdown("#### 📋 Jadual Rekod Mentah Kualiti Air Sungai")
+    st.dataframe(df, use_container_width=True)
+  else:
+    st.warning("Tiada data ditemui untuk River Water Quality.")
 
 # ==========================================
 # PAGE 4: CASES TRACKER
