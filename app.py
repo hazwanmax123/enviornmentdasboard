@@ -986,7 +986,23 @@ elif selected_page == "River Water Quality":
   )
 
   if not df.empty:
-    # Dropdown Sesi AM / PM
+    # 1. PENAPIS TARIKH KAT SIDEBAR (NAVIGATION TEPI KAU)
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 📅 Tarikh Analisis Sungai")
+    
+    if "Date" in df.columns:
+      min_d = df["Date"].min().date() if pd.notnull(df["Date"].min()) else datetime.date.today() - datetime.timedelta(days=30)
+      max_d = df["Date"].max().date() if pd.notnull(df["Date"].max()) else datetime.date.today()
+      
+      selected_date_range = st.sidebar.date_input(
+          "Pilih Julat Tarikh",
+          value=[min_d, max_d],
+          key="river_sidebar_date_picker"
+      )
+    else:
+      selected_date_range = []
+
+    # 2. DROPDOWN SESI AM / PM DI ATAS PAGE
     selected_session = st.selectbox(
         "Pilih Sesi Persampelan (AM / PM)",
         ["Sesi Pagi (AM)", "Sesi Petang (PM)"],
@@ -995,125 +1011,108 @@ elif selected_page == "River Water Quality":
 
     st.markdown("---")
 
-    # Tentukan kolum US & DS berdasarkan sesi AM / PM yang dipilih
-    if "Sesi Pagi" in selected_session:
-      ph_us_col = next((c for c in df.columns if "ph" in c.lower() and ("us" in c.lower() or "upstream" in c.lower() or "duri 1" in c.lower()) and "am" in c.lower()), df.columns[1])
-      ph_ds_col = next((c for c in df.columns if "ph" in c.lower() and ("ds" in c.lower() or "downstream" in c.lower() or "duri 2" in c.lower()) and "am" in c.lower()), df.columns[2])
-      ntu_us_col = next((c for c in df.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("us" in c.lower() or "upstream" in c.lower()) and "am" in c.lower()), df.columns[11])
-      ntu_ds_col = next((c for c in df.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("ds" in c.lower() or "downstream" in c.lower()) and "am" in c.lower()), df.columns[12])
+    # Tapis dataframe mengikut tarikh sidebar
+    df_filtered = df.copy()
+    if len(selected_date_range) == 2:
+      start_date, end_date = selected_date_range
+      df_filtered = df_filtered[(df_filtered["Date"].dt.date >= start_date) & (df_filtered["Date"].dt.date <= end_date)]
+    elif len(selected_date_range) == 1:
+      start_date = selected_date_range[0]
+      df_filtered = df_filtered[df_filtered["Date"].dt.date >= start_date]
+
+    if not df_filtered.empty:
+      if "Sesi Pagi" in selected_session:
+        ph_us_col = next((c for c in df_filtered.columns if "ph" in c.lower() and ("us" in c.lower() or "upstream" in c.lower() or "duri 1" in c.lower()) and "am" in c.lower()), df_filtered.columns[1])
+        ph_ds_col = next((c for c in df_filtered.columns if "ph" in c.lower() and ("ds" in c.lower() or "downstream" in c.lower() or "duri 2" in c.lower()) and "am" in c.lower()), df_filtered.columns[2])
+        ntu_us_col = next((c for c in df_filtered.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("us" in c.lower() or "upstream" in c.lower()) and "am" in c.lower()), df_filtered.columns[11])
+        ntu_ds_col = next((c for c in df_filtered.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("ds" in c.lower() or "downstream" in c.lower()) and "am" in c.lower()), df_filtered.columns[12])
+      else:
+        ph_us_col = next((c for c in df_filtered.columns if "ph" in c.lower() and ("us" in c.lower() or "upstream" in c.lower()) and "pm" in c.lower()), df_filtered.columns[1])
+        ph_ds_col = next((c for c in df_filtered.columns if "ph" in c.lower() and ("ds" in c.lower() or "downstream" in c.lower()) and "pm" in c.lower()), df_filtered.columns[2])
+        ntu_us_col = next((c for c in df_filtered.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("us" in c.lower() or "upstream" in c.lower()) and "pm" in c.lower()), df_filtered.columns[11])
+        ntu_ds_col = next((c for c in df_filtered.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("ds" in c.lower() or "downstream" in c.lower()) and "pm" in c.lower()), df_filtered.columns[12])
+
+      # KPI CARDS
+      st.markdown("#### 📌 River Water Quality KPI Summary")
+      
+      min_ph_val = df_filtered[ph_ds_col].min() if ph_ds_col in df_filtered.columns else 0.0
+      min_ph_row = df_filtered.loc[df_filtered[ph_ds_col] == min_ph_val] if ph_ds_col in df_filtered.columns else pd.DataFrame()
+      min_ph_date = min_ph_row["Date"].dt.strftime("%d %b %Y").values[0] if not min_ph_row.empty and "Date" in min_ph_row.columns else "N/A"
+
+      max_ntu_val = df_filtered[ntu_ds_col].max() if ntu_ds_col in df_filtered.columns else 0.0
+      max_ntu_row = df_filtered.loc[df_filtered[ntu_ds_col] == max_ntu_val] if ntu_ds_col in df_filtered.columns else pd.DataFrame()
+      max_ntu_date = max_ntu_row["Date"].dt.strftime("%d %b %Y").values[0] if not max_ntu_row.empty and "Date" in max_ntu_row.columns else "N/A"
+
+      ph_impact = (df_filtered[ph_ds_col] - df_filtered[ph_us_col]).mean() if ph_ds_col in df_filtered.columns and ph_us_col in df_filtered.columns else 0.0
+      ntu_impact = (df_filtered[ntu_ds_col] - df_filtered[ntu_us_col]).mean() if ntu_ds_col in df_filtered.columns and ntu_us_col in df_filtered.columns else 0.0
+
+      col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
+
+      with col_kpi1:
+        st.metric(label="Lowest pH Record", value=f"{min_ph_val:.2f}", delta=f"Tarikh: {min_ph_date}", delta_color="inverse" if min_ph_val < 6.0 else "normal")
+      with col_kpi2:
+        st.metric(label="Highest NTU Record", value=f"{max_ntu_val:.1f}", delta=f"Tarikh: {max_ntu_date}", delta_color="inverse" if max_ntu_val > 250 else "normal")
+      with col_kpi3:
+        st.metric(label="pH Net Impact (DS - US)", value=f"{ph_impact:+.2f}", delta="Acidity Shift")
+      with col_kpi4:
+        st.metric(label="NTU Net Impact (DS - US)", value=f"{ntu_impact:+.1f} NTU", delta="Silt Load Effect", delta_color="inverse" if ntu_impact > 20 else "normal")
+
+      st.markdown("<br>", unsafe_allow_html=True)
+
+      # GRAF 1: pH LEVEL (US vs DS)
+      st.subheader(f"📈 Analisis Tahap pH Sg. Duri ({selected_session})")
+      fig_river_ph = go.Figure()
+      if ph_us_col in df_filtered.columns:
+        fig_river_ph.add_trace(go.Scatter(x=df_filtered["Date"], y=df_filtered[ph_us_col], name="Sg Duri Upstream (US)", mode="lines+markers", line=dict(color="#0284c7", width=2)))
+      if ph_ds_col in df_filtered.columns:
+        fig_river_ph.add_trace(go.Scatter(x=df_filtered["Date"], y=df_filtered[ph_ds_col], name="Sg Duri Downstream (DS)", mode="lines+markers", line=dict(color="#0f172a", width=2)))
+
+      fig_river_ph.update_layout(
+          title=f"Perbandingan pH Upstream vs Downstream ({selected_session})",
+          plot_bgcolor="#ffffff",
+          paper_bgcolor="rgba(0,0,0,0)",
+          xaxis=dict(showgrid=False, title="Date"),
+          yaxis=dict(title="pH Level", range=[0, 14], showgrid=True),
+          height=380,
+          margin=dict(l=30, r=30, t=40, b=30),
+      )
+      st.plotly_chart(fig_river_ph, use_container_width=True, config={"responsive": True})
+
+      st.markdown("<br>", unsafe_allow_html=True)
+
+      # GRAF 2: TURBIDITY / NTU (US vs DS + Limit 250)
+      st.subheader(f"📊 Analisis Turbidity Sg. Duri & Had Standard ({selected_session})")
+      fig_river_ntu = go.Figure()
+      if ntu_us_col in df_filtered.columns:
+        fig_river_ntu.add_trace(go.Scatter(x=df_filtered["Date"], y=df_filtered[ntu_us_col], name="Sg Duri Upstream (US NTU)", mode="lines+markers", line=dict(color="#38bdf8", width=2)))
+      if ntu_ds_col in df_filtered.columns:
+        fig_river_ntu.add_trace(go.Scatter(x=df_filtered["Date"], y=df_filtered[ntu_ds_col], name="Sg Duri Downstream (DS NTU)", mode="lines+markers", line=dict(color="#ef4444", width=2)))
+
+      fig_river_ntu.add_hline(
+          y=250,
+          line_dash="dash",
+          line_color="#ef4444",
+          annotation_text="Standard Limit (250 NTU)",
+          annotation_position="top right",
+          annotation_font_color="#ef4444",
+      )
+
+      fig_river_ntu.update_layout(
+          title=f"Perbandingan Turbidity Upstream vs Downstream & Had 250 NTU ({selected_session})",
+          plot_bgcolor="#ffffff",
+          paper_bgcolor="rgba(0,0,0,0)",
+          xaxis=dict(showgrid=False, title="Date"),
+          yaxis=dict(title="Turbidity (NTU)", showgrid=True),
+          height=380,
+          margin=dict(l=30, r=30, t=40, b=30),
+      )
+      st.plotly_chart(fig_river_ntu, use_container_width=True, config={"responsive": True})
+
+      st.markdown("---")
+      st.markdown("#### 📋 Jadual Rekod Mentah Kualiti Air Sungai")
+      st.dataframe(df_filtered, use_container_width=True)
     else:
-      ph_us_col = next((c for c in df.columns if "ph" in c.lower() and ("us" in c.lower() or "upstream" in c.lower()) and "pm" in c.lower()), df.columns[1])
-      ph_ds_col = next((c for c in df.columns if "ph" in c.lower() and ("ds" in c.lower() or "downstream" in c.lower()) and "pm" in c.lower()), df.columns[2])
-      ntu_us_col = next((c for c in df.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("us" in c.lower() or "upstream" in c.lower()) and "pm" in c.lower()), df.columns[11])
-      ntu_ds_col = next((c for c in df.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("ds" in c.lower() or "downstream" in c.lower()) and "pm" in c.lower()), df.columns[12])
-
-    # 1. KPI CARDS DENGAN NILAI, TARIKH & NET IMPACT SEBENAR
-    st.markdown("#### 📌 River Water Quality KPI Summary")
-    
-    # Kira nilai min pH dan max NTU berserta tarikh
-    min_ph_val = df[ph_ds_col].min() if ph_ds_col in df.columns else 0.0
-    min_ph_row = df.loc[df[ph_ds_col] == min_ph_val] if ph_ds_col in df.columns else pd.DataFrame()
-    min_ph_date = min_ph_row["Date"].dt.strftime("%d %b %Y").values[0] if not min_ph_row.empty and "Date" in min_ph_row.columns else "N/A"
-
-    max_ntu_val = df[ntu_ds_col].max() if ntu_ds_col in df.columns else 0.0
-    max_ntu_row = df.loc[df[ntu_ds_col] == max_ntu_val] if ntu_ds_col in df.columns else pd.DataFrame()
-    max_ntu_date = max_ntu_row["Date"].dt.strftime("%d %b %Y").values[0] if not max_ntu_row.empty and "Date" in max_ntu_row.columns else "N/A"
-
-    # Kira Net Impact (Perbezaan purata DS - US)
-    ph_impact = (df[ph_ds_col] - df[ph_us_col]).mean() if ph_ds_col in df.columns and ph_us_col in df.columns else 0.0
-    ntu_impact = (df[ntu_ds_col] - df[ntu_us_col]).mean() if ntu_ds_col in df.columns and ntu_us_col in df.columns else 0.0
-
-    col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
-
-    with col_kpi1:
-      st.metric(
-          label="Lowest pH Record",
-          value=f"{min_ph_val:.2f}",
-          delta=f"Tarikh: {min_ph_date}",
-          delta_color="inverse" if min_ph_val < 6.0 else "normal",
-      )
-    with col_kpi2:
-      st.metric(
-          label="Highest NTU Record",
-          value=f"{max_ntu_val:.1f}",
-          delta=f"Tarikh: {max_ntu_date}",
-          delta_color="inverse" if max_ntu_val > 250 else "normal",
-      )
-    with col_kpi3:
-      st.metric(
-          label="pH Net Impact (DS - US)",
-          value=f"{ph_impact:+.2f}",
-          delta="Acidity Shift",
-      )
-    with col_kpi4:
-      st.metric(
-          label="NTU Net Impact (DS - US)",
-          value=f"{ntu_impact:+.1f} NTU",
-          delta="Silt Load Effect",
-          delta_color="inverse" if ntu_impact > 20 else "normal",
-      )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ==========================================
-    # GRAF 1: pH LEVEL (Sg Duri US vs DS)
-    # ==========================================
-    st.subheader(f"📈 Analisis Tahap pH Sg. Duri ({selected_session})")
-    fig_river_ph = go.Figure()
-
-    if ph_us_col in df.columns:
-      fig_river_ph.add_trace(go.Scatter(x=df["Date"], y=df[ph_us_col], name="Sg Duri Upstream (US)", mode="lines+markers", line=dict(color="#0284c7", width=2)))
-    if ph_ds_col in df.columns:
-      fig_river_ph.add_trace(go.Scatter(x=df["Date"], y=df[ph_ds_col], name="Sg Duri Downstream (DS)", mode="lines+markers", line=dict(color="#0f172a", width=2)))
-
-    fig_river_ph.update_layout(
-        title=f"Perbandingan pH Upstream vs Downstream ({selected_session})",
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(showgrid=False, title="Date"),
-        yaxis=dict(title="pH Level", range=[0, 14], showgrid=True),
-        height=380,
-        margin=dict(l=30, r=30, t=40, b=30),
-    )
-    st.plotly_chart(fig_river_ph, use_container_width=True, config={"responsive": True})
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ==========================================
-    # GRAF 2: TURBIDITY / NTU (Sg Duri US vs DS + Limit 250)
-    # ==========================================
-    st.subheader(f"📊 Analisis Turbidity Sg. Duri & Had Standard ({selected_session})")
-    fig_river_ntu = go.Figure()
-
-    if ntu_us_col in df.columns:
-      fig_river_ntu.add_trace(go.Scatter(x=df["Date"], y=df[ntu_us_col], name="Sg Duri Upstream (US NTU)", mode="lines+markers", line=dict(color="#38bdf8", width=2)))
-    if ntu_ds_col in df.columns:
-      fig_river_ntu.add_trace(go.Scatter(x=df["Date"], y=df[ntu_ds_col], name="Sg Duri Downstream (DS NTU)", mode="lines+markers", line=dict(color="#ef4444", width=2)))
-
-    # Garis rujukan Limit 250 NTU
-    fig_river_ntu.add_hline(
-        y=250,
-        line_dash="dash",
-        line_color="#ef4444",
-        annotation_text="Standard Limit (250 NTU)",
-        annotation_position="top right",
-        annotation_font_color="#ef4444",
-    )
-
-    fig_river_ntu.update_layout(
-        title=f"Perbandingan Turbidity Upstream vs Downstream & Had 250 NTU ({selected_session})",
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(showgrid=False, title="Date"),
-        yaxis=dict(title="Turbidity (NTU)", showgrid=True),
-        height=380,
-        margin=dict(l=30, r=30, t=40, b=30),
-    )
-    st.plotly_chart(fig_river_ntu, use_container_width=True, config={"responsive": True})
-
-    st.markdown("---")
-    st.markdown("#### 📋 Jadual Rekod Mentah Kualiti Air Sungai")
-    st.dataframe(df, use_container_width=True)
+      st.warning("Tiada data dalam julat tarikh yang dipilih.")
   else:
     st.warning("Tiada data ditemui untuk River Water Quality.")
 # ==========================================
