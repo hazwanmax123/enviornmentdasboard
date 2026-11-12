@@ -53,9 +53,7 @@ try:
   sheet_cases = client.open(SPREADSHEET_NAME).worksheet("Cases Tracker")
   df_cases = pd.DataFrame(sheet_cases.get_all_records())
   df_cases_raw = df_cases.copy()
-  date_col = next(
-      (c for c in df_cases.columns if "date" in c.lower()), df_cases.columns[0]
-  )
+  date_col = df_cases.columns[0]
   df_cases[date_col] = pd.to_datetime(df_cases[date_col], errors="coerce")
 except:
   df_cases = pd.DataFrame()
@@ -70,22 +68,9 @@ try:
 except:
   df_monthly = pd.DataFrame()
 
-f_ph = (
-    next((c for c in df.columns if "ph" in c.lower() and "fdp" in c.lower()), "")
-    if not df.empty
-    else ""
-)
-f_ntu = (
-    next(
-        (c for c in df.columns if "ntu" in c.lower() and "fdp" in c.lower()), ""
-    )
-    if not df.empty
-    else ""
-)
-status_col = (
-    next((c for c in df_cases.columns if "status" in c.lower()), None)
-    if not df_cases.empty
-    else None
+f_ph = df.columns[1] if not df.empty and len(df.columns) > 1 else ""
+f_ntu = df.columns[11] if not df.empty and len(df.columns) > 11 else ""
+status_col = df_cases.columns[3] if not df_cases.empty and len(df_cases.columns) > 3 else None
 # ==========================================
 # UI TITLE & HEADER
 # ==========================================
