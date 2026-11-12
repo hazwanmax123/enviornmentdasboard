@@ -885,12 +885,6 @@ elif selected_page == "Discharge Compliance":
       unsafe_allow_html=True,
   )
 
-  # Cari kolum AM & PM secara automatik dari df asal kau
-  ph_am_col = next((c for c in df.columns if "ph" in c.lower() and ("am" in c.lower() or "pagang" in c.lower())), df.columns[1] if len(df.columns) > 1 else "")
-  ph_pm_col = next((c for c in df.columns if "ph" in c.lower() and ("pm" in c.lower() or "petang" in c.lower())), df.columns[2] if len(df.columns) > 2 else "")
-  ntu_am_col = next((c for c in df.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("am" in c.lower() or "pagang" in c.lower())), df.columns[11] if len(df.columns) > 11 else "")
-  ntu_pm_col = next((c for c in df.columns if ("ntu" in c.lower() or "turb" in c.lower()) and ("pm" in c.lower() or "petang" in c.lower())), df.columns[12] if len(df.columns) > 12 else "")
-
   if not df.empty:
     limit_val = (
         df["NTU Limit"].dropna().iloc[-1]
@@ -945,39 +939,41 @@ elif selected_page == "Discharge Compliance":
     st.markdown("<br>", unsafe_allow_html=True)
     st.subheader("📈 Analisis Terperinci Sesi AM vs PM (pH & Turbidity)")
 
-    # 1. Graf pH (AM vs PM)
-    if ph_am_col in df.columns and ph_pm_col in df.columns:
-      fig_ph_session = go.Figure()
-      fig_ph_session.add_trace(go.Scatter(x=df["Date"], y=df[ph_am_col], name="pH Pagi (AM)", mode="lines+markers", line=dict(color="#0284c7")))
-      fig_ph_session.add_trace(go.Scatter(x=df["Date"], y=df[ph_pm_col], name="pH Petang (PM)", mode="lines+markers", line=dict(color="#0f172a")))
-      fig_ph_session.update_layout(
-          title="Perbandingan Tahap pH Sesi Pagi (AM) vs Petang (PM)",
-          plot_bgcolor="#ffffff",
-          paper_bgcolor="rgba(0,0,0,0)",
-          xaxis=dict(showgrid=False, title="Date"),
-          yaxis=dict(title="pH Level", range=[0, 14], showgrid=True),
-          height=350,
-          margin=dict(l=30, r=30, t=40, b=30),
-      )
-      st.plotly_chart(fig_ph_session, use_container_width=True, config={"responsive": True})
+    # Dapatkan kolum asal AM vs PM berdasarkan nama asal fail kau
+    ph_am = next((c for c in df.columns if "ph" in c.lower() and "am" in c.lower()), df.columns[1])
+    ph_pm = next((c for c in df.columns if "ph" in c.lower() and "pm" in c.lower()), df.columns[2])
+    ntu_am = next((c for c in df.columns if ("ntu" in c.lower() or "turb" in c.lower()) and "am" in c.lower()), df.columns[11])
+    ntu_pm = next((c for c in df.columns if ("ntu" in c.lower() or "turb" in c.lower()) and "pm" in c.lower()), df.columns[12])
 
-    # 2. Graf Turbidity / NTU (AM vs PM)
-    if ntu_am_col in df.columns and ntu_pm_col in df.columns:
-      fig_ntu_session = go.Figure()
-      fig_ntu_session.add_trace(go.Bar(x=df["Date"], y=df[ntu_am_col], name="Turbidity Pagi (AM NTU)", marker_color="#38bdf8"))
-      fig_ntu_session.add_trace(go.Bar(x=df["Date"], y=df[ntu_pm_col], name="Turbidity Petang (PM NTU)", marker_color="#0284c7"))
-      fig_ntu_session.update_layout(
-          title="Perbandingan Turbidity Sesi Pagi (AM) vs Petang (PM)",
-          plot_bgcolor="#ffffff",
-          paper_bgcolor="rgba(0,0,0,0)",
-          xaxis=dict(showgrid=False, title="Date"),
-          yaxis=dict(title="Turbidity (NTU)", showgrid=True),
-          height=350,
-          margin=dict(l=30, r=30, t=40, b=30),
-      )
-      st.plotly_chart(fig_ntu_session, use_container_width=True, config={"responsive": True})
+    fig_ph = go.Figure()
+    fig_ph.add_trace(go.Scatter(x=df["Date"], y=df[ph_am], name="pH AM", mode="lines+markers", line=dict(color="#0284c7")))
+    fig_ph.add_trace(go.Scatter(x=df["Date"], y=df[ph_pm], name="pH PM", mode="lines+markers", line=dict(color="#0f172a")))
+    fig_ph.update_layout(
+        title="Perbandingan Tahap pH (AM vs PM)",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(showgrid=False, title="Date"),
+        yaxis=dict(title="pH Level", range=[0, 14], showgrid=True),
+        height=350,
+        margin=dict(l=30, r=30, t=40, b=30),
+    )
+    st.plotly_chart(fig_ph, use_container_width=True, config={"responsive": True})
+
+    fig_ntu = go.Figure()
+    fig_ntu.add_trace(go.Bar(x=df["Date"], y=df[ntu_am], name="Turbidity AM (NTU)", marker_color="#38bdf8"))
+    fig_ntu.add_trace(go.Bar(x=df["Date"], y=df[ntu_pm], name="Turbidity PM (NTU)", marker_color="#0284c7"))
+    fig_ntu.update_layout(
+        title="Perbandingan Turbidity (AM vs PM)",
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(showgrid=False, title="Date"),
+        yaxis=dict(title="Turbidity (NTU)", showgrid=True),
+        height=350,
+        margin=dict(l=30, r=30, t=40, b=30),
+    )
+    st.plotly_chart(fig_ntu, use_container_width=True, config={"responsive": True})
   else:
-    st.warning("Tiada data ditemui untuk Discharge Compliance.")
+    st.warning("Tiada data ditemui.")
 
 # ==========================================
 # PAGE 3: RIVER WATER QUALITY
