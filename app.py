@@ -663,7 +663,7 @@ if selected_page == "Overview":
     compliance_rate = 0.0
 
 bmp_performance = 0.0
-  bmp_col = next(
+bmp_col = next(
       (
           col
           for col in df.columns
