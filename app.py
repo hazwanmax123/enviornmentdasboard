@@ -663,47 +663,42 @@ if selected_page == "Overview":
     compliance_rate = 0.0
 
 bmp_performance = 0.0
-  bmp_col = next(
-      (
-          col
-          for col in df.columns
-          if "bmp" in col.lower() and "perf" in col.lower()
-      ),
-      None,
+bmp_col = next(
+    (
+        col
+        for col in df.columns
+        if "bmp" in col.lower() and "perf" in col.lower()
+    ),
+    None,
+)
+if bmp_col and not df.empty:
+  df_sorted_bmp = df.sort_values(by="Date")
+  raw_val = (
+      df_sorted_bmp[bmp_col].dropna().iloc[-1]
+      if not df_sorted_bmp[bmp_col].dropna().empty
+      else 0.0
   )
-  if bmp_col and not df.empty:
-    df_sorted_bmp = df.sort_values(by="Date")
-    raw_val = (
-        df_sorted_bmp[bmp_col].dropna().iloc[-1]
-        if not df_sorted_bmp[bmp_col].dropna().empty
-        else 0.0
-    )
-    if isinstance(raw_val, str):
-      raw_val = raw_val.replace("%", "").strip()
-    bmp_performance = float(raw_val) if raw_val != "" else 0.0
+  if isinstance(raw_val, str):
+    raw_val = raw_val.replace("%", "").strip()
+  bmp_performance = float(raw_val) if raw_val != "" else 0.0
 
-  col1, col2, col3, col4 = st.columns(4)
-  with col1:
-    st.metric(
-        label="Discharge Compliance",
-        value=f"{compliance_rate:.1f}%",
-        delta="Optimal Range",
-    )
-  with col2:
-    st.metric(
-        label="Open Cases",
-        value=open_cases_count,
-        delta="Requires Action / Review",
-    )
-  with col3:
-    st.metric(label="Last Sample Date", value=last_sample_date)
-  with col4:
-    st.metric(label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%")
-  st.markdown("<br>", unsafe_allow_html=True)
-  st.subheader(
-      "📋 Station Status by Parameter (Latest Sample - Using Avg Columns)"
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+  st.metric(
+      label="Discharge Compliance",
+      value=f"{compliance_rate:.1f}%",
+      delta="Optimal Range",
   )
-
+with col2:
+  st.metric(
+      label="Open Cases",
+      value=open_cases_count,
+      delta="Requires Action / Review",
+  )
+with col3:
+  st.metric(label="Last Sample Date", value=last_sample_date)
+with col4:
+  st.metric(label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%")
   if not df.empty:
     latest_row = df.sort_values(by="Date").iloc[-1]
 
