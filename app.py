@@ -1784,3 +1784,137 @@ elif selected_page == "Monthly Monitoring Record":
         f" **{selected_month}**. Status ditanda sebagai **Non-Active** (Tiada"
         " Dummy Data)."
     )
+# ==========================================
+# PAGE 6: DATA ENTRY (AUTO-SYNC TO GOOGLE SHEETS)
+# ==========================================
+elif selected_page == "📝 Data Entry":
+  st.markdown(
+      "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
+      " margin-bottom: 2px;'>📝 Field Data Entry & Auto-Sync</h1>",
+      unsafe_allow_html=True,
+  )
+  st.markdown(
+      "<p style='color: #64748b; font-size: 13px; margin-bottom: 20px;'>Data"
+      " yang dihantar akan terus direkodkan ke Google Sheets dan dikemas"
+      " kini pada papan pemuka secara automatik.</p>",
+      unsafe_allow_html=True,
+  )
+
+  tab1, tab2, tab3 = st.tabs([
+      "🌊 Daily log 2026",
+      "⚠️ Cases tracker",
+      "🗺️ Monthly Sampling",
+  ])
+
+  # --- TAB 1: DAILY LOG 2026 ---
+  with tab1:
+    with st.form("daily_log_form", clear_on_submit=True):
+      st.subheader("Tambah Rekod Harian ke 'Daily log 2026'")
+      entry_date = st.date_input("Tarikh Sampel", value=datetime.date.today())
+
+      col1, col2 = st.columns(2)
+      with col1:
+        fdp_ph = st.number_input(
+            "FDP pH", min_value=0.0, max_value=14.0, value=7.0, step=0.01
+        )
+      with col2:
+        fdp_ntu = st.number_input("FDP NTU", min_value=0.0, value=15.0, step=0.1)
+
+      submitted_daily = st.form_submit_button(
+          "💾 Simpan ke Daily Log", use_container_width=True
+      )
+
+      if submitted_daily:
+        try:
+          existing_df = conn.read(worksheet="Daily log 2026", ttl=0)
+
+          new_row = pd.DataFrame([{
+              "Date": entry_date.strftime("%Y-%m-%d"),
+              "FDP pH": fdp_ph,
+              "FDP NTU": fdp_ntu,
+          }])
+
+          updated_df = pd.concat([existing_df, new_row], ignore_index=True)
+          conn.update(worksheet="Daily log 2026", data=updated_df)
+
+          st.cache_data.clear()
+          st.success("✅ Data berjaya disimpan ke 'Daily log 2026'!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"Gagal menyimpan: {e}")
+
+  # --- TAB 2: CASES TRACKER ---
+  with tab2:
+    with st.form("cases_tracker_form", clear_on_submit=True):
+      st.subheader("Daftar Kes Baharu ke 'Cases tracker'")
+      case_date = st.date_input(
+          "Tarikh Kes Dikesan", value=datetime.date.today(), key="c_date"
+      )
+      case_loc = st.text_input("Lokasi Isu")
+      case_issue = st.text_area("Huraian Masalah / Isu")
+      case_status = st.selectbox(
+          "Status Kes", ["No Action", "Proposed In Meeting", "Closed"]
+      )
+
+      submitted_case = st.form_submit_button(
+          "💾 Simpan ke Cases Tracker", use_container_width=True
+      )
+
+      if submitted_case:
+        try:
+          existing_cases = conn.read(worksheet="Cases tracker", ttl=0)
+
+          new_case = pd.DataFrame([{
+              "Date": case_date.strftime("%Y-%m-%d"),
+              "Location": case_loc,
+              "Issue": case_issue,
+              "Status": case_status,
+          }])
+
+          updated_cases = pd.concat(
+              [existing_cases, new_case], ignore_index=True
+          )
+          conn.update(worksheet="Cases tracker", data=updated_cases)
+
+          st.cache_data.clear()
+          st.success("✅ Kes baharu berjaya direkodkan ke 'Cases tracker'!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"Gagal merekod kes: {e}")
+
+  # --- TAB 3: MONTHLY SAMPLING ---
+  with tab3:
+    with st.form("monthly_sampling_form", clear_on_submit=True):
+      st.subheader("Kemaskini Rekod 'Monthly Sampling'")
+      m_station = st.selectbox(
+          "Pilih Stesen", ["WQ1", "WQ2", "Final Discharge", "GW", "ANV"]
+      )
+      m_month = st.selectbox(
+          "Pilih Bulan", list(calendar.month_name)[1:], index=9
+      )
+      m_status = st.selectbox("Status Makmal", ["Active", "Pending", "Closed"])
+
+      submitted_monthly = st.form_submit_button(
+          "💾 Simpan ke Monthly Sampling", use_container_width=True
+      )
+
+      if submitted_monthly:
+        try:
+          existing_monthly = conn.read(worksheet="Monthly Sampling", ttl=0)
+
+          new_monthly = pd.DataFrame([{
+              "Station": m_station,
+              "Month": m_month,
+              "Status": m_status,
+          }])
+
+          updated_monthly = pd.concat(
+              [existing_monthly, new_monthly], ignore_index=True
+          )
+          conn.update(worksheet="Monthly Sampling", data=updated_monthly)
+
+          st.cache_data.clear()
+          st.success("✅ Rekod berjaya dikemas kini ke 'Monthly Sampling'!")
+          st.rerun()
+        except Exception as e:
+          st.error(f"Gagal mengemas kini: {e}")
