@@ -40,6 +40,52 @@ def init_gspread_client():
 
 
 client = init_gspread_client()
+SPREADSHEET_NAME = "Master Data Monitoring"
+
+try:
+  sheet_daily = client.open(SPREADSHEET_NAME).worksheet("Daily log 2026")
+  df = pd.DataFrame(sheet_daily.get_all_records())
+  df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+except:
+  df = pd.DataFrame()
+
+try:
+  sheet_cases = client.open(SPREADSHEET_NAME).worksheet("Cases Tracker")
+  df_cases = pd.DataFrame(sheet_cases.get_all_records())
+  df_cases_raw = df_cases.copy()
+  date_col = next(
+      (c for c in df_cases.columns if "date" in c.lower()), df_cases.columns[0]
+  )
+  df_cases[date_col] = pd.to_datetime(df_cases[date_col], errors="coerce")
+except:
+  df_cases = pd.DataFrame()
+  df_cases_raw = pd.DataFrame()
+  date_col = None
+
+try:
+  sheet_monthly_read = client.open(SPREADSHEET_NAME).worksheet(
+      "Monthly Sampling"
+  )
+  df_monthly = pd.DataFrame(sheet_monthly_read.get_all_records())
+except:
+  df_monthly = pd.DataFrame()
+
+f_ph = (
+    next((c for c in df.columns if "ph" in c.lower() and "fdp" in c.lower()), "")
+    if not df.empty
+    else ""
+)
+f_ntu = (
+    next(
+        (c for c in df.columns if "ntu" in c.lower() and "fdp" in c.lower()), ""
+    )
+    if not df.empty
+    else ""
+)
+status_col = (
+    next((c for c in df_cases.columns if "status" in c.lower()), None)
+    if not df_cases.empty
+    else None
 # ==========================================
 # UI TITLE & HEADER
 # ==========================================
@@ -1175,9 +1221,6 @@ elif selected_page == "Monthly Monitoring Record":
     st.info("Tiada rekod persampelan bulanan ditemui.")
 
 
-# ==========================================
-# PAGE 6: DATA ENTRY PORTAL (Eksklusif Borang Input)
-# ==========================================
 # ==========================================
 # PAGE 6: DATA ENTRY PORTAL (Eksklusif Borang Input)
 # ==========================================
