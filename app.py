@@ -662,7 +662,7 @@ if selected_page == "Overview":
   else:
     compliance_rate = 0.0
 
- bmp_performance = 0.0
+bmp_performance = 0.0
   bmp_col = next(
       (
           col
@@ -673,10 +673,20 @@ if selected_page == "Overview":
   )
   if bmp_col and not df.empty:
     df_sorted_bmp = df.sort_values(by="Date")
-    bmp_performance = float(
+    raw_val = (
         df_sorted_bmp[bmp_col].dropna().iloc[-1]
         if not df_sorted_bmp[bmp_col].dropna().empty
         else 0.0
+    )
+    # Bersihkan simbol % jika ada, dan tukar jadi nombor
+    if isinstance(raw_val, str):
+      raw_val = raw_val.replace("%", "").strip()
+    bmp_performance = float(raw_val) if raw_val != "" else 0.0
+    )
+    # Bersihkan simbol % jika ada, dan tukar jadi nombor
+    if isinstance(raw_val, str):
+      raw_val = raw_val.replace("%", "").strip()
+    bmp_performance = float(raw_val) if raw_val != "" else 0.0
     )
 
   col1, col2, col3, col4 = st.columns(4)
