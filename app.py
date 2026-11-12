@@ -146,9 +146,10 @@ MONTHLY_SAMPLING_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6E
 # ==========================================
 # DATA LOADING DENGAN TTL CACHE (Auto-refresh)
 # ==========================================
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=10)  # Kurangkan masa cache kepada 10 saat sahaja
 def load_data():
-  df = pd.read_csv(CSV_URL)
+  # Baca terus menggunakan sambungan GSheets supaya data masuk serta-merta
+  df = conn.read(worksheet="Daily log 2026", ttl=10)
   df.columns = df.columns.str.strip()
   df = df.dropna(subset=["Date"]).copy()
   df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
