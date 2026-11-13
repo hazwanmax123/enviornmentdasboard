@@ -1953,7 +1953,7 @@ elif selected_page == "📝 Data Entry":
   # ==========================================
   # TAB 2: CASES TRACKER
   # ==========================================
-  with tab 2
+  with tab2 :
 st.markdown("### ⚠️ Daftar Kes / Isu Baru & Kemas Kini Status")
 st.markdown(
     "<p style='color: #64748b; font-size: 13px;'>Nota: Status 'No action' dan 'Proposed in meeting' akan dikira secara automatik sebagai Open Cases di Dashboard.</p>",
