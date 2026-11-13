@@ -608,151 +608,150 @@ if len(selected_date_range) == 2:
 # PAGE 1: OVERVIEW
 # ==========================================
 if selected_page == "Overview":
-  try:
-    st.image("Header_bg.JPG", use_container_width=True)
-  except:
-    pass
+    try:
+        st.image("Header_bg.JPG", use_container_width=True)
+    except:
+        pass
 
-  st.markdown(
-      "<h1 style='font-size: 28px; font-weight: 700; color: #0f172a;"
-      " margin-bottom: 2px;'>Welcome</h1>",
-      unsafe_allow_html=True,
-  )
-  st.markdown(
-      "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top:"
-      " 0; margin-bottom: 20px;'>RBA Engineering Sdn Bhd | Tin Mining"
-      " ML087</p>",
-      unsafe_allow_html=True,
-  )
-
-  open_cases_count = 0
-  if not df_cases_raw.empty:
-    raw_status_col = next(
-        (c for c in df_cases_raw.columns if "status" in c.lower()), None
+    st.markdown(
+        "<h1 style='font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 2px;'>Welcome</h1>",
+        unsafe_allow_html=True,
     )
-    if raw_status_col:
-      temp_status = (
-          df_cases_raw[raw_status_col]
-          .astype(str)
-          .str.strip()
-          .str.lower()
-          .str.replace("no action", "no_action")
-      )
-      open_cases_count = df_cases_raw[
-          temp_status.isin(["no_action", "proposed in meeting", "open"])
-      ].shape[0]
+    st.markdown(
+        "<p style='color: #0284c7; font-size: 13px; font-weight: 600; margin-top: 0; margin-bottom: 20px;'>RBA Engineering Sdn Bhd | Tin Mining ML087</p>",
+        unsafe_allow_html=True,
+    )
 
-  if not df.empty:
-    valid_recs = df.dropna(subset=[f_ph, f_ntu])
-    if not valid_recs.empty:
-      limit_val = (
-          valid_recs["NTU Limit"].dropna().iloc[-1]
-          if "NTU Limit" in valid_recs.columns
-          and not valid_recs["NTU Limit"].dropna().empty
-          else 50.0
-      )
-      compliant_count = valid_recs[
-          (valid_recs[f_ph] >= 6.0)
-          & (valid_recs[f_ph] <= 9.0)
-          & (valid_recs[f_ntu] <= limit_val)
-      ].shape[0]
-      compliance_rate = (compliant_count / len(valid_recs)) * 100.0
+    open_cases_count = 0
+    if not df_cases_raw.empty:
+        raw_status_col = next(
+            (c for c in df_cases_raw.columns if "status" in c.lower()), None
+        )
+        if raw_status_col:
+            temp_status = (
+                df_cases_raw[raw_status_col]
+                .astype(str)
+                .str.strip()
+                .str.lower()
+                .str.replace("no action", "no_action")
+            )
+            open_cases_count = df_cases_raw[
+                temp_status.isin(["no_action", "proposed in meeting", "open"])
+            ].shape[0]
+
+    if not df.empty:
+        valid_recs = df.dropna(subset=[f_ph, f_ntu])
+        if not valid_recs.empty:
+            limit_val = (
+                valid_recs["NTU Limit"].dropna().iloc[-1]
+                if "NTU Limit" in valid_recs.columns
+                and not valid_recs["NTU Limit"].dropna().empty
+                else 50.0
+            )
+            compliant_count = valid_recs[
+                (valid_recs[f_ph] >= 6.0)
+                & (valid_recs[f_ph] <= 9.0)
+                & (valid_recs[f_ntu] <= limit_val)
+            ].shape[0]
+            compliance_rate = (compliant_count / len(valid_recs)) * 100.0
+        else:
+            compliance_rate = 100.0
     else:
-      compliance_rate = 100.0
-  else:
-    compliance_rate = 0.0
+        compliance_rate = 0.0
 
-bmp_performance = (
-      float(str(df["BMP Perfomance"].dropna().iloc[-1]).replace("%", "").strip())
-      if "BMP Perfomance" in df.columns and not df.empty
-      else 0.0
-  )
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric(
-        label="Discharge Compliance",
-        value=f"{compliance_rate:.1f}%",
-        delta="Optimal Range",
-    )
-with col2:
-    st.metric(
-        label="Open Cases",
-        value=open_cases_count,
-        delta="Requires Action / Review",
-    )
-with col3:
-    st.metric(label="Last Sample Date", value=last_sample_date)
-with col4:
-    st.metric(label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%")
-if not df.empty:
-    latest_row = df.sort_values(by="Date").iloc[-1]
-
-    us_ph_avg_col = next(
-        (
-            c
-            for c in df.columns
-            if "avg" in c.lower()
-            and "ph" in c.lower()
-            and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
-        ),
-        df.columns[3],
-    )
-    us_ntu_avg_col = next(
-        (
-            c
-            for c in df.columns
-            if "avg" in c.lower()
-            and ("ntu" in c.lower() or "turb" in c.lower())
-            and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
-        ),
-        df.columns[5],
-    )
-    ds_ph_avg_col = next(
-        (
-            c
-            for c in df.columns
-            if "avg" in c.lower()
-            and "ph" in c.lower()
-            and ("ds" in c.lower() or "downstream" in c.lower())
-        ),
-        df.columns[7],
-    )
-    ds_ntu_avg_col = next(
-        (
-            c
-            for c in df.columns
-            if "avg" in c.lower()
-            and ("ntu" in c.lower() or "turb" in c.lower())
-            and ("ds" in c.lower() or "downstream" in c.lower())
-        ),
-        df.columns[9],
+    bmp_performance = (
+        float(str(df["BMP Perfomance"].dropna().iloc[-1]).replace("%", "").strip())
+        if "BMP Perfomance" in df.columns and not df.empty
+        else 0.0
     )
 
-    def get_status_badge(val, param_type):
-      if pd.isna(val):
-        return "<span class='badge-alert'>No Data</span>"
-      if param_type == "pH":
-        if val < 3.0:
-          return "<span class='badge-breach'>❌ Breach (pH < 3)</span>"
-        elif 6.0 <= val <= 9.0:
-          return "<span class='badge-pass'>🟢 Within limit</span>"
-        else:
-          return "<span class='badge-alert'>▲ Alert</span>"
-      elif param_type == "Turbidity":
-        if val > 250.0:
-          return "<span class='badge-breach'>❌ Breach (&gt; 250 NTU)</span>"
-        else:
-          return "<span class='badge-pass'>🟢 Within limit</span>"
-      return "<span>-</span>"
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric(
+            label="Discharge Compliance",
+            value=f"{compliance_rate:.1f}%",
+            delta="Optimal Range",
+        )
+    with col2:
+        st.metric(
+            label="Open Cases",
+            value=open_cases_count,
+            delta="Requires Action / Review",
+        )
+    with col3:
+        st.metric(label="Last Sample Date", value=last_sample_date)
+    with col4:
+        st.metric(label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%")
 
-    fdp_ph_val = latest_row.get(f_ph, 0)
-    fdp_ntu_val = latest_row.get(f_ntu, 0)
-    us_ph_val = latest_row.get(us_ph_avg_col, 0)
-    us_ntu_val = latest_row.get(us_ntu_avg_col, 0)
-    ds_ph_val = latest_row.get(ds_ph_avg_col, 0)
-    ds_ntu_val = latest_row.get(ds_ntu_avg_col, 0)
+    if not df.empty:
+        latest_row = df.sort_values(by="Date").iloc[-1]
 
-    matrix_html = f"""
+        us_ph_avg_col = next(
+            (
+                c
+                for c in df.columns
+                if "avg" in c.lower()
+                and "ph" in c.lower()
+                and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
+            ),
+            df.columns[3] if len(df.columns) > 3 else df.columns[0],
+        )
+        us_ntu_avg_col = next(
+            (
+                c
+                for c in df.columns
+                if "avg" in c.lower()
+                and ("ntu" in c.lower() or "turb" in c.lower())
+                and ("duri" in c.lower() or "us" in c.lower() or "upstream" in c.lower())
+            ),
+            df.columns[5] if len(df.columns) > 5 else df.columns[0],
+        )
+        ds_ph_avg_col = next(
+            (
+                c
+                for c in df.columns
+                if "avg" in c.lower()
+                and "ph" in c.lower()
+                and ("ds" in c.lower() or "downstream" in c.lower())
+            ),
+            df.columns[7] if len(df.columns) > 7 else df.columns[0],
+        )
+        ds_ntu_avg_col = next(
+            (
+                c
+                for c in df.columns
+                if "avg" in c.lower()
+                and ("ntu" in c.lower() or "turb" in c.lower())
+                and ("ds" in c.lower() or "downstream" in c.lower())
+            ),
+            df.columns[9] if len(df.columns) > 9 else df.columns[0],
+        )
+
+        def get_status_badge(val, param_type):
+            if pd.isna(val):
+                return "<span class='badge-alert'>No Data</span>"
+            if param_type == "pH":
+                if val < 3.0:
+                    return "<span class='badge-breach'>❌ Breach (pH < 3)</span>"
+                elif 6.0 <= val <= 9.0:
+                    return "<span class='badge-pass'>🟢 Within limit</span>"
+                else:
+                    return "<span class='badge-alert'>▲ Alert</span>"
+            elif param_type == "Turbidity":
+                if val > 250.0:
+                    return "<span class='badge-breach'>❌ Breach (&gt; 250 NTU)</span>"
+                else:
+                    return "<span class='badge-pass'>🟢 Within limit</span>"
+            return "<span>-</span>"
+
+        fdp_ph_val = latest_row.get(f_ph, 0)
+        fdp_ntu_val = latest_row.get(f_ntu, 0)
+        us_ph_val = latest_row.get(us_ph_avg_col, 0)
+        us_ntu_val = latest_row.get(us_ntu_avg_col, 0)
+        ds_ph_val = latest_row.get(ds_ph_avg_col, 0)
+        ds_ntu_val = latest_row.get(ds_ntu_avg_col, 0)
+
+        matrix_html = f"""
         <div class="table-container">
         <table style="width:100%; border-collapse: collapse; font-family: 'Inter', sans-serif; white-space: nowrap;">
             <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; text-align: left;">
@@ -778,78 +777,77 @@ if not df.empty:
         </table>
         </div>
         """
-    st.markdown(matrix_html, unsafe_allow_html=True)
+        st.markdown(matrix_html, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.subheader("📊 Final Discharge Condition Analytics")
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.subheader("📊 Final Discharge Condition Analytics")
 
-  if not df.empty:
-    fig = go.Figure()
-    fig.add_trace(
-        go.Bar(
-            x=df["Date"],
-            y=df[f_ntu],
-            name="Discharge Turbidity (NTU)",
-            marker_color="#0284c7",
-            yaxis="y1",
+        fig = go.Figure()
+        fig.add_trace(
+            go.Bar(
+                x=df["Date"],
+                y=df[f_ntu],
+                name="Discharge Turbidity (NTU)",
+                marker_color="#0284c7",
+                yaxis="y1",
+            )
         )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=df["Date"],
-            y=df[f_ph],
-            name="pH Level",
-            mode="lines+markers",
-            line=dict(color="#0f172a", width=2, shape="spline"),
-            marker=dict(size=5, color="#0f172a"),
-            fill="tozeroy",
-            fillcolor="rgba(15, 23, 42, 0.05)",
-            yaxis="y2",
+        fig.add_trace(
+            go.Scatter(
+                x=df["Date"],
+                y=df[f_ph],
+                name="pH Level",
+                mode="lines+markers",
+                line=dict(color="#0f172a", width=2, shape="spline"),
+                marker=dict(size=5, color="#0f172a"),
+                fill="tozeroy",
+                fillcolor="rgba(15, 23, 42, 0.05)",
+                yaxis="y2",
+            )
         )
-    )
-    fig.update_layout(
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#0f172a", family="Inter", size=11),
-        xaxis=dict(
-            title=dict(text="Date", font=dict(color="#0f172a", size=12)),
-            showgrid=False,
-            linecolor="#94a3b8",
-            tickfont=dict(color="#0f172a", size=11),
-            tickformat="%b %d",
-            rangeslider=dict(visible=True, thickness=0.08),
-        ),
-        yaxis=dict(
-            title=dict(
-                text="Turbidity (NTU)", font=dict(color="#0f172a", size=11)
+        fig.update_layout(
+            plot_bgcolor="#ffffff",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#0f172a", family="Inter", size=11),
+            xaxis=dict(
+                title=dict(text="Date", font=dict(color="#0f172a", size=12)),
+                showgrid=False,
+                linecolor="#94a3b8",
+                tickfont=dict(color="#0f172a", size=11),
+                tickformat="%b %d",
+                rangeslider=dict(visible=True, thickness=0.08),
             ),
-            tickfont=dict(color="#0f172a", size=10),
-            side="left",
-            showgrid=True,
-            gridcolor="rgba(100, 100, 100, 0.06)",
-        ),
-        yaxis2=dict(
-            title=dict(text="pH Level", font=dict(color="#0f172a", size=11)),
-            tickfont=dict(color="#0f172a", size=10),
-            overlaying="y",
-            side="right",
-            showgrid=False,
-            range=[6.0, 8.5],
-        ),
-        legend=dict(
-            orientation="h",
-            yanchor="top",
-            y=1.12,
-            xanchor="center",
-            x=0.5,
-            font=dict(size=10, color="#0f172a"),
-            bgcolor="rgba(255, 255, 255, 0.8)",
-        ),
-        margin=dict(l=30, r=30, t=30, b=60),
-        hovermode="x unified",
-        height=400,
-    )
-    st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
+            yaxis=dict(
+                title=dict(
+                    text="Turbidity (NTU)", font=dict(color="#0f172a", size=11)
+                ),
+                tickfont=dict(color="#0f172a", size=10),
+                side="left",
+                showgrid=True,
+                gridcolor="rgba(100, 100, 100, 0.06)",
+            ),
+            yaxis2=dict(
+                title=dict(text="pH Level", font=dict(color="#0f172a", size=11)),
+                tickfont=dict(color="#0f172a", size=10),
+                overlaying="y",
+                side="right",
+                showgrid=False,
+                range=[6.0, 8.5],
+            ),
+            legend=dict(
+                orientation="h",
+                yanchor="top",
+                y=1.12,
+                xanchor="center",
+                x=0.5,
+                font=dict(size=10, color="#0f172a"),
+                bgcolor="rgba(255, 255, 255, 0.8)",
+            ),
+            margin=dict(l=30, r=30, t=30, b=60),
+            hovermode="x unified",
+            height=400,
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"responsive": True})
 
 # ==========================================
 # PAGE 2: DISCHARGE COMPLIANCE
