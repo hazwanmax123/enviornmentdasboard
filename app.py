@@ -668,21 +668,21 @@ bmp_performance = (
       else 0.0
   )
 col1, col2, col3, col4 = st.columns(4)
-  with col1:
+with col1:
     st.metric(
         label="Discharge Compliance",
         value=f"{compliance_rate:.1f}%",
         delta="Optimal Range",
     )
-  with col2:
+with col2:
     st.metric(
         label="Open Cases",
         value=open_cases_count,
         delta="Requires Action / Review",
     )
-  with col3:
+with col3:
     st.metric(label="Last Sample Date", value=last_sample_date)
-  with col4:
+with col4:
     st.metric(label="BMP Performance (Latest)", value=f"{bmp_performance:.1f}%")
   if not df.empty:
     latest_row = df.sort_values(by="Date").iloc[-1]
