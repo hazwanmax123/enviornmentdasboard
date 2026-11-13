@@ -1776,7 +1776,7 @@ elif selected_page == "Monthly Monitoring Record":
 # ==========================================
 # PAGE 6: DATA ENTRY (AUTO-SYNC TO GOOGLE SHEETS)
 # ==========================================
-  if selected_page == "📝 Data Entry":
+if selected_page == "📝 Data Entry":
   st.markdown(
       "<h1 style='font-size: 26px; font-weight: 700; color: #0f172a;"
       " margin-bottom: 2px;'>📝 Field Data Entry & Auto-Sync</h1>",
