@@ -780,8 +780,8 @@ if not df.empty:
         """
     st.markdown(matrix_html, unsafe_allow_html=True)
 
-  st.markdown("<br>", unsafe_allow_html=True)
-  st.subheader("📊 Final Discharge Condition Analytics")
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("📊 Final Discharge Condition Analytics")
 
   if not df.empty:
     fig = go.Figure()
