@@ -1889,7 +1889,6 @@ if selected_page == "📝 Data Entry":
         try:
           existing_df = conn.read(worksheet="Daily log 2026", ttl=0)
 
-          # Pengiraan Automatik oleh Sistem
           avg_us_ph = round((us_ph_am + us_ph_pm) / 2, 3)
           avg_ds_ph = round((ds_ph_am + ds_ph_pm) / 2, 3)
           avg_fdp_ph = round((fdp_ph_am + fdp_ph_pm) / 2, 3)
@@ -1904,7 +1903,6 @@ if selected_page == "📝 Data Entry":
           )
           bmp_perf_str = f"{bmp_perf_val}%"
 
-          # Padankan 100% dengan ejaan header kolum A1:AD1 dalam Google Sheet
           new_row = pd.DataFrame([{
               "Date": entry_date.strftime("%Y-%m-%d"),
               "Year": entry_date.year,
@@ -1953,91 +1951,121 @@ if selected_page == "📝 Data Entry":
   # ==========================================
   # TAB 2: CASES TRACKER
   # ==========================================
-    with tab2 :
-        st.markdown("### ⚠️ Daftar Kes / Isu Baru & Kemas Kini Status")
-        st.markdown(
-    "<p style='color: #64748b; font-size: 13px;'>Nota: Status 'No action' dan 'Proposed in meeting' akan dikira secara automatik sebagai Open Cases di Dashboard.</p>",
-    unsafe_allow_html=True,
-)
-
-# Pilihan mod: Daftar baharu atau Update status kes sedia ada
-entry_mode = st.radio(
-    "Pilih Mod Operasi Kes",
-    ["Daftar Kes Baharu", "Kemas Kini Status Kes Sedia Ada"],
-    horizontal=True,
-)
-
-if entry_mode == "Daftar Kes Baharu":
-  with st.form("form_cases_tracker_new"):
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-      case_date = st.date_input("Date Raised", value=datetime.date.today())
-    with col_c2:
-      case_status = st.selectbox(
-          "Status", ["No action", "Proposed in meeting", "Closed"]
-      )
-
-    case_issue = st.text_input(
-        "Issue", placeholder="Contoh: Slope Erosion / Clogged Drain"
-    )
-    case_location = st.text_input(
-        "Location", placeholder="Contoh: Bukit Adam (CH300)"
+  with tab2:
+    st.subheader("Daftar Kes / Isu Baru & Kemas Kini Status (Cases tracker)")
+    st.markdown(
+        "<p style='color: #64748b; font-size: 13px;'>Nota: Status 'No action'"
+        " dan 'Proposed in meeting' akan dikira secara automatik sebagai Open"
+        " Cases di Dashboard.</p>",
+        unsafe_allow_html=True,
     )
 
-    submit_case = st.form_submit_button("💾 Simpan Kes Baharu ke Google Sheets")
+    entry_mode = st.radio(
+        "Pilih Mod Operasi Kes",
+        ["Daftar Kes Baharu", "Kemas Kini Status Kes Sedia Ada"],
+        horizontal=True,
+    )
 
-    if submit_case:
-      if case_issue and case_location:
-        try:
-          new_row_case = pd.DataFrame([{
-              "Date Raised": case_date.strftime("%Y-%m-%d"),
-              "Issue": case_issue,
-              "Location": case_location,
-              "Status": case_status,
-          }])
-          # Pastikan conn merujuk kepada sambutan Google Sheets yang betul
-          updated_cases_df = pd.concat([df_cases_raw, new_row_case], ignore_index=True)
-          conn.update(worksheet="Cases tracker", data=updated_cases_df)
-          st.success("✅ Kes baharu berjaya direkodkan ke Google Sheets!")
-          st.rerun()
-        except Exception as e:
-          st.error(f"❌ Ralat semasa menyimpan data: {e}")
+    if entry_mode == "Daftar Kes Baharu":
+      with st.form("form_cases_tracker_new", clear_on_submit=True):
+        col_c1, col_c2 = st.columns(2)
+        with col_c1:
+          case_date = st.date_input("Date Raised", value=datetime.date.today())
+        with col_c2:
+          case_status = st.selectbox(
+              "Status", ["No action", "Proposed in meeting", "Closed"]
+          )
+
+        case_issue = st.text_input(
+            "Issue", placeholder="Contoh: Slope Erosion / Clogged Drain"
+        )
+        case_location = st.text_input(
+            "Location", placeholder="Contoh: Bukit Adam (CH300)"
+        )
+
+        submit_case = st.form_submit_button(
+            "💾 Simpan Kes Baharu ke Cases tracker", use_container_width=True
+        )
+
+        if submit_case:
+          if case_issue and case_location:
+            try:
+              existing_cases = conn.read(worksheet="Cases tracker", ttl=0)
+              new_row_case = pd.DataFrame([{
+                  "Date Raised": case_date.strftime("%Y-%m-%d"),
+                  "Issue": case_issue,
+                  "Location": case_location,
+                  "Status": case_status,
+              }])
+              updated_cases_df = pd.concat(
+                  [existing_cases, new_row_case], ignore_index=True
+              )
+              conn.update(worksheet="Cases tracker", data=updated_cases_df)
+              st.cache_data.clear()
+              st.success("✅ Kes baharu berjaya direkodkan ke Cases tracker!")
+              st.rerun()
+            except Exception as e:
+              st.error(f"❌ Ralat semasa menyimpan data: {e}")
+          else:
+            st.warning("⚠️ Sila isi maklumat Issue dan Location.")
+
+    else:
+      try:
+        current_cases = conn.read(worksheet="Cases tracker", ttl=0)
+      except Exception:
+        current_cases = df_cases_raw.copy()
+
+      if current_cases.empty:
+        st.info("Tiada rekod kes sedia ada dalam pangkalan data untuk dikemas kini.")
       else:
-          st.warning("⚠️ Sila isi maklumat Issue dan Location.")
+        with st.form("form_cases_tracker_update"):
+          issue_col = next(
+              (c for c in current_cases.columns if "issue" in c.lower()),
+              current_cases.columns[1]
+              if len(current_cases.columns) > 1
+              else current_cases.columns[0],
+          )
+          loc_col = next(
+              (c for c in current_cases.columns if "loc" in c.lower()), None
+          )
+          status_col = next(
+              (c for c in current_cases.columns if "status" in c.lower()),
+              "Status",
+          )
 
-else:
-  # MOD: KEMAS KINI STATUS KES SEDIA ADA
-  if df_cases_raw.empty:
-    st.info("Tiada rekod kes sedia ada dalam pangkalan data untuk dikemas kini.")
-  else:
-    with st.form("form_cases_tracker_update"):
-      # Cari kolum yang berkaitan dengan Issue / ID kes
-      issue_col = next((c for c in df_cases_raw.columns if "issue" in c.lower()), df_cases_raw.columns[1] if len(df_cases_raw.columns) > 1 else df_cases_raw.columns[0])
-      
-      # Paparkan senarai kes sedia ada untuk dipilih
-      case_list = df_cases_raw[issue_col].astype(str).tolist()
-      selected_case_issue = st.selectbox("Pilih Isu / Kes yang Ingin Dikemas Kini", case_list)
-      
-      new_status = st.selectbox(
-          "Status Baharu", ["No action", "Proposed in meeting", "Closed"]
-      )
-      
-      update_case_btn = st.form_submit_button("🔄 Kemas Kini Status Kes")
-      
-      if update_case_btn:
-        try:
-          # Cari baris yang sepadan dan kemas kini statusnya
-          status_col = next((c for c in df_cases_raw.columns if "status" in c.lower()), "Status")
-          
-          # Kemas kini nilai dalam DataFrame
-          df_cases_raw.loc[df_cases_raw[issue_col].astype(str) == selected_case_issue, status_col] = new_status
-          
-          # Hantar semula ke Google Sheets
-          conn.update(worksheet="Cases tracker", data=df_cases_raw)
-          st.success(f"✅ Status bagi kes '{selected_case_issue}' berjaya dikemas kini kepada '{new_status}'!")
-          st.rerun()
-        except Exception as e:
-          st.error(f"❌ Ralat semasa mengemas kini status: {e}")
+          # Papar Issue + Location + Status semasa supaya senang kenal pasti kalau ada isu yang sama
+          case_options = {}
+          for idx, row in current_cases.iterrows():
+            loc_str = f" | {row[loc_col]}" if loc_col and pd.notna(row[loc_col]) else ""
+            stat_str = f" [{row[status_col]}]" if status_col in current_cases.columns else ""
+            label = f"Row {idx + 1}: {row[issue_col]}{loc_str}{stat_str}"
+            case_options[label] = idx
+
+          selected_label = st.selectbox(
+              "Pilih Isu / Kes yang Ingin Dikemas Kini",
+              list(case_options.keys()),
+          )
+          new_status = st.selectbox(
+              "Status Baharu",
+              ["Proposed in meeting", "Closed", "No action"],
+          )
+
+          update_case_btn = st.form_submit_button(
+              "🔄 Kemas Kini Status Kes", use_container_width=True
+          )
+
+          if update_case_btn:
+            try:
+              target_idx = case_options[selected_label]
+              current_cases.at[target_idx, status_col] = new_status
+              conn.update(worksheet="Cases tracker", data=current_cases)
+              st.cache_data.clear()
+              st.success(
+                  f"✅ Status kes berjaya dikemas kini kepada '{new_status}'!"
+              )
+              st.rerun()
+            except Exception as e:
+              st.error(f"❌ Ralat semasa mengemas kini status: {e}")
 
   # ==========================================
   # TAB 3: MONTHLY SAMPLING
@@ -2045,7 +2073,6 @@ else:
   with tab3:
     st.subheader("Rekod Persampelan Bulanan (Monthly Sampling)")
 
-    # Letak dropdown Status di luar st.form supaya UI bertukar terus bila dipilih
     m_c1, m_c2, m_c3 = st.columns(3)
     m_year = m_c1.number_input(
         "Year", min_value=2024, max_value=2035, value=datetime.date.today().year, step=1
@@ -2135,13 +2162,11 @@ else:
               "Station Id": m_station,
               "Status": m_status,
           }
-          # Masukkan nilai parameter hanya jika status adalah Active
           if m_status == "Active":
             row_dict.update(param_data)
 
           new_monthly = pd.DataFrame([row_dict])
 
-          # Jika sudah wujud rekod untuk Tahun, Bulan & Stesen yang sama, kemaskini baris tersebut; jika belum, tambah baris baharu
           if not existing_monthly.empty and all(
               col in existing_monthly.columns
               for col in ["Year", "Month", "Station Id"]
