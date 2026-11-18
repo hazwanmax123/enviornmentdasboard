@@ -13,131 +13,75 @@ from streamlit_gsheets import GSheetsConnection
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # ==========================================
-# PAGE CONFIG
+# KONFIGURASI HALAMAN & CUSTOM CSS MODEN
 # ==========================================
 st.set_page_config(
-    page_title="Environmental Monitoring Dashboard",
-    page_icon="🌊",
+    page_title="RBA Engineering | Environmental Monitoring ML087",
+    page_icon="⛏️",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded"
 )
 
-# ==========================================
-# CUSTOM CSS: CLEAN LIGHT CANVAS + DARK SIDEBAR
-# ==========================================
-st.markdown(
-    """
-    <style>
+# Custom CSS untuk naik taraf UI (Glassmorphism, Soft Shadows, Clean Modern Cards)
+st.markdown("""
+<style>
+    /* Tetapan font umum dan latar belakang lembut */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-    .stApp {
-        background-color: #f4f7fc;
-        color: #1e293b;
+    
+    html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
     
-    [data-testid="stSidebar"] {
-        background-color: #0d1322;
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-        color: #ffffff;
-    }
-    
-    [data-testid="stSidebar"] label {
-        color: #e2e8f0 !important;
-        font-weight: 500;
-        font-family: 'Inter', sans-serif;
-    }
-
-    [data-testid="stSidebar"] .stButton button {
-        background-color: #0284c7 !important;
-        color: #ffffff !important;
-        font-weight: 600 !important;
-        border: none !important;
-        border-radius: 8px !important;
-        width: 100% !important;
-    }
-    [data-testid="stSidebar"] .stButton button:hover {
-        background-color: #0369a1 !important;
-        color: #ffffff !important;
-    }
-
-    h1, h2, h3, h4 {
-        color: #0f172a !important;
-        font-family: 'Inter', sans-serif;
-    }
-    
-    p, span, label {
-        font-family: 'Inter', sans-serif;
-    }
-
+    /* Cantikkan rupa kad metrik Streamlit */
     div[data-testid="stMetric"] {
         background: #ffffff;
         border: 1px solid #e2e8f0;
         padding: 16px 20px;
-        border-radius: 14px;
+        border-radius: 12px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-        margin-bottom: 10px;
-        word-break: break-word;
+        transition: all 0.3s ease;
     }
-
-    [data-testid="stMetricValue"] {
-        font-size: 18px !important;
-        font-weight: 700 !important;
-        color: #0f172a !important;
-        font-family: 'Inter', sans-serif;
+    div[data-testid="stMetric"]:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
     }
     
-    [data-testid="stMetricLabel"] {
-        font-size: 11px !important;
-        color: #64748b !important;
-        font-weight: 600 !important;
-        font-family: 'Inter', sans-serif;
-    }
-
-    .table-container {
-        width: 100%;
-        overflow-x: auto;
-        border-radius: 14px;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-    }
-
+    /* Gaya Badge Status Khas */
     .badge-pass {
-        background-color: #d1fae5;
-        color: #065f46;
-        border: 1px solid #a7f3d0;
+        background-color: #dcfce7;
+        color: #166534;
         padding: 4px 10px;
-        border-radius: 20px;
+        border-radius: 6px;
         font-weight: 600;
-        font-size: 11px;
-        display: inline-block;
-    }
-    .badge-alert {
-        background-color: #fef3c7;
-        color: #92400e;
-        border: 1px solid #fde68a;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 11px;
-        display: inline-block;
+        font-size: 12px;
     }
     .badge-breach {
         background-color: #fee2e2;
         color: #991b1b;
-        border: 1px solid #fecaca;
         padding: 4px 10px;
-        border-radius: 20px;
+        border-radius: 6px;
         font-weight: 600;
-        font-size: 11px;
-        display: inline-block;
+        font-size: 12px;
     }
-    </style>
-""",
-    unsafe_allow_html=True,
-)
-
+    .badge-alert {
+        background-color: #fef9c3;
+        color: #854d0e;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+    
+    /* Kotak kontena jadual */
+    .table-container {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    }
+</style>
+""", unsafe_allow_html=True)
 CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=0&single=true&output=csv"
 CASES_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=1959925791&single=true&output=csv"
 MONTHLY_SAMPLING_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT6EtvUg9G_4FqGNLdnmMB1yHeid1cW4n3tQu9h8Yjmj3gmU8tcEkc7_ygc_9hhZ-wneiUwHgRLiIxB/pub?gid=1267713168&single=true&output=csv"
